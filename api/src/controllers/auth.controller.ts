@@ -1,10 +1,13 @@
 import { Request, Response } from 'express';
 import { LoginUserDto, RegisterUserDto } from '../dtos/auth.dto';
 import { AuthService } from '../services/auth.service';
+import { FirebaseAuthService } from '../services/firebase-auth.service';
+import { VerifyFirebaseTokenDto } from '../types/firebase';
 import { buildSuccessResponse } from '../utils/api-response';
 import { AppError } from '../utils/app-error';
 
 const authService = new AuthService();
+const firebaseAuthService = new FirebaseAuthService();
 
 export class AuthController {
   getStatus(_request: Request, response: Response) {
@@ -37,5 +40,12 @@ export class AuthController {
     const user = await authService.getAuthenticatedUser(authUser.id);
 
     return response.status(200).json({ user });
+  }
+
+  async verifyFirebaseToken(request: Request, response: Response) {
+    const payload = request.body as VerifyFirebaseTokenDto;
+    const identity = await firebaseAuthService.verifyToken(payload.token);
+
+    return response.status(200).json(buildSuccessResponse(identity));
   }
 }

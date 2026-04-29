@@ -16,6 +16,11 @@ export const env = {
     secret: process.env.JWT_SECRET ?? '',
     expiresIn: process.env.JWT_EXPIRES_IN ?? '1d',
   },
+  firebase: {
+    projectId: process.env.FIREBASE_PROJECT_ID ?? '',
+    clientEmail: process.env.FIREBASE_CLIENT_EMAIL ?? '',
+    privateKey: process.env.FIREBASE_PRIVATE_KEY ?? '',
+  },
   database: {
     host: process.env.DATABASE_HOST ?? 'localhost',
     port: toNumber(process.env.DATABASE_PORT, 3306),

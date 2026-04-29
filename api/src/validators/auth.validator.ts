@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import { LoginUserDto, RegisterUserDto } from '../dtos/auth.dto';
+import { VerifyFirebaseTokenDto } from '../types/firebase';
 import { buildErrorResponse } from '../utils/api-response';
 
 export function validateAuthBootstrapRequest(
@@ -87,6 +88,28 @@ export function validateLoginUserRequest(
     email: email!.trim(),
     password: password!,
   } satisfies LoginUserDto;
+
+  return next();
+}
+
+export function validateFirebaseVerifyTokenRequest(
+  request: Request,
+  response: Response,
+  next: NextFunction,
+) {
+  const { token } = request.body as Partial<VerifyFirebaseTokenDto>;
+
+  if (!token?.trim()) {
+    return response
+      .status(422)
+      .json(buildErrorResponse('Token Firebase obrigatorio.', [
+        'Informe um token Firebase valido.',
+      ]));
+  }
+
+  request.body = {
+    token: token.trim(),
+  } satisfies VerifyFirebaseTokenDto;
 
   return next();
 }

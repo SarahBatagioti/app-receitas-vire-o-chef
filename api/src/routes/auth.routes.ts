@@ -3,6 +3,7 @@ import { AuthController } from '../controllers/auth.controller';
 import { authenticateJwt } from '../middlewares/auth.middleware';
 import {
   validateAuthBootstrapRequest,
+  validateFirebaseVerifyTokenRequest,
   validateLoginUserRequest,
   validateRegisterUserRequest,
 } from '../validators/auth.validator';
@@ -16,6 +17,13 @@ authRoutes.post('/register', validateRegisterUserRequest, (request, response, ne
 
 authRoutes.post('/login', validateLoginUserRequest, (request, response, next) =>
   authController.login(request, response).catch(next),
+);
+
+authRoutes.post(
+  '/firebase/verify-token',
+  validateFirebaseVerifyTokenRequest,
+  (request, response, next) =>
+    authController.verifyFirebaseToken(request, response).catch(next),
 );
 
 authRoutes.get('/me', authenticateJwt, (request, response, next) =>
