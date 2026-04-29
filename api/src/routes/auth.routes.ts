@@ -1,9 +1,16 @@
 import { Router } from 'express';
 import { AuthController } from '../controllers/auth.controller';
-import { validateAuthBootstrapRequest } from '../validators/auth.validator';
+import {
+  validateAuthBootstrapRequest,
+  validateRegisterUserRequest,
+} from '../validators/auth.validator';
 
 const authRoutes = Router();
 const authController = new AuthController();
+
+authRoutes.post('/register', validateRegisterUserRequest, (request, response, next) =>
+  authController.register(request, response).catch(next),
+);
 
 authRoutes.get('/status', validateAuthBootstrapRequest, (request, response) =>
   authController.getStatus(request, response),

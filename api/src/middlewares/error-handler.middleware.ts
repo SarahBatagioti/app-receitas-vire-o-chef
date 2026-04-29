@@ -1,4 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
+import { buildErrorResponse } from '../utils/api-response';
+import { AppError } from '../utils/app-error';
 
 export function errorHandler(
   error: unknown,
@@ -8,8 +10,11 @@ export function errorHandler(
 ) {
   console.error(error);
 
-  return response.status(500).json({
-    success: false,
-    message: 'Erro interno do servidor.',
-  });
+  if (error instanceof AppError) {
+    return response
+      .status(error.statusCode)
+      .json(buildErrorResponse(error.message, error.details));
+  }
+
+  return response.status(500).json(buildErrorResponse('Erro interno do servidor.'));
 }

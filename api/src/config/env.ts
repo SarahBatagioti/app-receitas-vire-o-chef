@@ -11,6 +11,7 @@ const toNumber = (value: string | undefined, fallback: number): number => {
 export const env = {
   port: toNumber(process.env.PORT, 3000),
   nodeEnv: process.env.NODE_ENV ?? 'development',
+  bcryptSaltRounds: toNumber(process.env.BCRYPT_SALT_ROUNDS, 10),
   database: {
     host: process.env.DATABASE_HOST ?? 'localhost',
     port: toNumber(process.env.DATABASE_PORT, 3306),

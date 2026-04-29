@@ -8,3 +8,19 @@ export interface AuthStatusResponseDto {
     socialLogin: boolean;
   };
 }
+
+export interface RegisterUserDto {
+  email: string;
+  password: string;
+  username: string;
+}
+
+export interface RegisteredUserDto {
+  id: string;
+  email: string;
+  username: string;
+  provider: 'local';
+  isSocialAccount: boolean;
+  createdAt: string;
+  updatedAt: string;
+}

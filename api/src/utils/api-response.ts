@@ -4,3 +4,11 @@ export function buildSuccessResponse<T>(data: T) {
     data,
   };
 }
+
+export function buildErrorResponse(message: string, details?: string[]) {
+  return {
+    success: false,
+    message,
+    ...(details ? { details } : {}),
+  };
+}
