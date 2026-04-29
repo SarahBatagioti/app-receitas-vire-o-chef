@@ -1,43 +1,43 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { AppContainer, AppText } from '../components/ui';
 
 type ScreenCardProps = {
   title: string;
   subtitle: string;
 };
 
+/**
+ * Componente ScreenCard
+ * Card reutilizável para exibir telas com título e subtítulo
+ * Utiliza componentes globais e tema para consistência visual
+ */
 function ScreenCard({ title, subtitle }: ScreenCardProps) {
   return (
-    <View style={styles.contentCard}>
-      <Text style={styles.screenTitle}>{title}</Text>
-      <Text style={styles.screenSubtitle}>{subtitle}</Text>
-    </View>
+    <AppContainer
+      padding="3xl"
+      borderRadius="3xl"
+      backgroundColor="surface"
+      shadow="md"
+      direction="column"
+      justify="center"
+    >
+      <AppText
+        size="3xl"
+        weight="bold"
+        marginBottom="sm"
+        color="text"
+      >
+        {title}
+      </AppText>
+      <AppText
+        size="md"
+        color="textSecondary"
+        lineHeight="relaxed"
+      >
+        {subtitle}
+      </AppText>
+    </AppContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  contentCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 18,
-    paddingVertical: 28,
-    paddingHorizontal: 22,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 3,
-  },
-  screenTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#1f1f1f',
-    marginBottom: 8,
-  },
-  screenSubtitle: {
-    fontSize: 16,
-    lineHeight: 23,
-    color: '#4a4a4a',
-  },
-});
 
 export default ScreenCard;

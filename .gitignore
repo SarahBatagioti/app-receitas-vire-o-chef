@@ -72,3 +72,17 @@ Thumbs.db
 .tmp/
 tmp/
 .cache/
+
+# github
+copilot-instructions.md
+mobile/BEST_PRACTICES.md
+mobile/DOCUMENTATION_INDEX.md
+mobile/FINAL_SUMMARY.md
+mobile/LIST_OF_CHANGES.md
+mobile/MIGRATION_GUIDE.md
+mobile/QUICK_REFERENCE.md
+mobile/README_START_HERE.md
+mobile/SETUP_SUMMARY.md
+mobile/THEME_DOCUMENTATION.md
+mobile/THEME_SETUP_README.md
+mobile/VALUES_REFACTORED.md
