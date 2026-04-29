@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { AuthController } from '../controllers/auth.controller';
+import { authenticateJwt } from '../middlewares/auth.middleware';
 import {
   validateAuthBootstrapRequest,
   validateLoginUserRequest,
@@ -15,6 +16,10 @@ authRoutes.post('/register', validateRegisterUserRequest, (request, response, ne
 
 authRoutes.post('/login', validateLoginUserRequest, (request, response, next) =>
   authController.login(request, response).catch(next),
+);
+
+authRoutes.get('/me', authenticateJwt, (request, response, next) =>
+  authController.me(request, response).catch(next),
 );
 
 authRoutes.get('/status', validateAuthBootstrapRequest, (request, response) =>

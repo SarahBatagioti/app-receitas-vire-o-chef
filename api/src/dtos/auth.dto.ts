@@ -34,6 +34,7 @@ export interface AuthenticatedUserDto {
   id: string;
   email: string;
   username: string;
+  provider: 'local';
 }
 
 export interface LoginResponseDto {

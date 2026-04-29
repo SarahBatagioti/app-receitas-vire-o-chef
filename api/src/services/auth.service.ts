@@ -90,7 +90,23 @@ export class AuthService {
         id: user.id,
         email: user.email,
         username: user.username,
+        provider: user.provider,
       },
+    };
+  }
+
+  async getAuthenticatedUser(userId: string) {
+    const user = await userRepository.findById(userId);
+
+    if (!user) {
+      throw new AppError('Usuario autenticado nao encontrado.', 404);
+    }
+
+    return {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      provider: user.provider,
     };
   }
 }

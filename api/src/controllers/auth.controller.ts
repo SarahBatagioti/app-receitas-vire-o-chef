@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { LoginUserDto, RegisterUserDto } from '../dtos/auth.dto';
 import { AuthService } from '../services/auth.service';
 import { buildSuccessResponse } from '../utils/api-response';
+import { AppError } from '../utils/app-error';
 
 const authService = new AuthService();
 
@@ -24,5 +25,17 @@ export class AuthController {
     const authenticatedUser = await authService.loginUser(payload);
 
     return response.status(200).json(authenticatedUser);
+  }
+
+  async me(request: Request, response: Response) {
+    const authUser = request.authUser;
+
+    if (!authUser) {
+      throw new AppError('Token de autenticacao invalido.', 401);
+    }
+
+    const user = await authService.getAuthenticatedUser(authUser.id);
+
+    return response.status(200).json({ user });
   }
 }

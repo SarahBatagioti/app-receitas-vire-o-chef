@@ -47,6 +47,34 @@ export class UserRepository {
     return mapUserRow(rows[0]);
   }
 
+  async findById(id: string): Promise<UserModel | null> {
+    await this.ensureUsersTable();
+
+    const [rows] = await database.execute<(RowDataPacket & UserDatabaseRow)[]>(
+      `
+        SELECT
+          id,
+          email,
+          password_hash,
+          username,
+          provider,
+          is_social_account,
+          created_at,
+          updated_at
+        FROM users
+        WHERE id = ?
+        LIMIT 1
+      `,
+      [id],
+    );
+
+    if (!rows.length) {
+      return null;
+    }
+
+    return mapUserRow(rows[0]);
+  }
+
   async findByUsername(username: string): Promise<UserModel | null> {
     await this.ensureUsersTable();
 
