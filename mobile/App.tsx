@@ -1,44 +1,57 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
+import React from 'react';
+import { StatusBar, StyleSheet, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { NewAppScreen } from '@react-native/new-app-screen';
-import { StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
+import BottomNav from './src/components/BottomNav';
 import {
-  SafeAreaProvider,
-  useSafeAreaInsets,
-} from 'react-native-safe-area-context';
+  InicioScreen,
+  PerfilScreen,
+  ProdutosScreen,
+  ReceitasScreen,
+  RefeicoesScreen,
+} from './src/screens';
+import { ScreenKey } from './src/types/navigation';
+
+const BACKGROUND = '#e5e5e5';
+
+const SCREENS: Record<ScreenKey, React.ComponentType> = {
+  inicio: InicioScreen,
+  produtos: ProdutosScreen,
+  receitas: ReceitasScreen,
+  refeicoes: RefeicoesScreen,
+  perfil: PerfilScreen,
+};
 
 function App() {
-  const isDarkMode = useColorScheme() === 'dark';
+  const [activeScreen, setActiveScreen] = React.useState<ScreenKey>('inicio');
+  const ActiveScreen = SCREENS[activeScreen];
 
   return (
-    <SafeAreaProvider>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <AppContent />
-    </SafeAreaProvider>
-  );
-}
+    <SafeAreaView style={styles.screen} edges={['top']}>
+      <StatusBar barStyle="dark-content" backgroundColor={BACKGROUND} />
 
-function AppContent() {
-  const safeAreaInsets = useSafeAreaInsets();
+      <View style={styles.contentArea}>
+        <ActiveScreen />
+      </View>
 
-  return (
-    <View style={styles.container}>
-      <NewAppScreen
-        templateFileName="App.tsx"
-        safeAreaInsets={safeAreaInsets}
+      <BottomNav
+        activeScreen={activeScreen}
+        onChangeScreen={setActiveScreen}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
+    backgroundColor: BACKGROUND,
+  },
+  contentArea: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingTop: 22,
+    justifyContent: 'center',
   },
 });
 
