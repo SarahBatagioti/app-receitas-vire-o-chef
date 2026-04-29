@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
-import { RegisterUserDto } from '../dtos/auth.dto';
+import { LoginUserDto, RegisterUserDto } from '../dtos/auth.dto';
 import { buildErrorResponse } from '../utils/api-response';
 
 export function validateAuthBootstrapRequest(
@@ -55,6 +55,38 @@ export function validateRegisterUserRequest(
     password: sanitizedPassword,
     username: sanitizedUsername,
   } satisfies RegisterUserDto;
+
+  return next();
+}
+
+export function validateLoginUserRequest(
+  request: Request,
+  response: Response,
+  next: NextFunction,
+) {
+  const { email, password } = request.body as Partial<LoginUserDto>;
+  const errors: string[] = [];
+
+  if (!email?.trim()) {
+    errors.push('E-mail e obrigatorio.');
+  } else if (!isValidEmail(email)) {
+    errors.push('Informe um e-mail valido.');
+  }
+
+  if (!password) {
+    errors.push('Senha e obrigatoria.');
+  }
+
+  if (errors.length > 0) {
+    return response
+      .status(422)
+      .json(buildErrorResponse('Dados de login invalidos.', errors));
+  }
+
+  request.body = {
+    email: email!.trim(),
+    password: password!,
+  } satisfies LoginUserDto;
 
   return next();
 }

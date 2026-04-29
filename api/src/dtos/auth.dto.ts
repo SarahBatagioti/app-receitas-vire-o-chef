@@ -15,6 +15,11 @@ export interface RegisterUserDto {
   username: string;
 }
 
+export interface LoginUserDto {
+  email: string;
+  password: string;
+}
+
 export interface RegisteredUserDto {
   id: string;
   email: string;
@@ -23,4 +28,15 @@ export interface RegisteredUserDto {
   isSocialAccount: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface AuthenticatedUserDto {
+  id: string;
+  email: string;
+  username: string;
+}
+
+export interface LoginResponseDto {
+  token: string;
+  user: AuthenticatedUserDto;
 }

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { RegisterUserDto } from '../dtos/auth.dto';
+import { LoginUserDto, RegisterUserDto } from '../dtos/auth.dto';
 import { AuthService } from '../services/auth.service';
 import { buildSuccessResponse } from '../utils/api-response';
 
@@ -17,5 +17,12 @@ export class AuthController {
     const createdUser = await authService.registerUser(payload);
 
     return response.status(201).json(buildSuccessResponse(createdUser));
+  }
+
+  async login(request: Request, response: Response) {
+    const payload = request.body as LoginUserDto;
+    const authenticatedUser = await authService.loginUser(payload);
+
+    return response.status(200).json(authenticatedUser);
   }
 }

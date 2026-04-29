@@ -1,11 +1,14 @@
 import {
   AuthStatusResponseDto,
+  LoginResponseDto,
+  LoginUserDto,
   RegisteredUserDto,
   RegisterUserDto,
 } from '../dtos/auth.dto';
 import { UserRepository } from '../repositories/user.repository';
 import { AppError } from '../utils/app-error';
-import { hashPassword } from '../utils/hash';
+import { comparePassword, hashPassword } from '../utils/hash';
+import { generateAccessToken } from '../utils/jwt';
 
 const userRepository = new UserRepository();
 
@@ -58,6 +61,36 @@ export class AuthService {
       isSocialAccount: createdUser.isSocialAccount,
       createdAt: createdUser.createdAt,
       updatedAt: createdUser.updatedAt,
+    };
+  }
+
+  async loginUser(input: LoginUserDto): Promise<LoginResponseDto> {
+    const normalizedEmail = input.email.trim().toLowerCase();
+    const user = await userRepository.findByEmail(normalizedEmail);
+
+    if (!user?.passwordHash) {
+      throw new AppError('E-mail ou senha invalidos.', 401);
+    }
+
+    const isPasswordValid = await comparePassword(input.password, user.passwordHash);
+
+    if (!isPasswordValid) {
+      throw new AppError('E-mail ou senha invalidos.', 401);
+    }
+
+    const token = generateAccessToken({
+      sub: user.id,
+      email: user.email,
+      username: user.username,
+    });
+
+    return {
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+      },
     };
   }
 }
