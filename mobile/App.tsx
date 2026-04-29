@@ -2,7 +2,7 @@ import React from 'react';
 import { StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { ThemeProvider, useAppTheme } from './src/contexts';
+import { AuthProvider, ThemeProvider, useAppTheme } from './src/contexts';
 import { AppContainer } from './src/components/ui';
 import BottomNav from './src/components/BottomNav';
 import {
@@ -66,7 +66,9 @@ function AppContent() {
 function App() {
   return (
     <ThemeProvider initialTheme="light">
-      <AppContent />
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
     </ThemeProvider>
   );
 }
