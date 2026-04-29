@@ -229,7 +229,7 @@ const AppButton = React.forwardRef<Pressable, AppButtonProps>(
     const appTheme = useAppTheme();
     const { theme } = appTheme;
 
-    const { container: containerStyle, text: textStyle: defaultTextStyle } = getButtonStyles(
+    const { container: containerStyle, text: defaultTextStyle } = getButtonStyles(
       theme,
       variant,
       size,

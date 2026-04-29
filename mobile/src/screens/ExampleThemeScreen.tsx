@@ -11,7 +11,7 @@ import {
   AppText,
   AppButton,
   AppInput,
-} from './ui';
+} from '../components/ui';
 
 export function ExampleThemeScreen() {
   const { theme, toggleTheme, themeMode } = useAppTheme();
