@@ -24,11 +24,11 @@ function ScreenCard({ title, subtitle }: ScreenCardProps) {
       <AppText
         size="3xl"
         weight="bold"
-        marginBottom="sm"
         color="text"
       >
         {title}
       </AppText>
+      <AppContainer marginVertical="md" />
       <AppText
         size="md"
         color="textSecondary"
