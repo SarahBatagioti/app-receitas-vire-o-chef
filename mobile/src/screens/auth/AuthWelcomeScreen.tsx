@@ -1,57 +1,70 @@
 import React from 'react';
-import { useAppTheme } from '../../contexts';
+
+import { AppButton, AppContainer, AppInput, AppText } from '../../components/ui';
 import { useAuth } from '../../hooks/useAuth';
-import { AppButton, AppContainer, AppText } from '../../components/ui';
 
 function AuthWelcomeScreen() {
-  const { theme } = useAppTheme();
-  const { status, isAuthenticated, clearSession } = useAuth();
+  const { status, isAuthenticated, user, clearSession } = useAuth();
 
   return (
     <AppContainer
-      padding="lg"
-      borderRadius="3xl"
       backgroundColor="surface"
+      borderRadius="3xl"
+      padding="lg"
       shadow="md"
     >
-      <AppText size="2xl" weight="bold" color="text">
-        Autenticacao
+      <AppText color="text" size="2xl" weight="bold">
+        Minha conta
       </AppText>
 
-      <AppContainer marginVertical="md" />
-
-      <AppText size="md" color="textSecondary" lineHeight="relaxed">
-        A base de autenticacao foi preparada para as proximas etapas. Login,
-        cadastro e integracao com Firebase ainda nao foram implementados.
+      <AppText color="textSecondary" size="md" lineHeight="relaxed" marginTop="sm">
+        Consulte rapidamente qual conta esta ativa no aplicativo.
       </AppText>
-
-      <AppContainer marginVertical="md" />
 
       <AppContainer
-        padding="md"
-        borderRadius="xl"
         backgroundColor="surfaceSecondary"
+        borderRadius="xl"
+        marginTop="lg"
+        padding="md"
       >
-        <AppText size="sm" weight="semibold" color="text">
+        <AppText color="text" size="sm" weight="semibold">
           Status atual: {status}
         </AppText>
         <AppText
-          size="sm"
           color={isAuthenticated ? 'success' : 'warning'}
-          style={{ marginTop: theme.spacing.xs }}
+          size="sm"
+          style={{ marginTop: 4 }}
         >
-          {isAuthenticated ? 'Sessao autenticada.' : 'Fluxo ainda em preparacao.'}
+          {isAuthenticated ? 'Sessao autenticada.' : 'Nenhuma conta conectada.'}
         </AppText>
       </AppContainer>
 
-      <AppContainer marginVertical="md" />
+      <AppContainer backgroundColor="surface" marginTop="lg">
+        <AppInput
+          editable={false}
+          fullWidth
+          label="E-mail"
+          value={user?.email ?? 'usuario@exemplo.com'}
+        />
+      </AppContainer>
 
-      <AppButton
-        label="Limpar estado de autenticacao"
-        variant="outline"
-        fullWidth
-        onPress={clearSession}
-      />
+      <AppContainer backgroundColor="surface" marginTop="sm">
+        <AppInput
+          editable={false}
+          fullWidth
+          label="Nome de usuario"
+          value={user?.name ?? 'chef.demo'}
+        />
+      </AppContainer>
+
+      <AppContainer marginTop="lg">
+        <AppButton
+          fullWidth
+          label="Sair da conta"
+          onPress={clearSession}
+          variant="outline"
+        />
+      </AppContainer>
     </AppContainer>
   );
 }

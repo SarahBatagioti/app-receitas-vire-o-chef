@@ -4,4 +4,11 @@ export { default as ProdutosScreen } from './ProdutosScreen';
 export { default as ReceitasScreen } from './ReceitasScreen';
 export { default as RefeicoesScreen } from './RefeicoesScreen';
 export { default as ExampleThemeScreen } from './ExampleThemeScreen';
-export { AuthWelcomeScreen } from './auth';
+export {
+  AccessScreen,
+  AuthWelcomeScreen,
+  CompleteSocialRegisterScreen,
+  ForgotPasswordScreen,
+  LoginScreen,
+  RegisterScreen,
+} from './auth';

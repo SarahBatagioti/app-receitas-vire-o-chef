@@ -1,4 +1,9 @@
 export const appRoutes = {
+  access: 'access',
+  login: 'login',
+  register: 'register',
+  forgotPassword: 'forgot-password',
+  completeSocialRegister: 'complete-social-register',
   home: 'inicio',
   products: 'produtos',
   recipes: 'receitas',

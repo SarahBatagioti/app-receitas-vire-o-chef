@@ -1,109 +1,30 @@
-/**
- * Componente AppInput
- * Input de texto reutilizável que usa o tema global
- * Substitui TextInput para garantir consistência visual
- */
-
 import React, { useState } from 'react';
-import {
-  TextInput,
-  TextInputProps,
-  View,
-  ViewStyle,
-  TextStyle,
-  Pressable,
-} from 'react-native';
+import { Pressable, TextInput, TextInputProps, TextStyle, View, ViewStyle } from 'react-native';
 import { Eye, EyeOff } from 'lucide-react-native';
+
 import { useAppTheme } from '../../contexts';
-import { SpacingKey, BorderRadiusKey } from '../../styles/spacing';
+import { ColorKey } from '../../styles/colors';
+import { BorderRadiusKey, SpacingKey } from '../../styles/spacing';
 import AppText from './AppText';
 
 interface AppInputProps extends Omit<TextInputProps, 'style'> {
-  /**
-   * Label do input
-   */
   label?: string;
-
-  /**
-   * Placeholder do input
-   */
   placeholder?: string;
-
-  /**
-   * Tipo de input
-   * @default 'text'
-   */
   inputType?: 'text' | 'email' | 'password' | 'phone' | 'number';
-
-  /**
-   * Mensagem de erro
-   */
   error?: string;
-
-  /**
-   * Ícone à esquerda (component)
-   */
   leftIcon?: React.ReactNode;
-
-  /**
-   * Ícone à direita (component)
-   */
   rightIcon?: React.ReactNode;
-
-  /**
-   * Se o input está desativado
-   * @default false
-   */
   disabled?: boolean;
-
-  /**
-   * Se o input é obrigatório
-   * @default false
-   */
   required?: boolean;
-
-  /**
-   * Tamanho do input
-   * @default 'md'
-   */
   size?: 'sm' | 'md' | 'lg';
-
-  /**
-   * Border radius do input
-   * @default 'md'
-   */
   borderRadius?: BorderRadiusKey;
-
-  /**
-   * Padding do input
-   * @default 'md'
-   */
   padding?: SpacingKey;
-
-  /**
-   * Largura do input
-   */
   width?: ViewStyle['width'];
-
-  /**
-   * Full width (100%)
-   */
   fullWidth?: boolean;
-
-  /**
-   * Cor da borda customizada
-   */
-  borderColor?: keyof ReturnType<(typeof import('../../styles/colors'))['lightColors']>;
-
-  /**
-   * Callback para mudanças de valor
-   */
+  borderColor?: ColorKey;
   onChangeText?: (text: string) => void;
-
-  /**
-   * Valor controlado
-   */
   value?: string;
+  style?: ViewStyle;
 }
 
 const AppInput = React.forwardRef<TextInput, AppInputProps>(
@@ -125,6 +46,7 @@ const AppInput = React.forwardRef<TextInput, AppInputProps>(
       borderColor,
       onChangeText,
       value,
+      style,
       ...props
     },
     ref,
@@ -137,16 +59,14 @@ const AppInput = React.forwardRef<TextInput, AppInputProps>(
       sm: { paddingVertical: theme.spacing.sm, fontSize: theme.fontSizes.sm },
       md: { paddingVertical: theme.spacing.md, fontSize: theme.fontSizes.base },
       lg: { paddingVertical: theme.spacing.lg, fontSize: theme.fontSizes.lg },
-    };
-
-    const config = sizeConfig[size];
+    } as const;
 
     const containerStyle: ViewStyle = {
-      width: fullWidth ? '100%' : width,
       marginBottom: error ? theme.spacing.sm : 0,
+      width: fullWidth ? '100%' : width,
     };
 
-    const borderColorValue = error
+    const resolvedBorderColor = error
       ? theme.colors.error
       : isFocused
         ? theme.colors.primary
@@ -155,58 +75,48 @@ const AppInput = React.forwardRef<TextInput, AppInputProps>(
           : theme.colors.border;
 
     const inputContainerStyle: ViewStyle = {
-      flexDirection: 'row',
       alignItems: 'center',
       backgroundColor: theme.colors.surface,
-      borderWidth: 1,
-      borderColor: borderColorValue,
+      borderColor: resolvedBorderColor,
       borderRadius: theme.borderRadius[borderRadius],
-      paddingHorizontal: padding ? theme.spacing[padding] : theme.spacing.md,
+      borderWidth: 1,
+      flexDirection: 'row',
       opacity: disabled ? 0.6 : 1,
+      paddingHorizontal: padding ? theme.spacing[padding] : theme.spacing.md,
     };
 
     const inputStyle: TextStyle = {
-      flex: 1,
-      fontSize: config.fontSize,
       color: theme.colors.text,
-      paddingVertical: config.paddingVertical,
+      flex: 1,
       fontFamily: theme.fonts.primary.regular,
+      fontSize: sizeConfig[size].fontSize,
+      paddingVertical: sizeConfig[size].paddingVertical,
     };
 
     const secureTextEntry = inputType === 'password' && !showPassword;
 
     return (
-      <View style={containerStyle}>
-        {label && (
-          <View style={{ marginBottom: theme.spacing.sm, flexDirection: 'row' }}>
-            <AppText weight="semibold" size="sm" color="text">
+      <View style={[containerStyle, style]}>
+        {label ? (
+          <View style={{ flexDirection: 'row', marginBottom: theme.spacing.sm }}>
+            <AppText color="text" size="sm" weight="semibold">
               {label}
             </AppText>
-            {required && (
+            {required ? (
               <AppText color="error" size="sm">
                 {' '}
                 *
               </AppText>
-            )}
+            ) : null}
           </View>
-        )}
+        ) : null}
 
         <View style={inputContainerStyle}>
-          {leftIcon && (
-            <View style={{ marginRight: theme.spacing.sm }}>{leftIcon}</View>
-          )}
+          {leftIcon ? <View style={{ marginRight: theme.spacing.sm }}>{leftIcon}</View> : null}
 
           <TextInput
             ref={ref}
-            style={inputStyle}
-            placeholder={placeholder}
-            placeholderTextColor={theme.colors.textTertiary}
             editable={!disabled}
-            secureTextEntry={secureTextEntry}
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
-            onChangeText={onChangeText}
-            value={value}
             keyboardType={
               inputType === 'email'
                 ? 'email-address'
@@ -216,32 +126,39 @@ const AppInput = React.forwardRef<TextInput, AppInputProps>(
                     ? 'numeric'
                     : 'default'
             }
+            onBlur={() => setIsFocused(false)}
+            onChangeText={onChangeText}
+            onFocus={() => setIsFocused(true)}
+            placeholder={placeholder}
+            placeholderTextColor={theme.colors.textTertiary}
+            secureTextEntry={secureTextEntry}
+            style={inputStyle}
+            value={value}
             {...props}
           />
 
           {inputType === 'password' ? (
             <Pressable
-              onPress={() => setShowPassword(!showPassword)}
+              accessibilityLabel={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+              onPress={() => setShowPassword((current) => !current)}
               style={{ marginLeft: theme.spacing.sm }}
             >
               {showPassword ? (
-                <Eye size={20} color={theme.colors.icon} />
+                <Eye color={theme.colors.icon} size={20} />
               ) : (
-                <EyeOff size={20} color={theme.colors.icon} />
+                <EyeOff color={theme.colors.icon} size={20} />
               )}
             </Pressable>
           ) : null}
 
-          {rightIcon && !props.editable && (
-            <View style={{ marginLeft: theme.spacing.sm }}>{rightIcon}</View>
-          )}
+          {rightIcon ? <View style={{ marginLeft: theme.spacing.sm }}>{rightIcon}</View> : null}
         </View>
 
-        {error && (
-          <AppText size="sm" color="error" style={{ marginTop: theme.spacing.xs }}>
+        {error ? (
+          <AppText color="error" size="sm" style={{ marginTop: theme.spacing.xs }}>
             {error}
           </AppText>
-        )}
+        ) : null}
       </View>
     );
   },

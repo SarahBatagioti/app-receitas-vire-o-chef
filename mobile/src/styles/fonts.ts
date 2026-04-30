@@ -1,23 +1,23 @@
 /**
- * Configuração de fontes do aplicativo
- * Define as famílias de fonte para tema light e dark
+ * Configuracao de fontes do aplicativo
+ * Define as familias de fonte para tema light e dark
  */
 
 export const fonts = {
-  // Fonte primária - usada para a maioria do texto
+  // Fonte primaria - usada para a maioria do texto
   primary: {
     regular: 'System',
     bold: 'System',
     semibold: 'System',
   },
 
-  // Fonte secundária - usada para elementos decorativos ou especiais
+  // Fonte secundaria - usada para elementos decorativos ou especiais
   secondary: {
-    regular: 'System',
-    bold: 'System',
+    regular: 'Dacherry',
+    bold: 'Dacherry',
   },
 
-  // Fonte monoespacial - usada para código ou dados
+  // Fonte monoespacial - usada para codigo ou dados
   mono: {
     regular: 'Courier New',
   },
