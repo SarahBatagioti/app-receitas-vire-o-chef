@@ -3,67 +3,97 @@ import React from 'react';
 import { AuthButton, AuthContainer, AuthInput, SocialButton } from '../../components/auth';
 import { AppContainer, AppText } from '../../components/ui';
 import { useAppTheme } from '../../contexts';
+import { useAuth } from '../../hooks/useAuth';
 
 type RegisterScreenProps = {
   onBack: () => void;
   onLogin: () => void;
-  onRegister: () => void;
-  onGoogleAuth: () => void;
-  onFacebookAuth: () => void;
+  onSocialRegisterRequired: () => void;
 };
 
-function RegisterScreen({
-  onBack,
-  onLogin,
-  onRegister,
-  onGoogleAuth,
-  onFacebookAuth,
-}: RegisterScreenProps) {
+function RegisterScreen({ onBack, onLogin, onSocialRegisterRequired }: RegisterScreenProps) {
   const { theme } = useAppTheme();
+  const { authError, clearAuthError, loginWithFacebook, loginWithGoogle, register } = useAuth();
   const [email, setEmail] = React.useState('');
   const [username, setUsername] = React.useState('');
   const [password, setPassword] = React.useState('');
-  const [error, setError] = React.useState('');
+  const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
   const [socialLoading, setSocialLoading] = React.useState<'google' | 'facebook' | null>(null);
 
-  const handleRegister = React.useCallback(() => {
-    setError('');
+  const handleRegister = React.useCallback(async () => {
+    clearAuthError();
+    setError(null);
+
+    if (!email || !username || !password) {
+      setError('Preencha os campos para concluir o cadastro.');
+      return;
+    }
+
     setLoading(true);
 
-    setTimeout(() => {
+    try {
+      await register({
+        email: email.trim(),
+        name: username.trim(),
+        password,
+      });
+    } catch (requestError) {
+      const message =
+        requestError instanceof Error ? requestError.message : 'Não foi possível concluir o cadastro.';
+      setError(message);
+    } finally {
       setLoading(false);
+    }
+  }, [clearAuthError, email, password, register, username]);
 
-      if (!email || !username || !password) {
-        setError('Preencha os campos para concluir o cadastro.');
-        return;
-      }
-
-      onRegister();
-    }, 700);
-  }, [email, onRegister, password, username]);
-
-  const handleGoogleAuth = React.useCallback(() => {
+  const handleGoogleAuth = React.useCallback(async () => {
+    clearAuthError();
+    setError(null);
     setSocialLoading('google');
-    setTimeout(() => {
-      setSocialLoading(null);
-      onGoogleAuth();
-    }, 700);
-  }, [onGoogleAuth]);
 
-  const handleFacebookAuth = React.useCallback(() => {
-    setSocialLoading('facebook');
-    setTimeout(() => {
+    try {
+      const response = await loginWithGoogle();
+
+      if (response.requiresSocialCompletion) {
+        onSocialRegisterRequired();
+      }
+    } catch (requestError) {
+      const message =
+        requestError instanceof Error ? requestError.message : 'Não foi possível iniciar o cadastro com Google.';
+      setError(message);
+    } finally {
       setSocialLoading(null);
-      onFacebookAuth();
-    }, 700);
-  }, [onFacebookAuth]);
+    }
+  }, [clearAuthError, loginWithGoogle, onSocialRegisterRequired]);
+
+  const handleFacebookAuth = React.useCallback(async () => {
+    clearAuthError();
+    setError(null);
+    setSocialLoading('facebook');
+
+    try {
+      const response = await loginWithFacebook();
+
+      if (response.requiresSocialCompletion) {
+        onSocialRegisterRequired();
+      }
+    } catch (requestError) {
+      const message =
+        requestError instanceof Error ? requestError.message : 'Não foi possível iniciar o cadastro com Facebook.';
+      setError(message);
+    } finally {
+      setSocialLoading(null);
+    }
+  }, [clearAuthError, loginWithFacebook, onSocialRegisterRequired]);
+
+  const resolvedError = error ?? authError;
 
   return (
     <AuthContainer onBack={onBack} showBackButton title="Cadastro">
       <AuthInput
         accessibilityLabel="Campo de e-mail para cadastro"
-        error={!email && error ? 'Informe seu e-mail.' : undefined}
+        error={!email && resolvedError ? 'Informe seu e-mail.' : undefined}
         inputType="email"
         label="Seu e-mail:"
         onChangeText={setEmail}
@@ -73,7 +103,7 @@ function RegisterScreen({
 
       <AuthInput
         accessibilityLabel="Campo de nome de usuário"
-        error={!username && error ? 'Informe seu nome de usuário.' : undefined}
+        error={!username && resolvedError ? 'Informe seu nome de usuário.' : undefined}
         label="Nome de usuário:"
         onChangeText={setUsername}
         placeholder="**********"
@@ -82,7 +112,7 @@ function RegisterScreen({
 
       <AuthInput
         accessibilityLabel="Campo de senha para cadastro"
-        error={!password && error ? 'Informe sua senha.' : undefined}
+        error={!password && resolvedError ? 'Informe sua senha.' : undefined}
         inputType="password"
         label="Senha:"
         onChangeText={setPassword}
@@ -91,6 +121,12 @@ function RegisterScreen({
       />
 
       <AuthButton label="Cadastrar" loading={loading} onPress={handleRegister} />
+
+      {resolvedError && email && username && password ? (
+        <AppText color="error" size="sm" style={{ marginTop: theme.spacing.md }}>
+          {resolvedError}
+        </AppText>
+      ) : null}
 
       <AppContainer
         align="center"

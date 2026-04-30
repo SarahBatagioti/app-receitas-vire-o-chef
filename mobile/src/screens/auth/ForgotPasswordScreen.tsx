@@ -1,6 +1,9 @@
 import React from 'react';
 
 import { AuthButton, AuthContainer, AuthInput } from '../../components/auth';
+import { AppText } from '../../components/ui';
+import { useAppTheme } from '../../contexts';
+import { useAuth } from '../../hooks/useAuth';
 
 type ForgotPasswordScreenProps = {
   onBack: () => void;
@@ -8,25 +11,44 @@ type ForgotPasswordScreenProps = {
 };
 
 function ForgotPasswordScreen({ onBack, onSent }: ForgotPasswordScreenProps) {
+  const { theme } = useAppTheme();
+  const { authError, clearAuthError, forgotPassword } = useAuth();
   const [email, setEmail] = React.useState('');
-  const [error, setError] = React.useState('');
+  const [error, setError] = React.useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
 
-  const handleForgotPassword = React.useCallback(() => {
-    setError('');
+  const handleForgotPassword = React.useCallback(async () => {
+    clearAuthError();
+    setError(null);
+    setSuccessMessage(null);
+
+    if (!email) {
+      setError('Informe o e-mail para envio das instruções.');
+      return;
+    }
+
     setLoading(true);
 
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      const response = await forgotPassword({
+        email: email.trim(),
+      });
 
-      if (!email) {
-        setError('Informe o e-mail para envio das instruções.');
-        return;
-      }
-
+      setSuccessMessage(response.message);
       onSent();
-    }, 700);
-  }, [email, onSent]);
+    } catch (requestError) {
+      const message =
+        requestError instanceof Error
+          ? requestError.message
+          : 'Não foi possível enviar o e-mail de redefinição.';
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  }, [clearAuthError, email, forgotPassword, onSent]);
+
+  const resolvedError = error ?? authError;
 
   return (
     <AuthContainer
@@ -37,7 +59,7 @@ function ForgotPasswordScreen({ onBack, onSent }: ForgotPasswordScreenProps) {
     >
       <AuthInput
         accessibilityLabel="Campo de e-mail para redefinir senha"
-        error={error || undefined}
+        error={resolvedError || undefined}
         inputType="email"
         onChangeText={setEmail}
         placeholder="exemplo@email.com"
@@ -49,6 +71,12 @@ function ForgotPasswordScreen({ onBack, onSent }: ForgotPasswordScreenProps) {
         loading={loading}
         onPress={handleForgotPassword}
       />
+
+      {successMessage ? (
+        <AppText color="success" size="sm" style={{ marginTop: theme.spacing.md }}>
+          {successMessage}
+        </AppText>
+      ) : null}
     </AuthContainer>
   );
 }

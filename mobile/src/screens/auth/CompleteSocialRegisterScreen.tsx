@@ -3,39 +3,50 @@ import React from 'react';
 import { AuthButton, AuthContainer, AuthInput } from '../../components/auth';
 import { AppText } from '../../components/ui';
 import { useAppTheme } from '../../contexts';
+import { useAuth } from '../../hooks/useAuth';
 
 type CompleteSocialRegisterScreenProps = {
-  email: string;
   onBack: () => void;
   onComplete: () => void;
 };
 
-function CompleteSocialRegisterScreen({
-  email,
-  onBack,
-  onComplete,
-}: CompleteSocialRegisterScreenProps) {
+function CompleteSocialRegisterScreen({ onBack, onComplete }: CompleteSocialRegisterScreenProps) {
   const { theme } = useAppTheme();
+  const { authError, clearAuthError, completeSocialRegister, pendingSocialAuth } = useAuth();
   const [username, setUsername] = React.useState('');
   const [password, setPassword] = React.useState('');
-  const [error, setError] = React.useState('');
+  const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
 
-  const handleCompleteSocialRegister = React.useCallback(() => {
-    setError('');
+  const handleCompleteSocialRegister = React.useCallback(async () => {
+    clearAuthError();
+    setError(null);
+
+    if (!username || !password) {
+      setError('Preencha usuário e senha para finalizar o cadastro.');
+      return;
+    }
+
     setLoading(true);
 
-    setTimeout(() => {
-      setLoading(false);
-
-      if (!username || !password) {
-        setError('Preencha usuário e senha para finalizar o cadastro.');
-        return;
-      }
+    try {
+      await completeSocialRegister({
+        name: username.trim(),
+        password,
+      });
 
       onComplete();
-    }, 700);
-  }, [onComplete, password, username]);
+    } catch (requestError) {
+      const message =
+        requestError instanceof Error ? requestError.message : 'Não foi possível concluir o cadastro social.';
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  }, [clearAuthError, completeSocialRegister, onComplete, password, username]);
+
+  const resolvedError = error ?? authError;
+  const email = pendingSocialAuth?.email ?? 'Nenhum e-mail social disponível';
 
   return (
     <AuthContainer onBack={onBack} showBackButton title="Cadastro">
@@ -58,16 +69,16 @@ function CompleteSocialRegisterScreen({
 
       <AuthInput
         accessibilityLabel="Campo de nome de usuário do cadastro social"
-        error={!username && error ? 'Informe seu nome de usuário.' : undefined}
+        error={!username && resolvedError ? 'Informe seu nome de usuário.' : undefined}
         label="Nome de usuário:"
         onChangeText={setUsername}
-        placeholder="exemplo@email.com"
+        placeholder="**********"
         value={username}
       />
 
       <AuthInput
         accessibilityLabel="Campo de senha do cadastro social"
-        error={!password && error ? 'Informe sua senha.' : undefined}
+        error={!password && resolvedError ? 'Informe sua senha.' : undefined}
         inputType="password"
         label="Senha:"
         onChangeText={setPassword}
@@ -80,6 +91,12 @@ function CompleteSocialRegisterScreen({
         loading={loading}
         onPress={handleCompleteSocialRegister}
       />
+
+      {resolvedError && username && password ? (
+        <AppText color="error" size="sm" style={{ marginTop: theme.spacing.md }}>
+          {resolvedError}
+        </AppText>
+      ) : null}
     </AuthContainer>
   );
 }

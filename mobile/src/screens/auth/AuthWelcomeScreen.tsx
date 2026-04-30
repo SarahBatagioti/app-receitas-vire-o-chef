@@ -4,7 +4,7 @@ import { AppButton, AppContainer, AppInput, AppText } from '../../components/ui'
 import { useAuth } from '../../hooks/useAuth';
 
 function AuthWelcomeScreen() {
-  const { status, isAuthenticated, user, clearSession } = useAuth();
+  const { status, isAuthenticated, user, logout } = useAuth();
 
   return (
     <AppContainer
@@ -18,7 +18,7 @@ function AuthWelcomeScreen() {
       </AppText>
 
       <AppText color="textSecondary" size="md" lineHeight="relaxed" marginTop="sm">
-        Consulte rapidamente qual conta esta ativa no aplicativo.
+        Consulte rapidamente qual conta está ativa no aplicativo.
       </AppText>
 
       <AppContainer
@@ -35,7 +35,7 @@ function AuthWelcomeScreen() {
           size="sm"
           style={{ marginTop: 4 }}
         >
-          {isAuthenticated ? 'Sessao autenticada.' : 'Nenhuma conta conectada.'}
+          {isAuthenticated ? 'Sessão autenticada.' : 'Nenhuma conta conectada.'}
         </AppText>
       </AppContainer>
 
@@ -52,7 +52,7 @@ function AuthWelcomeScreen() {
         <AppInput
           editable={false}
           fullWidth
-          label="Nome de usuario"
+          label="Nome de usuário"
           value={user?.name ?? 'chef.demo'}
         />
       </AppContainer>
@@ -61,7 +61,7 @@ function AuthWelcomeScreen() {
         <AppButton
           fullWidth
           label="Sair da conta"
-          onPress={clearSession}
+          onPress={logout}
           variant="outline"
         />
       </AppContainer>

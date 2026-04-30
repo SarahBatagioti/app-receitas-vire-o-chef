@@ -2,9 +2,9 @@ import React from 'react';
 import { StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AuthProvider, ThemeProvider, useAppTheme } from './src/contexts';
-import { AppContainer } from './src/components/ui';
 import BottomNav from './src/components/BottomNav';
+import { AppContainer, AppText } from './src/components/ui';
+import { AuthProvider, ThemeProvider, useAppTheme } from './src/contexts';
 import { useAuth } from './src/hooks/useAuth';
 import {
   AccessScreen,
@@ -18,7 +18,6 @@ import {
   RefeicoesScreen,
   RegisterScreen,
 } from './src/screens';
-import { AuthUser } from './src/types/auth';
 import { AppScreenKey, ScreenKey } from './src/types/navigation';
 
 const SCREENS: Record<ScreenKey, React.ComponentType> = {
@@ -29,45 +28,37 @@ const SCREENS: Record<ScreenKey, React.ComponentType> = {
   perfil: PerfilScreen,
 };
 
-const STATIC_AUTH_USERS = {
-  login: {
-    id: 'auth-login',
-    email: 'usuario@exemplo.com',
-    name: 'chef.demo',
-  },
-  social: {
-    id: 'auth-social',
-    email: 'usuario.social@exemplo.com',
-    name: 'chef.social',
-  },
-  register: {
-    id: 'auth-register',
-    email: 'novo.usuario@exemplo.com',
-    name: 'chef.novo',
-  },
-} satisfies Record<string, AuthUser>;
-
 function AppContent() {
   const [activeScreen, setActiveScreen] = React.useState<AppScreenKey>('access');
   const { theme, themeMode } = useAppTheme();
-  const { isAuthenticated, setSession } = useAuth();
+  const { isAuthenticated, isInitializing, pendingSocialAuth } = useAuth();
   const isMainScreen = activeScreen in SCREENS;
   const ActiveScreen = isMainScreen ? SCREENS[activeScreen as ScreenKey] : null;
-
-  const openApp = React.useCallback((user: AuthUser) => {
-    setSession('authenticated', user);
-    setActiveScreen('inicio');
-  }, [setSession]);
 
   const goBackToAccess = React.useCallback(() => {
     setActiveScreen('access');
   }, []);
 
   React.useEffect(() => {
+    if (isInitializing) {
+      return;
+    }
+
+    if (isAuthenticated && !isMainScreen) {
+      setActiveScreen('inicio');
+      return;
+    }
+
     if (!isAuthenticated && isMainScreen) {
       setActiveScreen('access');
     }
-  }, [activeScreen, isAuthenticated, isMainScreen]);
+  }, [isAuthenticated, isInitializing, isMainScreen]);
+
+  React.useEffect(() => {
+    if (pendingSocialAuth && activeScreen !== 'complete-social-register') {
+      setActiveScreen('complete-social-register');
+    }
+  }, [activeScreen, pendingSocialAuth]);
 
   return (
     <SafeAreaView
@@ -83,58 +74,61 @@ function AppContent() {
       />
 
       <AppContainer flex direction="column" justify="flex-start" backgroundColor="background">
-        {activeScreen === 'access' ? (
+        {isInitializing ? (
+          <AppContainer flex align="center" justify="center" padding="xl">
+            <AppText color="primary" size="xl" weight="bold">
+              Carregando sua sessão...
+            </AppText>
+          </AppContainer>
+        ) : null}
+
+        {!isInitializing && activeScreen === 'access' ? (
           <AccessScreen
             onEmailPress={() => setActiveScreen('login')}
-            onGooglePress={() => setActiveScreen('complete-social-register')}
+            onGooglePress={() => setActiveScreen('login')}
             onRegisterPress={() => setActiveScreen('register')}
           />
         ) : null}
 
-        {activeScreen === 'login' ? (
+        {!isInitializing && activeScreen === 'login' ? (
           <LoginScreen
             onBack={goBackToAccess}
             onForgotPassword={() => setActiveScreen('forgot-password')}
-            onLogin={() => openApp(STATIC_AUTH_USERS.login)}
             onRegister={() => setActiveScreen('register')}
-            onGoogleAuth={() => setActiveScreen('complete-social-register')}
-            onFacebookAuth={() => openApp(STATIC_AUTH_USERS.social)}
+            onSocialRegisterRequired={() => setActiveScreen('complete-social-register')}
           />
         ) : null}
 
-        {activeScreen === 'register' ? (
+        {!isInitializing && activeScreen === 'register' ? (
           <RegisterScreen
             onBack={goBackToAccess}
             onLogin={() => setActiveScreen('login')}
-            onRegister={() => openApp(STATIC_AUTH_USERS.register)}
-            onGoogleAuth={() => setActiveScreen('complete-social-register')}
-            onFacebookAuth={() => openApp(STATIC_AUTH_USERS.social)}
+            onSocialRegisterRequired={() => setActiveScreen('complete-social-register')}
           />
         ) : null}
 
-        {activeScreen === 'forgot-password' ? (
+        {!isInitializing && activeScreen === 'forgot-password' ? (
           <ForgotPasswordScreen
             onBack={() => setActiveScreen('login')}
             onSent={() => setActiveScreen('login')}
           />
         ) : null}
 
-        {activeScreen === 'complete-social-register' ? (
+        {!isInitializing && activeScreen === 'complete-social-register' ? (
           <CompleteSocialRegisterScreen
-            email={STATIC_AUTH_USERS.social.email}
             onBack={goBackToAccess}
-            onComplete={() => openApp(STATIC_AUTH_USERS.social)}
+            onComplete={() => setActiveScreen('inicio')}
           />
         ) : null}
 
-        {ActiveScreen ? (
+        {!isInitializing && ActiveScreen ? (
           <AppContainer flex padding="lg" backgroundColor="background">
             <ActiveScreen />
           </AppContainer>
         ) : null}
       </AppContainer>
 
-      {isMainScreen ? (
+      {!isInitializing && isMainScreen ? (
         <BottomNav
           activeScreen={activeScreen as ScreenKey}
           onChangeScreen={setActiveScreen as (screen: ScreenKey) => void}

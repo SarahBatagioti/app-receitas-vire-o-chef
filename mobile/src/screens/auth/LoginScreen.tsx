@@ -4,72 +4,101 @@ import { Pressable } from 'react-native';
 import { AuthButton, AuthContainer, AuthInput, SocialButton } from '../../components/auth';
 import { AppContainer, AppText } from '../../components/ui';
 import { useAppTheme } from '../../contexts';
+import { useAuth } from '../../hooks/useAuth';
 
 type LoginScreenProps = {
   onBack: () => void;
   onForgotPassword: () => void;
-  onLogin: () => void;
   onRegister: () => void;
-  onGoogleAuth: () => void;
-  onFacebookAuth: () => void;
+  onSocialRegisterRequired: () => void;
 };
 
 function LoginScreen({
   onBack,
   onForgotPassword,
-  onLogin,
   onRegister,
-  onGoogleAuth,
-  onFacebookAuth,
+  onSocialRegisterRequired,
 }: LoginScreenProps) {
   const { theme } = useAppTheme();
+  const { authError, clearAuthError, login, loginWithFacebook, loginWithGoogle } = useAuth();
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
-  const [error, setError] = React.useState('');
+  const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
   const [socialLoading, setSocialLoading] = React.useState<'google' | 'facebook' | null>(null);
 
-  const handleLogin = React.useCallback(() => {
-    setError('');
+  const handleLogin = React.useCallback(async () => {
+    clearAuthError();
+    setError(null);
+
+    if (!email || !password) {
+      setError('Preencha e-mail e senha para continuar.');
+      return;
+    }
+
     setLoading(true);
 
-    setTimeout(() => {
+    try {
+      await login({
+        email: email.trim(),
+        password,
+      });
+    } catch (requestError) {
+      const message =
+        requestError instanceof Error ? requestError.message : 'Não foi possível entrar agora.';
+      setError(message);
+    } finally {
       setLoading(false);
+    }
+  }, [clearAuthError, email, login, password]);
 
-      if (!email || !password) {
-        setError('Preencha e-mail e senha para continuar.');
-        return;
-      }
-
-      onLogin();
-    }, 700);
-  }, [email, onLogin, password]);
-
-  const handleGoogleAuth = React.useCallback(() => {
-    setError('');
+  const handleGoogleAuth = React.useCallback(async () => {
+    clearAuthError();
+    setError(null);
     setSocialLoading('google');
 
-    setTimeout(() => {
-      setSocialLoading(null);
-      onGoogleAuth();
-    }, 700);
-  }, [onGoogleAuth]);
+    try {
+      const response = await loginWithGoogle();
 
-  const handleFacebookAuth = React.useCallback(() => {
-    setError('');
+      if (response.requiresSocialCompletion) {
+        onSocialRegisterRequired();
+      }
+    } catch (requestError) {
+      const message =
+        requestError instanceof Error ? requestError.message : 'Não foi possível iniciar o login com Google.';
+      setError(message);
+    } finally {
+      setSocialLoading(null);
+    }
+  }, [clearAuthError, loginWithGoogle, onSocialRegisterRequired]);
+
+  const handleFacebookAuth = React.useCallback(async () => {
+    clearAuthError();
+    setError(null);
     setSocialLoading('facebook');
 
-    setTimeout(() => {
+    try {
+      const response = await loginWithFacebook();
+
+      if (response.requiresSocialCompletion) {
+        onSocialRegisterRequired();
+      }
+    } catch (requestError) {
+      const message =
+        requestError instanceof Error ? requestError.message : 'Não foi possível iniciar o login com Facebook.';
+      setError(message);
+    } finally {
       setSocialLoading(null);
-      onFacebookAuth();
-    }, 700);
-  }, [onFacebookAuth]);
+    }
+  }, [clearAuthError, loginWithFacebook, onSocialRegisterRequired]);
+
+  const resolvedError = error ?? authError;
 
   return (
     <AuthContainer onBack={onBack} showBackButton title="Login">
       <AuthInput
         accessibilityLabel="Campo de e-mail"
-        error={!email && error ? 'Informe seu e-mail.' : undefined}
+        error={!email && resolvedError ? 'Informe seu e-mail.' : undefined}
         inputType="email"
         label="Seu e-mail:"
         onChangeText={setEmail}
@@ -79,7 +108,7 @@ function LoginScreen({
 
       <AuthInput
         accessibilityLabel="Campo de senha"
-        error={!password && error ? 'Informe sua senha.' : undefined}
+        error={!password && resolvedError ? 'Informe sua senha.' : undefined}
         inputType="password"
         label="Senha:"
         onChangeText={setPassword}
@@ -102,6 +131,12 @@ function LoginScreen({
       </Pressable>
 
       <AuthButton label="Entrar com o e-mail" loading={loading} onPress={handleLogin} />
+
+      {resolvedError && email && password ? (
+        <AppText color="error" size="sm" style={{ marginTop: theme.spacing.md }}>
+          {resolvedError}
+        </AppText>
+      ) : null}
 
       <AppContainer
         align="center"
