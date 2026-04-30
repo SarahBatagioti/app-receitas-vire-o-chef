@@ -2,22 +2,39 @@ import {
   AuthStatusResponseDto,
   AuthenticatedUserDto,
   CompleteSocialRegisterDto,
+  ForgotPasswordDto,
+  GenericMessageResponseDto,
   LoginResponseDto,
   LoginUserDto,
   RegisteredUserDto,
   RegisterUserDto,
+  ResetPasswordDto,
   SocialLoginDto,
   SocialLoginResponseDto,
   SocialLoginSuccessResponseDto,
 } from '../dtos/auth.dto';
+import { env } from '../config/env';
+import { PasswordResetRepository } from '../repositories/password-reset.repository';
 import { UserRepository } from '../repositories/user.repository';
 import { AppError } from '../utils/app-error';
 import { comparePassword, hashPassword } from '../utils/hash';
 import { generateAccessToken } from '../utils/jwt';
+import {
+  buildExpirationDate,
+  buildResetPasswordLink,
+  generateSecureToken,
+  hashOpaqueToken,
+} from '../utils/token';
 import { FirebaseAuthService } from './firebase-auth.service';
+import { EmailService } from './email.service';
 
 const userRepository = new UserRepository();
+const passwordResetRepository = new PasswordResetRepository();
 const firebaseAuthService = new FirebaseAuthService();
+const emailService = new EmailService();
+const PASSWORD_RESET_EXPIRATION_MINUTES = 60;
+const GENERIC_FORGOT_PASSWORD_MESSAGE =
+  'Se existir uma conta vinculada a este e-mail, enviaremos instrucoes para redefinicao de senha.';
 
 export class AuthService {
   getAuthBootstrapStatus(): AuthStatusResponseDto {
@@ -123,6 +140,79 @@ export class AuthService {
     return buildLoginResponse(user.id, user.email, user.username, user.provider);
   }
 
+  async forgotPassword(
+    input: ForgotPasswordDto,
+  ): Promise<GenericMessageResponseDto> {
+    const normalizedEmail = input.email.trim().toLowerCase();
+    const user = await userRepository.findByEmail(normalizedEmail);
+
+    if (!user || !user.isRegistrationCompleted) {
+      return {
+        success: true,
+        message: GENERIC_FORGOT_PASSWORD_MESSAGE,
+      };
+    }
+
+    const rawToken = generateSecureToken();
+    const tokenHash = hashOpaqueToken(rawToken);
+    const expiresAt = buildExpirationDate(PASSWORD_RESET_EXPIRATION_MINUTES);
+
+    await passwordResetRepository.invalidateActiveTokensByUserId(user.id);
+    await passwordResetRepository.create({
+      userId: user.id,
+      tokenHash,
+      expiresAt,
+    });
+
+    try {
+      const resetLink = buildResetPasswordLink(
+        env.frontendResetPasswordUrl,
+        rawToken,
+      );
+
+      await emailService.sendPasswordResetEmail(user.email, resetLink);
+    } catch (error) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+
+      throw new AppError('Nao foi possivel iniciar a redefinicao de senha.', 500);
+    }
+
+    return {
+      success: true,
+      message: GENERIC_FORGOT_PASSWORD_MESSAGE,
+    };
+  }
+
+  async resetPassword(
+    input: ResetPasswordDto,
+  ): Promise<GenericMessageResponseDto> {
+    const tokenHash = hashOpaqueToken(input.token.trim());
+    const resetToken = await passwordResetRepository.findValidByTokenHash(tokenHash);
+
+    if (!resetToken) {
+      throw new AppError('Token de redefinicao invalido ou expirado.', 401);
+    }
+
+    const user = await userRepository.findById(resetToken.userId);
+
+    if (!user) {
+      throw new AppError('Token de redefinicao invalido ou expirado.', 401);
+    }
+
+    const passwordHash = await hashPassword(input.newPassword);
+
+    await userRepository.updatePasswordById(user.id, passwordHash);
+    await passwordResetRepository.markAsUsed(resetToken.id);
+    await passwordResetRepository.invalidateActiveTokensByUserId(user.id);
+
+    return {
+      success: true,
+      message: 'Senha redefinida com sucesso.',
+    };
+  }
+
   async completeSocialRegister(
     input: CompleteSocialRegisterDto,
   ): Promise<SocialLoginResponseDto> {
@@ -213,7 +303,7 @@ export class AuthService {
       completedUser.email,
       completedUser.username!,
       completedUser.provider,
-      );
+    );
   }
 
   async getAuthenticatedUser(userId: string): Promise<AuthenticatedUserDto> {

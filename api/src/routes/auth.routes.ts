@@ -5,8 +5,10 @@ import {
   validateAuthBootstrapRequest,
   validateCompleteSocialRegisterRequest,
   validateFirebaseVerifyTokenRequest,
+  validateForgotPasswordRequest,
   validateLoginUserRequest,
   validateRegisterUserRequest,
+  validateResetPasswordRequest,
   validateSocialLoginRequest,
 } from '../validators/auth.validator';
 
@@ -19,6 +21,20 @@ authRoutes.post('/register', validateRegisterUserRequest, (request, response, ne
 
 authRoutes.post('/login', validateLoginUserRequest, (request, response, next) =>
   authController.login(request, response).catch(next),
+);
+
+authRoutes.post(
+  '/forgot-password',
+  validateForgotPasswordRequest,
+  (request, response, next) =>
+    authController.forgotPassword(request, response).catch(next),
+);
+
+authRoutes.post(
+  '/reset-password',
+  validateResetPasswordRequest,
+  (request, response, next) =>
+    authController.resetPassword(request, response).catch(next),
 );
 
 authRoutes.post('/social-login', validateSocialLoginRequest, (request, response, next) =>

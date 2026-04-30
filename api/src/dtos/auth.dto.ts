@@ -22,6 +22,15 @@ export interface LoginUserDto {
   password: string;
 }
 
+export interface ForgotPasswordDto {
+  email: string;
+}
+
+export interface ResetPasswordDto {
+  token: string;
+  newPassword: string;
+}
+
 export interface SocialLoginDto {
   firebaseToken: string;
   provider: 'google' | 'facebook';
@@ -54,6 +63,11 @@ export interface AuthenticatedUserDto {
 export interface LoginResponseDto {
   token: string;
   user: AuthenticatedUserDto;
+}
+
+export interface GenericMessageResponseDto {
+  success: true;
+  message: string;
 }
 
 export interface SocialLoginPendingResponseDto {

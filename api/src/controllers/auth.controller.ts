@@ -1,8 +1,10 @@
 import { Request, Response } from 'express';
 import {
   CompleteSocialRegisterDto,
+  ForgotPasswordDto,
   LoginUserDto,
   RegisterUserDto,
+  ResetPasswordDto,
   SocialLoginDto,
 } from '../dtos/auth.dto';
 import { AuthService } from '../services/auth.service';
@@ -33,6 +35,20 @@ export class AuthController {
     const authenticatedUser = await authService.loginUser(payload);
 
     return response.status(200).json(authenticatedUser);
+  }
+
+  async forgotPassword(request: Request, response: Response) {
+    const payload = request.body as ForgotPasswordDto;
+    const forgotPasswordResponse = await authService.forgotPassword(payload);
+
+    return response.status(200).json(forgotPasswordResponse);
+  }
+
+  async resetPassword(request: Request, response: Response) {
+    const payload = request.body as ResetPasswordDto;
+    const resetPasswordResponse = await authService.resetPassword(payload);
+
+    return response.status(200).json(resetPasswordResponse);
   }
 
   async socialLogin(request: Request, response: Response) {

@@ -1,8 +1,10 @@
 import { NextFunction, Request, Response } from 'express';
 import {
   CompleteSocialRegisterDto,
+  ForgotPasswordDto,
   LoginUserDto,
   RegisterUserDto,
+  ResetPasswordDto,
   SocialLoginDto,
 } from '../dtos/auth.dto';
 import { VerifyFirebaseTokenDto } from '../types/firebase';
@@ -67,6 +69,63 @@ export function validateLoginUserRequest(
     email: email!.trim(),
     password: password!,
   } satisfies LoginUserDto;
+
+  return next();
+}
+
+export function validateForgotPasswordRequest(
+  request: Request,
+  response: Response,
+  next: NextFunction,
+) {
+  const { email } = request.body as Partial<ForgotPasswordDto>;
+  const errors: string[] = [];
+
+  validateEmail(email, errors);
+
+  if (errors.length > 0) {
+    return response
+      .status(422)
+      .json(buildErrorResponse('Dados de recuperacao invalidos.', errors));
+  }
+
+  request.body = {
+    email: email!.trim(),
+  } satisfies ForgotPasswordDto;
+
+  return next();
+}
+
+export function validateResetPasswordRequest(
+  request: Request,
+  response: Response,
+  next: NextFunction,
+) {
+  const { token, newPassword } = request.body as Partial<ResetPasswordDto>;
+  const errors: string[] = [];
+
+  if (!token?.trim()) {
+    errors.push('Token de redefinicao e obrigatorio.');
+  }
+
+  if (!newPassword) {
+    errors.push('Nova senha e obrigatoria.');
+  } else if (!isStrongPassword(newPassword)) {
+    errors.push(
+      'Nova senha deve ter ao menos 8 caracteres, com letra maiuscula, letra minuscula e numero.',
+    );
+  }
+
+  if (errors.length > 0) {
+    return response
+      .status(422)
+      .json(buildErrorResponse('Dados de redefinicao invalidos.', errors));
+  }
+
+  request.body = {
+    token: token!.trim(),
+    newPassword: newPassword!,
+  } satisfies ResetPasswordDto;
 
   return next();
 }

@@ -21,6 +21,14 @@ export const env = {
     clientEmail: process.env.FIREBASE_CLIENT_EMAIL ?? '',
     privateKey: process.env.FIREBASE_PRIVATE_KEY ?? '',
   },
+  email: {
+    host: process.env.EMAIL_HOST ?? '',
+    port: toNumber(process.env.EMAIL_PORT, 587),
+    user: process.env.EMAIL_USER ?? '',
+    password: process.env.EMAIL_PASSWORD ?? '',
+    from: process.env.EMAIL_FROM ?? '',
+  },
+  frontendResetPasswordUrl: process.env.FRONTEND_RESET_PASSWORD_URL ?? '',
   database: {
     host: process.env.DATABASE_HOST ?? 'localhost',
     port: toNumber(process.env.DATABASE_PORT, 3306),

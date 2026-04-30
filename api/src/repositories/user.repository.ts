@@ -134,6 +134,19 @@ export class UserRepository {
     return createdUser;
   }
 
+  async updatePasswordById(userId: string, passwordHash: string): Promise<void> {
+    await this.ensureUsersTable();
+
+    await database.execute<ResultSetHeader>(
+      `
+        UPDATE users
+        SET password_hash = ?
+        WHERE id = ?
+      `,
+      [passwordHash, userId],
+    );
+  }
+
   async completeSocialRegistration(
     userId: string,
     input: CompleteSocialRegistrationInput,
