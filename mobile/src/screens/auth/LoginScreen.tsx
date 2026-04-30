@@ -60,6 +60,11 @@ function LoginScreen({
     try {
       const response = await loginWithGoogle();
 
+      if (response.cancelled) {
+        setError('Login com Google cancelado.');
+        return;
+      }
+
       if (response.requiresSocialCompletion) {
         onSocialRegisterRequired();
       }
@@ -79,6 +84,11 @@ function LoginScreen({
 
     try {
       const response = await loginWithFacebook();
+
+      if (response.cancelled) {
+        setError('Login com Facebook cancelado.');
+        return;
+      }
 
       if (response.requiresSocialCompletion) {
         onSocialRegisterRequired();

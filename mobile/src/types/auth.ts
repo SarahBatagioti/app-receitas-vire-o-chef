@@ -20,6 +20,7 @@ export interface LoginPayload {
 export interface RegisterPayload {
   email: string;
   name: string;
+  username?: string;
   password: string;
 }
 
@@ -27,24 +28,21 @@ export interface ForgotPasswordPayload {
   email: string;
 }
 
-export interface SocialLoginPayload {
+export interface SocialIdentity {
   provider: SocialProvider;
-  accessToken: string;
-  idToken?: string;
+  firebaseToken: string;
+  email: string;
+  name?: string;
+  avatarUrl?: string;
 }
 
-export interface PendingSocialAuth {
-  provider: SocialProvider;
-  accessToken: string;
-  email: string;
-}
+export interface SocialLoginPayload extends SocialIdentity {}
 
-export interface CompleteSocialRegisterPayload {
-  provider: SocialProvider;
-  accessToken: string;
-  email: string;
-  name: string;
+export interface PendingSocialAuth extends SocialIdentity {}
+
+export interface CompleteSocialRegisterPayload extends SocialIdentity {
   password: string;
+  username?: string;
 }
 
 export interface AuthResponse {
@@ -55,6 +53,7 @@ export interface AuthResponse {
 
 export interface SocialLoginResponse {
   requiresSocialCompletion: boolean;
+  cancelled?: boolean;
   pendingSocialAuth?: PendingSocialAuth;
   token?: string;
   user?: AuthUser;
@@ -63,6 +62,15 @@ export interface SocialLoginResponse {
 
 export interface ForgotPasswordResponse {
   message: string;
+}
+
+export interface SocialAuthResult {
+  cancelled: boolean;
+  provider: SocialProvider;
+  firebaseToken?: string;
+  email?: string;
+  name?: string;
+  avatarUrl?: string;
 }
 
 export interface AuthContextValue {
@@ -78,9 +86,9 @@ export interface AuthContextValue {
   clearSession: () => Promise<void>;
   forgotPassword: (payload: ForgotPasswordPayload) => Promise<ForgotPasswordResponse>;
   completeSocialRegister: (
-    payload: Omit<CompleteSocialRegisterPayload, 'provider' | 'accessToken' | 'email'>,
+    payload: Pick<CompleteSocialRegisterPayload, 'name' | 'password'>,
   ) => Promise<void>;
-  loginWithGoogle: (payload?: Omit<SocialLoginPayload, 'provider'>) => Promise<SocialLoginResponse>;
-  loginWithFacebook: (payload?: Omit<SocialLoginPayload, 'provider'>) => Promise<SocialLoginResponse>;
+  loginWithGoogle: () => Promise<SocialLoginResponse>;
+  loginWithFacebook: () => Promise<SocialLoginResponse>;
   clearAuthError: () => void;
 }

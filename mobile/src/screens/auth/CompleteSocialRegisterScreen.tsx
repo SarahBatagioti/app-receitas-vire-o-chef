@@ -13,7 +13,7 @@ type CompleteSocialRegisterScreenProps = {
 function CompleteSocialRegisterScreen({ onBack, onComplete }: CompleteSocialRegisterScreenProps) {
   const { theme } = useAppTheme();
   const { authError, clearAuthError, completeSocialRegister, pendingSocialAuth } = useAuth();
-  const [username, setUsername] = React.useState('');
+  const [username, setUsername] = React.useState(pendingSocialAuth?.name ?? '');
   const [password, setPassword] = React.useState('');
   const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);

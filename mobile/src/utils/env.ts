@@ -1,37 +1,39 @@
-type RuntimeEnv = {
-  API_BASE_URL?: string;
-};
+type RuntimeEnv = Record<string, string | undefined>;
+
+type RequiredEnvKey =
+  | 'API_BASE_URL'
+  | 'FIREBASE_API_KEY'
+  | 'FIREBASE_AUTH_DOMAIN'
+  | 'FIREBASE_PROJECT_ID'
+  | 'FIREBASE_STORAGE_BUCKET'
+  | 'FIREBASE_MESSAGING_SENDER_ID'
+  | 'FIREBASE_APP_ID'
+  | 'GOOGLE_WEB_CLIENT_ID'
+  | 'GOOGLE_ANDROID_CLIENT_ID'
+  | 'GOOGLE_IOS_CLIENT_ID'
+  | 'FACEBOOK_APP_ID'
+  | 'FACEBOOK_CLIENT_TOKEN';
 
 function readRuntimeEnv(): RuntimeEnv {
   try {
     const configModule = require('react-native-config');
     const config = configModule?.default ?? configModule;
 
-    if (config?.API_BASE_URL) {
-      return {
-        API_BASE_URL: String(config.API_BASE_URL),
-      };
+    if (config && typeof config === 'object') {
+      return config as RuntimeEnv;
     }
   } catch {}
 
-  const runtimeProcess = globalThis as { process?: { env?: Record<string, string | undefined> } };
+  const runtimeProcess = globalThis as { process?: { env?: RuntimeEnv } };
 
-  if (runtimeProcess.process?.env) {
-    return {
-      API_BASE_URL: runtimeProcess.process.env.API_BASE_URL,
-    };
-  }
-
-  return {};
+  return runtimeProcess.process?.env ?? {};
 }
 
-function getRequiredEnv(key: keyof RuntimeEnv): string {
+function getRequiredEnv(key: RequiredEnvKey): string {
   const value = readRuntimeEnv()[key]?.trim();
 
   if (!value) {
-    throw new Error(
-      'A variável API_BASE_URL não foi configurada. Defina o valor no .env e instale a integração de variáveis de ambiente do app.',
-    );
+    throw new Error(`A variável ${key} não foi configurada no ambiente do aplicativo.`);
   }
 
   return value;
@@ -40,5 +42,38 @@ function getRequiredEnv(key: keyof RuntimeEnv): string {
 export const env = {
   get apiBaseUrl() {
     return getRequiredEnv('API_BASE_URL');
+  },
+  get firebaseApiKey() {
+    return getRequiredEnv('FIREBASE_API_KEY');
+  },
+  get firebaseAuthDomain() {
+    return getRequiredEnv('FIREBASE_AUTH_DOMAIN');
+  },
+  get firebaseProjectId() {
+    return getRequiredEnv('FIREBASE_PROJECT_ID');
+  },
+  get firebaseStorageBucket() {
+    return getRequiredEnv('FIREBASE_STORAGE_BUCKET');
+  },
+  get firebaseMessagingSenderId() {
+    return getRequiredEnv('FIREBASE_MESSAGING_SENDER_ID');
+  },
+  get firebaseAppId() {
+    return getRequiredEnv('FIREBASE_APP_ID');
+  },
+  get googleWebClientId() {
+    return getRequiredEnv('GOOGLE_WEB_CLIENT_ID');
+  },
+  get googleAndroidClientId() {
+    return getRequiredEnv('GOOGLE_ANDROID_CLIENT_ID');
+  },
+  get googleIosClientId() {
+    return getRequiredEnv('GOOGLE_IOS_CLIENT_ID');
+  },
+  get facebookAppId() {
+    return getRequiredEnv('FACEBOOK_APP_ID');
+  },
+  get facebookClientToken() {
+    return getRequiredEnv('FACEBOOK_CLIENT_TOKEN');
   },
 };

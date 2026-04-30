@@ -36,6 +36,7 @@ function RegisterScreen({ onBack, onLogin, onSocialRegisterRequired }: RegisterS
       await register({
         email: email.trim(),
         name: username.trim(),
+        username: username.trim(),
         password,
       });
     } catch (requestError) {
@@ -54,6 +55,11 @@ function RegisterScreen({ onBack, onLogin, onSocialRegisterRequired }: RegisterS
 
     try {
       const response = await loginWithGoogle();
+
+      if (response.cancelled) {
+        setError('Cadastro com Google cancelado.');
+        return;
+      }
 
       if (response.requiresSocialCompletion) {
         onSocialRegisterRequired();
@@ -74,6 +80,11 @@ function RegisterScreen({ onBack, onLogin, onSocialRegisterRequired }: RegisterS
 
     try {
       const response = await loginWithFacebook();
+
+      if (response.cancelled) {
+        setError('Cadastro com Facebook cancelado.');
+        return;
+      }
 
       if (response.requiresSocialCompletion) {
         onSocialRegisterRequired();

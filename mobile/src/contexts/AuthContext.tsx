@@ -2,6 +2,7 @@ import React, { createContext, ReactNode, useContext, useEffect, useMemo, useSta
 
 import { authService } from '../services/authService';
 import { ApiError, getErrorMessage, setApiAuthToken } from '../services/api';
+import { socialAuthService } from '../services/socialAuthService';
 import {
   AuthContextValue,
   AuthResponse,
@@ -12,9 +13,7 @@ import {
   LoginPayload,
   PendingSocialAuth,
   RegisterPayload,
-  SocialLoginPayload,
   SocialLoginResponse,
-  SocialProvider,
   AuthUser,
 } from '../types/auth';
 import { clearAuthToken, getAuthToken, saveAuthToken } from '../utils/storage';
@@ -82,7 +81,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const logout = React.useCallback(async () => {
     setAuthError(null);
-    await clearAuthToken().catch(() => undefined);
+    await Promise.allSettled([
+      clearAuthToken(),
+      socialAuthService.clearProviderSessions(),
+    ]);
     clearSessionState();
   }, [clearSessionState]);
 
@@ -133,56 +135,93 @@ export function AuthProvider({ children }: AuthProviderProps) {
     [],
   );
 
-  const authenticateWithSocialProvider = React.useCallback(
-    async (
-      provider: SocialProvider,
-      payload?: Omit<SocialLoginPayload, 'provider'>,
-    ): Promise<SocialLoginResponse> => {
-      setAuthError(null);
-
-      if (!payload?.accessToken) {
-        const message = `Integração com ${provider === 'google' ? 'Google' : 'Facebook'} ainda não configurada no app. Conecte o SDK social para obter o token do provedor antes de chamar o backend.`;
-        setAuthError(message);
-        throw new Error(message);
-      }
-
-      try {
-        const response = await authService.socialLogin({
-          provider,
-          accessToken: payload.accessToken,
-          idToken: payload.idToken,
-        });
-
-        if (response.requiresSocialCompletion && response.pendingSocialAuth) {
-          setPendingSocialAuth(response.pendingSocialAuth);
-          setStatus('unauthenticated');
-          return response;
-        }
-
-        if (!response.token || !response.user) {
-          throw new Error('Não foi possível finalizar o login social.');
-        }
-
-        await persistAuthenticatedSession({
-          token: response.token,
-          user: response.user,
-          message: response.message,
-        });
-
+  const handleSocialResponse = React.useCallback(
+    async (response: SocialLoginResponse): Promise<SocialLoginResponse> => {
+      if (response.cancelled) {
         return response;
-      } catch (error) {
-        const message = getErrorMessage(error, 'Não foi possível autenticar com a conta social.');
-        setAuthError(message);
-        throw new Error(message);
       }
+
+      if (response.requiresSocialCompletion && response.pendingSocialAuth) {
+        setPendingSocialAuth(response.pendingSocialAuth);
+        setStatus('unauthenticated');
+        return response;
+      }
+
+      if (!response.token || !response.user) {
+        throw new Error('Não foi possível finalizar o login social.');
+      }
+
+      await persistAuthenticatedSession({
+        token: response.token,
+        user: response.user,
+        message: response.message,
+      });
+
+      return response;
     },
     [persistAuthenticatedSession],
   );
 
+  const loginWithGoogle = React.useCallback(async (): Promise<SocialLoginResponse> => {
+    setAuthError(null);
+
+    try {
+      const socialResult = await socialAuthService.signInWithGoogle();
+
+      if (socialResult.cancelled) {
+        return {
+          cancelled: true,
+          requiresSocialCompletion: false,
+        };
+      }
+
+      const response = await authService.socialLogin({
+        provider: 'google',
+        firebaseToken: socialResult.firebaseToken ?? '',
+        email: socialResult.email ?? '',
+        name: socialResult.name,
+        avatarUrl: socialResult.avatarUrl,
+      });
+
+      return await handleSocialResponse(response);
+    } catch (error) {
+      const message = getErrorMessage(error, 'Não foi possível autenticar com a conta Google.');
+      setAuthError(message);
+      throw new Error(message);
+    }
+  }, [handleSocialResponse]);
+
+  const loginWithFacebook = React.useCallback(async (): Promise<SocialLoginResponse> => {
+    setAuthError(null);
+
+    try {
+      const socialResult = await socialAuthService.signInWithFacebook();
+
+      if (socialResult.cancelled) {
+        return {
+          cancelled: true,
+          requiresSocialCompletion: false,
+        };
+      }
+
+      const response = await authService.socialLogin({
+        provider: 'facebook',
+        firebaseToken: socialResult.firebaseToken ?? '',
+        email: socialResult.email ?? '',
+        name: socialResult.name,
+        avatarUrl: socialResult.avatarUrl,
+      });
+
+      return await handleSocialResponse(response);
+    } catch (error) {
+      const message = getErrorMessage(error, 'Não foi possível autenticar com a conta Facebook.');
+      setAuthError(message);
+      throw new Error(message);
+    }
+  }, [handleSocialResponse]);
+
   const completeSocialRegister = React.useCallback(
-    async (
-      payload: Omit<CompleteSocialRegisterPayload, 'provider' | 'accessToken' | 'email'>,
-    ) => {
+    async (payload: Pick<CompleteSocialRegisterPayload, 'name' | 'password'>) => {
       setAuthError(null);
 
       if (!pendingSocialAuth) {
@@ -195,9 +234,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       try {
         const session = await authService.completeSocialRegister({
           provider: pendingSocialAuth.provider,
-          accessToken: pendingSocialAuth.accessToken,
+          firebaseToken: pendingSocialAuth.firebaseToken,
           email: pendingSocialAuth.email,
-          ...payload,
+          name: payload.name,
+          username: payload.name,
+          password: payload.password,
+          avatarUrl: pendingSocialAuth.avatarUrl,
         });
 
         await persistAuthenticatedSession(session);
@@ -224,17 +266,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
       clearSession: logout,
       forgotPassword,
       completeSocialRegister,
-      loginWithGoogle: (payload) => authenticateWithSocialProvider('google', payload),
-      loginWithFacebook: (payload) => authenticateWithSocialProvider('facebook', payload),
+      loginWithGoogle,
+      loginWithFacebook,
       clearAuthError: () => setAuthError(null),
     }),
     [
       authError,
-      authenticateWithSocialProvider,
       completeSocialRegister,
       forgotPassword,
       isInitializing,
       login,
+      loginWithFacebook,
+      loginWithGoogle,
       logout,
       pendingSocialAuth,
       register,

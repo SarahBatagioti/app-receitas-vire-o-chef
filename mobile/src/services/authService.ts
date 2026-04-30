@@ -49,6 +49,7 @@ function extractToken(payload: Record<string, unknown>): string | null {
     readString(payload.accessToken) ??
     readString(extractNestedRecord(payload, 'data')?.token) ??
     readString(extractNestedRecord(payload, 'data')?.accessToken) ??
+    readString(extractNestedRecord(payload, 'data')?.jwt) ??
     null
   );
 }
@@ -100,8 +101,19 @@ function normalizePendingSocialAuth(
 
   return {
     provider: request.provider,
-    accessToken: request.accessToken,
-    email: readString(payload.email) ?? readString(dataPayload.email) ?? '',
+    firebaseToken: request.firebaseToken,
+    email:
+      readString(payload.email) ??
+      readString(dataPayload.email) ??
+      request.email,
+    name:
+      readString(payload.name) ??
+      readString(dataPayload.name) ??
+      request.name,
+    avatarUrl:
+      readString(payload.avatarUrl) ??
+      readString(dataPayload.avatarUrl) ??
+      request.avatarUrl,
   };
 }
 
@@ -124,6 +136,7 @@ class AuthService {
     const requiresSocialCompletion = Boolean(
       responsePayload.requiresSocialCompletion ??
         responsePayload.socialRegistrationPending ??
+        responsePayload.incompleteRegistration ??
         (!token && !user),
     );
 
