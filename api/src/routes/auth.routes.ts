@@ -3,9 +3,11 @@ import { AuthController } from '../controllers/auth.controller';
 import { authenticateJwt } from '../middlewares/auth.middleware';
 import {
   validateAuthBootstrapRequest,
+  validateCompleteSocialRegisterRequest,
   validateFirebaseVerifyTokenRequest,
   validateLoginUserRequest,
   validateRegisterUserRequest,
+  validateSocialLoginRequest,
 } from '../validators/auth.validator';
 
 const authRoutes = Router();
@@ -17,6 +19,17 @@ authRoutes.post('/register', validateRegisterUserRequest, (request, response, ne
 
 authRoutes.post('/login', validateLoginUserRequest, (request, response, next) =>
   authController.login(request, response).catch(next),
+);
+
+authRoutes.post('/social-login', validateSocialLoginRequest, (request, response, next) =>
+  authController.socialLogin(request, response).catch(next),
+);
+
+authRoutes.post(
+  '/social-complete-register',
+  validateCompleteSocialRegisterRequest,
+  (request, response, next) =>
+    authController.completeSocialRegister(request, response).catch(next),
 );
 
 authRoutes.post(

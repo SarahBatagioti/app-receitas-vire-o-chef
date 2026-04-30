@@ -25,7 +25,7 @@ export async function authenticateJwt(
   const payload = verifyAccessToken(token);
   const user = await userRepository.findById(payload.sub);
 
-  if (!user) {
+  if (!user || !user.username) {
     return next(new AppError('Usuario autenticado nao encontrado.', 404));
   }
 

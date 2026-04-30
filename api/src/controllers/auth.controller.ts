@@ -1,5 +1,10 @@
 import { Request, Response } from 'express';
-import { LoginUserDto, RegisterUserDto } from '../dtos/auth.dto';
+import {
+  CompleteSocialRegisterDto,
+  LoginUserDto,
+  RegisterUserDto,
+  SocialLoginDto,
+} from '../dtos/auth.dto';
 import { AuthService } from '../services/auth.service';
 import { FirebaseAuthService } from '../services/firebase-auth.service';
 import { VerifyFirebaseTokenDto } from '../types/firebase';
@@ -28,6 +33,20 @@ export class AuthController {
     const authenticatedUser = await authService.loginUser(payload);
 
     return response.status(200).json(authenticatedUser);
+  }
+
+  async socialLogin(request: Request, response: Response) {
+    const payload = request.body as SocialLoginDto;
+    const socialLoginResponse = await authService.socialLogin(payload);
+
+    return response.status(200).json(socialLoginResponse);
+  }
+
+  async completeSocialRegister(request: Request, response: Response) {
+    const payload = request.body as CompleteSocialRegisterDto;
+    const socialRegisterResponse = await authService.completeSocialRegister(payload);
+
+    return response.status(200).json(socialRegisterResponse);
   }
 
   async me(request: Request, response: Response) {

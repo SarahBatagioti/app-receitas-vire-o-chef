@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto';
 import { ResultSetHeader, RowDataPacket } from 'mysql2/promise';
 import { database } from '../config/database';
-import { UserModel } from '../models/user.model';
+import { AuthProvider, UserModel } from '../models/user.model';
 
 export class UserRepository {
   async ensureUsersTable(): Promise<void> {
@@ -9,34 +9,36 @@ export class UserRepository {
       CREATE TABLE IF NOT EXISTS users (
         id CHAR(36) NOT NULL PRIMARY KEY,
         email VARCHAR(255) NOT NULL UNIQUE,
-        password_hash VARCHAR(255) NOT NULL,
-        username VARCHAR(100) NOT NULL UNIQUE,
+        password_hash VARCHAR(255) NULL,
+        username VARCHAR(100) NULL UNIQUE,
         provider VARCHAR(50) NOT NULL,
+        firebase_uid VARCHAR(128) NULL,
         is_social_account BOOLEAN NOT NULL DEFAULT FALSE,
+        is_registration_completed BOOLEAN NOT NULL DEFAULT TRUE,
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
       )
     `);
+
+    await database.execute(`
+      ALTER TABLE users
+      MODIFY COLUMN password_hash VARCHAR(255) NULL,
+      MODIFY COLUMN username VARCHAR(100) NULL
+    `);
+
+    await ensureColumn('users', 'firebase_uid', 'VARCHAR(128) NULL');
+    await ensureColumn(
+      'users',
+      'is_registration_completed',
+      'BOOLEAN NOT NULL DEFAULT TRUE',
+    );
   }
 
   async findByEmail(email: string): Promise<UserModel | null> {
     await this.ensureUsersTable();
 
     const [rows] = await database.execute<(RowDataPacket & UserDatabaseRow)[]>(
-      `
-        SELECT
-          id,
-          email,
-          password_hash,
-          username,
-          provider,
-          is_social_account,
-          created_at,
-          updated_at
-        FROM users
-        WHERE email = ?
-        LIMIT 1
-      `,
+      `${baseSelectQuery} WHERE email = ? LIMIT 1`,
       [email],
     );
 
@@ -51,20 +53,7 @@ export class UserRepository {
     await this.ensureUsersTable();
 
     const [rows] = await database.execute<(RowDataPacket & UserDatabaseRow)[]>(
-      `
-        SELECT
-          id,
-          email,
-          password_hash,
-          username,
-          provider,
-          is_social_account,
-          created_at,
-          updated_at
-        FROM users
-        WHERE id = ?
-        LIMIT 1
-      `,
+      `${baseSelectQuery} WHERE id = ? LIMIT 1`,
       [id],
     );
 
@@ -79,21 +68,23 @@ export class UserRepository {
     await this.ensureUsersTable();
 
     const [rows] = await database.execute<(RowDataPacket & UserDatabaseRow)[]>(
-      `
-        SELECT
-          id,
-          email,
-          password_hash,
-          username,
-          provider,
-          is_social_account,
-          created_at,
-          updated_at
-        FROM users
-        WHERE username = ?
-        LIMIT 1
-      `,
+      `${baseSelectQuery} WHERE username = ? LIMIT 1`,
       [username],
+    );
+
+    if (!rows.length) {
+      return null;
+    }
+
+    return mapUserRow(rows[0]);
+  }
+
+  async findByFirebaseUid(firebaseUid: string): Promise<UserModel | null> {
+    await this.ensureUsersTable();
+
+    const [rows] = await database.execute<(RowDataPacket & UserDatabaseRow)[]>(
+      `${baseSelectQuery} WHERE firebase_uid = ? LIMIT 1`,
+      [firebaseUid],
     );
 
     if (!rows.length) {
@@ -116,9 +107,11 @@ export class UserRepository {
           password_hash,
           username,
           provider,
-          is_social_account
+          firebase_uid,
+          is_social_account,
+          is_registration_completed
         )
-        VALUES (?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `,
       [
         id,
@@ -126,7 +119,9 @@ export class UserRepository {
         input.passwordHash,
         input.username,
         input.provider,
+        input.firebaseUid,
         input.isSocialAccount,
+        input.isRegistrationCompleted,
       ],
     );
 
@@ -138,24 +133,88 @@ export class UserRepository {
 
     return createdUser;
   }
+
+  async completeSocialRegistration(
+    userId: string,
+    input: CompleteSocialRegistrationInput,
+  ): Promise<UserModel> {
+    await this.ensureUsersTable();
+
+    await database.execute<ResultSetHeader>(
+      `
+        UPDATE users
+        SET
+          password_hash = ?,
+          username = ?,
+          provider = ?,
+          firebase_uid = ?,
+          is_social_account = ?,
+          is_registration_completed = TRUE
+        WHERE id = ?
+      `,
+      [
+        input.passwordHash,
+        input.username,
+        input.provider,
+        input.firebaseUid,
+        input.isSocialAccount,
+        userId,
+      ],
+    );
+
+    const updatedUser = await this.findById(userId);
+
+    if (!updatedUser) {
+      throw new Error('Falha ao buscar usuario atualizado.');
+    }
+
+    return updatedUser;
+  }
 }
+
+const baseSelectQuery = `
+  SELECT
+    id,
+    email,
+    password_hash,
+    username,
+    provider,
+    firebase_uid,
+    is_social_account,
+    is_registration_completed,
+    created_at,
+    updated_at
+  FROM users
+`;
 
 interface UserDatabaseRow {
   id: string;
   email: string;
-  password_hash: string;
-  username: string;
-  provider: 'local';
+  password_hash: string | null;
+  username: string | null;
+  provider: AuthProvider;
+  firebase_uid: string | null;
   is_social_account: number | boolean;
+  is_registration_completed: number | boolean;
   created_at: Date | string;
   updated_at: Date | string;
 }
 
 interface CreateUserRepositoryInput {
   email: string;
+  passwordHash: string | null;
+  username: string | null;
+  provider: AuthProvider;
+  firebaseUid: string | null;
+  isSocialAccount: boolean;
+  isRegistrationCompleted: boolean;
+}
+
+interface CompleteSocialRegistrationInput {
   passwordHash: string;
   username: string;
-  provider: 'local';
+  provider: 'google' | 'facebook';
+  firebaseUid: string;
   isSocialAccount: boolean;
 }
 
@@ -166,10 +225,36 @@ function mapUserRow(row: UserDatabaseRow): UserModel {
     passwordHash: row.password_hash,
     username: row.username,
     provider: row.provider,
+    firebaseUid: row.firebase_uid,
     isSocialAccount: Boolean(row.is_social_account),
+    isRegistrationCompleted: Boolean(row.is_registration_completed),
     createdAt: toIsoString(row.created_at),
     updatedAt: toIsoString(row.updated_at),
   };
+}
+
+async function ensureColumn(
+  tableName: string,
+  columnName: string,
+  definition: string,
+): Promise<void> {
+  const [rows] = await database.execute<RowDataPacket[]>(
+    `
+      SELECT COLUMN_NAME
+      FROM INFORMATION_SCHEMA.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = ?
+        AND COLUMN_NAME = ?
+      LIMIT 1
+    `,
+    [tableName, columnName],
+  );
+
+  if (!rows.length) {
+    await database.execute(
+      `ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${definition}`,
+    );
+  }
 }
 
 function toIsoString(value: Date | string): string {

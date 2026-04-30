@@ -1,3 +1,5 @@
+import { AuthProvider } from '../models/user.model';
+
 export interface AuthStatusResponseDto {
   feature: 'auth';
   ready: boolean;
@@ -20,11 +22,23 @@ export interface LoginUserDto {
   password: string;
 }
 
+export interface SocialLoginDto {
+  firebaseToken: string;
+  provider: 'google' | 'facebook';
+}
+
+export interface CompleteSocialRegisterDto {
+  firebaseToken: string;
+  provider: 'google' | 'facebook';
+  password: string;
+  username: string;
+}
+
 export interface RegisteredUserDto {
   id: string;
   email: string;
   username: string;
-  provider: 'local';
+  provider: AuthProvider;
   isSocialAccount: boolean;
   createdAt: string;
   updatedAt: string;
@@ -34,10 +48,26 @@ export interface AuthenticatedUserDto {
   id: string;
   email: string;
   username: string;
-  provider: 'local';
+  provider: AuthProvider;
 }
 
 export interface LoginResponseDto {
   token: string;
   user: AuthenticatedUserDto;
 }
+
+export interface SocialLoginPendingResponseDto {
+  requiresCompletion: true;
+  email: string;
+  provider: 'google' | 'facebook';
+}
+
+export interface SocialLoginSuccessResponseDto {
+  requiresCompletion: false;
+  token: string;
+  user: AuthenticatedUserDto;
+}
+
+export type SocialLoginResponseDto =
+  | SocialLoginPendingResponseDto
+  | SocialLoginSuccessResponseDto;
