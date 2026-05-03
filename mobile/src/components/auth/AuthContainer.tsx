@@ -10,7 +10,10 @@ import { ArrowLeft } from 'lucide-react-native';
 import { SvgXml } from 'react-native-svg';
 
 import { useAppTheme } from '../../contexts';
-import { getLogoVireOChefXml } from '../../assets/images/logoVireOChefXml';
+import {
+  getLogoVireOChefXml,
+  LOGO_VIRE_O_CHEF_ASPECT_RATIO,
+} from '../../assets/images/logoVireOChefXml';
 import { AppContainer, AppText } from '../ui';
 
 type AuthContainerProps = {
@@ -36,8 +39,9 @@ function AuthContainer({
   const { width, height } = useWindowDimensions();
   const isCompact = height < 760;
   const titleSize = variant === 'access' ? '5xl' : isCompact ? '4xl' : '5xl';
-  const logoSize = variant === 'access' ? Math.min(width * 0.42, 172) : Math.min(width * 0.22, 92);
-  const brandAccentColor = themeMode === 'dark' ? theme.colors.text : theme.colors.primary;
+  const logoHeight =
+    variant === 'access' ? Math.min(width * 0.42, 172) : Math.min(width * 0.22, 92);
+  const logoWidth = logoHeight * LOGO_VIRE_O_CHEF_ASPECT_RATIO;
   const titleColor = variant === 'access' && themeMode === 'dark' ? 'text' : 'primary';
 
   return (
@@ -127,7 +131,16 @@ function AuthContainer({
                 marginBottom: variant === 'access' ? theme.spacing['4xl'] : theme.spacing['3xl'],
               }}
             >
-              <SvgXml xml={getLogoVireOChefXml(brandAccentColor)} width={logoSize} height={logoSize} />
+              <AppContainer
+                align="center"
+                backgroundColor="background"
+                style={{
+                  backgroundColor: 'transparent',
+                  width: logoWidth,
+                }}
+              >
+                <SvgXml xml={getLogoVireOChefXml(themeMode)} width={logoWidth} height={logoHeight} />
+              </AppContainer>
 
               {title ? (
                 <AppText
@@ -137,6 +150,7 @@ function AuthContainer({
                     fontFamily: theme.fonts.secondary.regular,
                     lineHeight: theme.fontSizes[titleSize] * 1.05,
                     marginTop: theme.spacing.lg,
+                    maxWidth: width * 0.82,
                     textAlign: 'center',
                   }}
                 >

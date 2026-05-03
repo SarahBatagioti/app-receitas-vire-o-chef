@@ -2,7 +2,10 @@ import React from 'react';
 import { useWindowDimensions } from 'react-native';
 import { Path, Svg, SvgXml } from 'react-native-svg';
 
-import { getLogoVireOChefXml } from '../../assets/images/logoVireOChefXml';
+import {
+  getLogoVireOChefXml,
+  LOGO_VIRE_O_CHEF_ASPECT_RATIO,
+} from '../../assets/images/logoVireOChefXml';
 import { useAppTheme } from '../../contexts';
 import AppContainer from './AppContainer';
 import AppText from './AppText';
@@ -28,7 +31,8 @@ function AppHeader() {
   const { width } = useWindowDimensions();
   const isDarkMode = themeMode === 'dark';
   const accentColor = isDarkMode ? theme.colors.text : theme.colors.primary;
-  const logoSize = Math.min(Math.max(width * 0.13, 44), 52);
+  const logoHeight = Math.min(Math.max(width * 0.13, 44), 52);
+  const logoWidth = logoHeight * LOGO_VIRE_O_CHEF_ASPECT_RATIO;
   const titleSize = width < 360 ? '4xl' : '5xl';
 
   return (
@@ -48,7 +52,7 @@ function AppHeader() {
           flexShrink: 1,
         }}
       >
-        <SvgXml xml={getLogoVireOChefXml(accentColor)} width={logoSize} height={logoSize} />
+        <SvgXml xml={getLogoVireOChefXml(themeMode)} width={logoWidth} height={logoHeight} />
 
         <AppText
           adjustsFontSizeToFit
