@@ -3,7 +3,7 @@ import { StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import BottomNav from './src/components/BottomNav';
-import { AppContainer, AppText } from './src/components/ui';
+import { AppContainer, AppHeader, AppText } from './src/components/ui';
 import { AuthProvider, ThemeProvider, useAppTheme } from './src/contexts';
 import { useAuth } from './src/hooks/useAuth';
 import {
@@ -75,10 +75,14 @@ function AppContent() {
 
       <AppContainer flex direction="column" justify="flex-start" backgroundColor="background">
         {isInitializing ? (
-          <AppContainer flex align="center" justify="center" padding="xl">
-            <AppText color="primary" size="xl" weight="bold">
+          <AppContainer flex padding="lg" backgroundColor="background">
+            <AppHeader />
+
+            <AppContainer flex align="center" justify="center" padding="xl">
+              <AppText color="primary" size="xl" weight="bold">
               Carregando sua sessão...
-            </AppText>
+              </AppText>
+            </AppContainer>
           </AppContainer>
         ) : null}
 
@@ -123,6 +127,8 @@ function AppContent() {
 
         {!isInitializing && ActiveScreen ? (
           <AppContainer flex padding="lg" backgroundColor="background">
+            <AppHeader />
+            <AppContainer style={{ height: theme.spacing.lg, backgroundColor: 'transparent' }} />
             <ActiveScreen />
           </AppContainer>
         ) : null}

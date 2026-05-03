@@ -10,7 +10,7 @@ import { ArrowLeft } from 'lucide-react-native';
 import { SvgXml } from 'react-native-svg';
 
 import { useAppTheme } from '../../contexts';
-import { logoVireOChefXml } from '../../assets/images/logoVireOChefXml';
+import { getLogoVireOChefXml } from '../../assets/images/logoVireOChefXml';
 import { AppContainer, AppText } from '../ui';
 
 type AuthContainerProps = {
@@ -32,11 +32,13 @@ function AuthContainer({
   onBack,
   variant = 'form',
 }: AuthContainerProps) {
-  const { theme } = useAppTheme();
+  const { theme, themeMode } = useAppTheme();
   const { width, height } = useWindowDimensions();
   const isCompact = height < 760;
   const titleSize = variant === 'access' ? '5xl' : isCompact ? '4xl' : '5xl';
   const logoSize = variant === 'access' ? Math.min(width * 0.42, 172) : Math.min(width * 0.22, 92);
+  const brandAccentColor = themeMode === 'dark' ? theme.colors.text : theme.colors.primary;
+  const titleColor = variant === 'access' && themeMode === 'dark' ? 'text' : 'primary';
 
   return (
     <KeyboardAvoidingView
@@ -114,24 +116,22 @@ function AuthContainer({
               >
                 <ArrowLeft color={theme.colors.primary} size={theme.fontSizes['4xl']} />
               </Pressable>
-            ) : (
-              <AppContainer style={{ height: theme.spacing['5xl'], backgroundColor: 'transparent' }} />
-            )}
+            ) : null}
 
             <AppContainer
               align="center"
               backgroundColor="background"
               style={{
                 backgroundColor: 'transparent',
-                marginTop: variant === 'access' ? theme.spacing['3xl'] : theme.spacing.xl,
+                marginTop: variant === 'access' ? theme.spacing['2xl'] : theme.spacing.lg,
                 marginBottom: variant === 'access' ? theme.spacing['4xl'] : theme.spacing['3xl'],
               }}
             >
-              <SvgXml xml={logoVireOChefXml} width={logoSize} height={logoSize} />
+              <SvgXml xml={getLogoVireOChefXml(brandAccentColor)} width={logoSize} height={logoSize} />
 
               {title ? (
                 <AppText
-                  color="primary"
+                  color={titleColor}
                   size={titleSize}
                   style={{
                     fontFamily: theme.fonts.secondary.regular,
