@@ -15,7 +15,7 @@ Aplicativo React Native puro com autenticação por e-mail e autenticação soci
 Preencha o `.env` com:
 
 ```env
-API_BASE_URL=
+API_BASE_URL=http://10.0.2.2:3000/api
 
 FIREBASE_API_KEY=
 FIREBASE_AUTH_DOMAIN=
@@ -31,6 +31,13 @@ GOOGLE_IOS_CLIENT_ID=
 FACEBOOK_APP_ID=
 FACEBOOK_CLIENT_TOKEN=
 ```
+
+Observacoes sobre a API no mobile:
+
+- O backend deste projeto responde sob o prefixo `/api`, por isso a `API_BASE_URL` precisa terminar com `/api`.
+- No emulador Android, `localhost` dentro do app nao aponta para o seu computador. Use `http://10.0.2.2:3000/api`.
+- Em dispositivo Android fisico, use o IP da sua maquina na rede local, por exemplo `http://192.168.0.15:3000/api`.
+- Depois de alterar o `.env`, refaca o build do app para o valor novo entrar na aplicacao.
 
 ## Fluxo social
 

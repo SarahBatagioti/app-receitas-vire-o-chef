@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import { env } from '../utils/env';
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
@@ -23,8 +24,38 @@ interface ApiRequestOptions<TBody> {
 
 let authToken: string | null = null;
 
+function ensureApiBasePath(baseUrl: string): string {
+  try {
+    const url = new URL(baseUrl);
+    const normalizedPath = url.pathname.replace(/\/+$/, '');
+    const suffix = `${url.search}${url.hash}`;
+
+    if (!normalizedPath) {
+      return `${url.origin}/api${suffix}`;
+    }
+
+    if (normalizedPath === '/api' || normalizedPath.endsWith('/api')) {
+      return `${url.origin}${normalizedPath}${suffix}`;
+    }
+
+    return url.toString();
+  } catch {
+    return baseUrl;
+  }
+}
+
+function normalizeBaseUrl(baseUrl: string): string {
+  const trimmedBaseUrl = baseUrl.trim();
+  const normalizedBaseUrl =
+    Platform.OS === 'android'
+      ? trimmedBaseUrl.replace('://localhost', '://10.0.2.2').replace('://127.0.0.1', '://10.0.2.2')
+      : trimmedBaseUrl;
+
+  return ensureApiBasePath(normalizedBaseUrl);
+}
+
 function buildUrl(path: string): string {
-  const baseUrl = env.apiBaseUrl.replace(/\/+$/, '');
+  const baseUrl = normalizeBaseUrl(env.apiBaseUrl).replace(/\/+$/, '');
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
 
   return `${baseUrl}${normalizedPath}`;
@@ -94,8 +125,14 @@ async function request<TResponse, TBody = undefined>(
       body: body !== undefined ? JSON.stringify(body) : undefined,
     });
   } catch {
+    const attemptedUrl = buildUrl(path);
+    const androidHint =
+      Platform.OS === 'android'
+        ? ' No emulador Android, use 10.0.2.2. Em dispositivo fisico, use o IP da maquina na rede local.'
+        : '';
+
     throw new ApiError(
-      'Não foi possível se conectar ao servidor. Verifique se o backend está rodando e se a API_BASE_URL está correta.',
+      `Nao foi possivel se conectar ao servidor em ${attemptedUrl}. Verifique se o backend esta rodando e se a API_BASE_URL esta correta.${androidHint}`,
       0,
     );
   }
@@ -104,7 +141,7 @@ async function request<TResponse, TBody = undefined>(
 
   if (!response.ok) {
     throw new ApiError(
-      extractErrorMessage(payload, 'Não foi possível concluir a solicitação no momento.'),
+      extractErrorMessage(payload, 'Nao foi possivel concluir a solicitacao no momento.'),
       response.status,
       payload,
     );
