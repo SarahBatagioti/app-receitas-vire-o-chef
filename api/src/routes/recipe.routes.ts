@@ -22,6 +22,10 @@ recipeRoutes.get('/minhas', (request, response, next) =>
   recipeController.listMine(request, response).catch(next),
 );
 
+recipeRoutes.get('/publicadas', (request, response, next) =>
+  recipeController.listPublished(request, response).catch(next),
+);
+
 recipeRoutes.get('/:id', validateRecipeIdParam, (request, response, next) =>
   recipeController.getById(request, response).catch(next),
 );

@@ -69,6 +69,7 @@ export type RecipeListItem = {
   prepMinutes: number;
   rating: number;
   servings: number;
+  authorName?: string;
   isFavorite?: boolean;
   isCollaborative?: boolean;
   status?: RecipeStatus;
@@ -122,6 +123,7 @@ export type RecipeDetail = RecipeListItem & {
 
 export type RecipesHomeCollections = {
   myPublications: RecipeListItem[];
+  publicRecipes: RecipeListItem[];
   favoriteRecipes: RecipeListItem[];
   draftRecipes: RecipeListItem[];
 };

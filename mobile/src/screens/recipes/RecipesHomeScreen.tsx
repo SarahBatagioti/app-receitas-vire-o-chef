@@ -31,6 +31,23 @@ function RecipesHomeScreen({
   const [searchValue, setSearchValue] = React.useState('');
 
   const normalizedSearch = searchValue.trim().toLowerCase();
+  const groupedPublicRecipes = React.useMemo(() => {
+    const groupedRecipes = new Map<string, RecipeListItem[]>();
+
+    collections.publicRecipes
+      .filter((recipe) => recipe.title.toLowerCase().includes(normalizedSearch))
+      .forEach((recipe) => {
+        const authorName = recipe.authorName?.trim() || 'Receitas públicas';
+        const currentRecipes = groupedRecipes.get(authorName) ?? [];
+        groupedRecipes.set(authorName, [...currentRecipes, recipe]);
+      });
+
+    return Array.from(groupedRecipes.entries()).map(([authorName, recipes]) => ({
+      authorName,
+      recipes,
+    }));
+  }, [collections.publicRecipes, normalizedSearch]);
+
   const myPublications = collections.myPublications.filter((recipe) =>
     recipe.title.toLowerCase().includes(normalizedSearch),
   );
@@ -109,6 +126,15 @@ function RecipesHomeScreen({
           title="Minhas publicações"
         />
 
+        {draftRecipes.length ? (
+          <RecipeSection
+            onRecipePress={onOpenRecipe}
+            onToggleFavorite={onToggleFavorite}
+            recipes={draftRecipes}
+            title="Meus rascunhos"
+          />
+        ) : null}
+
         <RecipeSection
           onRecipePress={onOpenRecipe}
           onToggleFavorite={onToggleFavorite}
@@ -116,13 +142,29 @@ function RecipesHomeScreen({
           title="Favoritos"
         />
 
-        {draftRecipes.length ? (
-          <RecipeSection
-            onRecipePress={onOpenRecipe}
-            onToggleFavorite={onToggleFavorite}
-            recipes={draftRecipes}
-            title="Rascunhos"
-          />
+        {groupedPublicRecipes.length ? (
+          <AppContainer marginBottom="xl">
+            <AppText
+              color="text"
+              size="2xl"
+              style={{
+                fontWeight: theme.fontWeights.bold,
+                marginBottom: theme.spacing.lg,
+              }}
+            >
+              Outras receitas
+            </AppText>
+
+            {groupedPublicRecipes.map((group) => (
+              <RecipeSection
+                key={group.authorName}
+                onRecipePress={onOpenRecipe}
+                onToggleFavorite={onToggleFavorite}
+                recipes={group.recipes}
+                title={`Receitas de ${group.authorName}`}
+              />
+            ))}
+          </AppContainer>
         ) : null}
       </AppContainer>
     </ScrollView>

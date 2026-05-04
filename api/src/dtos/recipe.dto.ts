@@ -104,6 +104,8 @@ export interface RecipeSummaryDto {
   avaliacaoMedia: number;
   midiaPrincipal: RecipeMediaDto | null;
   autorId: string;
+  autorNome: string;
+  autorUsername: string | null;
   createdAt: string;
   updatedAt: string;
 }

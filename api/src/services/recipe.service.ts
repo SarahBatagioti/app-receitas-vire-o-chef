@@ -99,6 +99,14 @@ export class RecipeService {
     return recipes.map(mapRecipeSummary);
   }
 
+  async listarReceitasPublicadas(): Promise<RecipeSummaryDto[]> {
+    await this.ensureInfrastructure();
+
+    const recipes = await recipeRepository.listPublishedRecipes();
+
+    return recipes.map(mapRecipeSummary);
+  }
+
   async buscarReceitaPorId(
     id: string,
     usuarioId: string,
@@ -106,7 +114,9 @@ export class RecipeService {
     await this.ensureInfrastructure();
     await this.ensureUserExists(usuarioId);
 
-    const recipe = await recipeRepository.findRecipeByIdAndAuthorId(id, usuarioId);
+    const recipe =
+      (await recipeRepository.findRecipeByIdAndAuthorId(id, usuarioId)) ??
+      (await recipeRepository.findPublishedRecipeById(id));
 
     if (!recipe) {
       throw new AppError('Receita nao encontrada.', 404);
@@ -328,6 +338,8 @@ function mapRecipeSummary(recipe: RecipeAggregate): RecipeSummaryDto {
     avaliacaoMedia: recipe.averageRating,
     midiaPrincipal: recipe.media[0] ? mapRecipeMedia(recipe.media[0]) : null,
     autorId: recipe.authorId,
+    autorNome: recipe.authorName,
+    autorUsername: recipe.authorUsername,
     createdAt: recipe.createdAt,
     updatedAt: recipe.updatedAt,
   };

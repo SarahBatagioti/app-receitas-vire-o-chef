@@ -12,6 +12,8 @@ export interface RecipeModel {
   status: RecipeStatus;
   averageRating: number;
   authorId: string;
+  authorName: string;
+  authorUsername: string | null;
   createdAt: string;
   updatedAt: string;
 }

@@ -38,6 +38,7 @@ type SubmitRecipeOptions = {
 function createEmptyCollections(): RecipesHomeCollections {
   return {
     myPublications: [],
+    publicRecipes: [],
     favoriteRecipes: [],
     draftRecipes: [],
   };
@@ -174,6 +175,7 @@ function buildRecipeListItem(
     prepMinutes: recipe.tempoPreparoMinutos ?? 0,
     rating: recipe.avaliacaoMedia,
     servings: recipe.rendimentoPorcoes ?? 0,
+    authorName: recipe.autorNome || recipe.autorUsername || 'Autor da receita',
     isFavorite: favoriteRecipeIds.includes(recipe.id),
     isCollaborative: recipe.isColaborativa,
     status: mapApiStatusToUi(recipe.status),
@@ -192,8 +194,9 @@ function syncCollectionsWithFavorites(
     }));
 
   const myPublications = applyFavoriteFlag(collections.myPublications);
+  const publicRecipes = applyFavoriteFlag(collections.publicRecipes);
   const draftRecipes = applyFavoriteFlag(collections.draftRecipes);
-  const allRecipes = [...myPublications, ...draftRecipes];
+  const allRecipes = [...myPublications, ...publicRecipes, ...draftRecipes];
   const favoriteRecipes = favoriteRecipeIds.reduce<RecipeListItem[]>((recipes, recipeId) => {
     const matchingRecipe = allRecipes.find((recipe) => recipe.id === recipeId);
 
@@ -206,6 +209,7 @@ function syncCollectionsWithFavorites(
 
   return {
     myPublications,
+    publicRecipes,
     favoriteRecipes,
     draftRecipes,
   };
@@ -213,6 +217,7 @@ function syncCollectionsWithFavorites(
 
 function buildRecipesCollections(
   recipes: RecipeRecord[],
+  currentUserId: string,
   favoriteRecipeIds: string[] = [],
 ): RecipesHomeCollections {
   return recipes.reduce<RecipesHomeCollections>(
@@ -221,8 +226,10 @@ function buildRecipesCollections(
 
       if (recipe.status === 'RASCUNHO') {
         collections.draftRecipes.push(listItem);
-      } else {
+      } else if (recipe.autorId === currentUserId) {
         collections.myPublications.push(listItem);
+      } else {
+        collections.publicRecipes.push(listItem);
       }
 
       if (listItem.isFavorite) {
@@ -276,8 +283,8 @@ function buildRecipeDetail(
     reviewsCount: 0,
     commentsCount: 0,
     author: {
-      name: user?.name ?? 'Voce',
-      subtitle: user?.email ?? 'Autor da receita',
+      name: recipe.autorNome || user?.name || 'Autor da receita',
+      subtitle: recipe.autorUsername ? `@${recipe.autorUsername}` : user?.email ?? undefined,
       avatarUrl: user?.avatarUrl ?? null,
     },
     primaryMedia,
@@ -325,8 +332,19 @@ function RecipesFlow() {
     setIsCollectionsLoading(true);
 
     try {
-      const recipes = await recipeService.listMyRecipes();
-      setCollections(buildRecipesCollections(recipes, favoriteRecipeIdsRef.current));
+      const [myRecipes, publicRecipes] = await Promise.all([
+        recipeService.listMyRecipes(),
+        recipeService.listPublicRecipes(),
+      ]);
+      const publicRecipesFromOthers = publicRecipes.filter((recipe) => recipe.autorId !== user?.id);
+
+      setCollections(
+        buildRecipesCollections(
+          [...myRecipes, ...publicRecipesFromOthers],
+          user?.id ?? '',
+          favoriteRecipeIdsRef.current,
+        ),
+      );
     } catch (error) {
       setCollections(createEmptyCollections());
       setCollectionsError(
@@ -478,6 +496,7 @@ function RecipesFlow() {
       setCollections((current) => ({
         ...current,
         myPublications: current.myPublications.filter((recipe) => recipe.id !== nextRecipe.id),
+        publicRecipes: current.publicRecipes.filter((recipe) => recipe.id !== nextRecipe.id),
         draftRecipes: current.draftRecipes.filter((recipe) => recipe.id !== nextRecipe.id),
       }));
       setCollections((current) => ({
@@ -486,6 +505,7 @@ function RecipesFlow() {
           nextStatus === 'published'
             ? [nextListItem, ...current.myPublications]
             : current.myPublications,
+        publicRecipes: current.publicRecipes,
         draftRecipes:
           nextStatus === 'draft' ? [nextListItem, ...current.draftRecipes] : current.draftRecipes,
       }));

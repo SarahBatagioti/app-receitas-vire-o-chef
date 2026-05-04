@@ -11,6 +11,7 @@ export const recipesMock: RecipesHomeCollections = {
       prepMinutes: 15,
       rating: 3.4,
       servings: 2,
+      authorName: 'Sarah Batagioti',
     },
     {
       id: 'recipe-2',
@@ -21,6 +22,7 @@ export const recipesMock: RecipesHomeCollections = {
       prepMinutes: 30,
       rating: 3.4,
       servings: 4,
+      authorName: 'Sarah Batagioti',
     },
     {
       id: 'recipe-3',
@@ -31,6 +33,42 @@ export const recipesMock: RecipesHomeCollections = {
       prepMinutes: 15,
       rating: 4.6,
       servings: 2,
+      authorName: 'Sarah Batagioti',
+    },
+  ],
+  publicRecipes: [
+    {
+      id: 'recipe-8',
+      title: 'Bolo de cenoura fit',
+      imageUrl:
+        'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=900&q=80',
+      difficulty: 'facil',
+      prepMinutes: 50,
+      rating: 4.8,
+      servings: 10,
+      authorName: 'Maria Silva',
+    },
+    {
+      id: 'recipe-9',
+      title: 'Tapioca de frango',
+      imageUrl:
+        'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=900&q=80',
+      difficulty: 'intermediario',
+      prepMinutes: 20,
+      rating: 4.2,
+      servings: 2,
+      authorName: 'Maria Silva',
+    },
+    {
+      id: 'recipe-10',
+      title: 'Suco verde refrescante',
+      imageUrl:
+        'https://images.unsplash.com/photo-1556679343-c1c0f9d80b6d?auto=format&fit=crop&w=900&q=80',
+      difficulty: 'facil',
+      prepMinutes: 10,
+      rating: 4.0,
+      servings: 1,
+      authorName: 'Joao Pereira',
     },
   ],
   favoriteRecipes: [
@@ -43,6 +81,7 @@ export const recipesMock: RecipesHomeCollections = {
       prepMinutes: 15,
       rating: 3.4,
       servings: 2,
+      authorName: 'Sarah Batagioti',
       isFavorite: true,
     },
     {
@@ -54,6 +93,7 @@ export const recipesMock: RecipesHomeCollections = {
       prepMinutes: 30,
       rating: 3.4,
       servings: 4,
+      authorName: 'Sarah Batagioti',
       isFavorite: true,
     },
     {
@@ -65,6 +105,7 @@ export const recipesMock: RecipesHomeCollections = {
       prepMinutes: 15,
       rating: 4.6,
       servings: 2,
+      authorName: 'Sarah Batagioti',
       isFavorite: true,
     },
   ],
@@ -78,6 +119,7 @@ export const recipesMock: RecipesHomeCollections = {
       prepMinutes: 45,
       rating: 0,
       servings: 8,
+      authorName: 'Sarah Batagioti',
       status: 'draft',
       isCollaborative: true,
     },
@@ -87,6 +129,7 @@ export const recipesMock: RecipesHomeCollections = {
 export function cloneRecipesCollections(): RecipesHomeCollections {
   return {
     myPublications: recipesMock.myPublications.map((recipe) => ({ ...recipe })),
+    publicRecipes: recipesMock.publicRecipes.map((recipe) => ({ ...recipe })),
     favoriteRecipes: recipesMock.favoriteRecipes.map((recipe) => ({ ...recipe })),
     draftRecipes: recipesMock.draftRecipes.map((recipe) => ({ ...recipe })),
   };
@@ -346,6 +389,7 @@ export const recipeDetailsMock: Record<string, RecipeDetail> = {
 
 const allRecipes = [
   ...recipesMock.myPublications,
+  ...recipesMock.publicRecipes,
   ...recipesMock.favoriteRecipes,
   ...recipesMock.draftRecipes,
 ];

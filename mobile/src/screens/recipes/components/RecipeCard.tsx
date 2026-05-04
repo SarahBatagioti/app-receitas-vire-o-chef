@@ -59,14 +59,17 @@ function RecipeCard({ recipe, onPress, onToggleFavorite, isLast = false }: Recip
         style={{
           borderColor: theme.colors[infoMeta.borderColor],
           borderWidth: 1.5,
+          backgroundColor: '#FFFFFF',
           overflow: 'visible',
           width: cardWidth,
         }}
       >
         <AppContainer
+          backgroundColor="surface"
           style={{
             borderTopLeftRadius: theme.borderRadius['3xl'],
             borderTopRightRadius: theme.borderRadius['3xl'],
+            backgroundColor: '#FFFFFF',
             overflow: 'hidden',
             position: 'relative',
           }}
@@ -146,11 +149,13 @@ function RecipeCard({ recipe, onPress, onToggleFavorite, isLast = false }: Recip
         </AppContainer>
 
         <AppContainer
+          backgroundColor="surface"
           paddingHorizontal="md"
           paddingVertical="md"
           style={{
             borderBottomLeftRadius: theme.borderRadius['3xl'],
             borderBottomRightRadius: theme.borderRadius['3xl'],
+            backgroundColor: '#FFFFFF',
             paddingTop: theme.spacing.lg + theme.spacing.sm,
           }}
         >
@@ -168,17 +173,29 @@ function RecipeCard({ recipe, onPress, onToggleFavorite, isLast = false }: Recip
           </AppText>
 
           <AppContainer
+            backgroundColor="surface"
             align="center"
             direction="row"
             justify="space-between"
             marginTop="sm"
+            style={{ backgroundColor: '#FFFFFF' }}
           >
-            <AppContainer align="center" direction="row" style={{ gap: theme.spacing.xs }}>
+            <AppContainer
+              backgroundColor="surface"
+              align="center"
+              direction="row"
+              style={{ backgroundColor: '#FFFFFF', gap: theme.spacing.xs }}
+            >
               <Clock3 color={theme.colors.text} size={theme.spacing.md + theme.spacing.xs} />
               <AppText size="sm">{`${recipe.prepMinutes} min`}</AppText>
             </AppContainer>
 
-            <AppContainer align="center" direction="row" style={{ gap: theme.spacing.xs }}>
+            <AppContainer
+              backgroundColor="surface"
+              align="center"
+              direction="row"
+              style={{ backgroundColor: '#FFFFFF', gap: theme.spacing.xs }}
+            >
               <Star
                 color={theme.colors.brandYellow}
                 fill={theme.colors.brandYellow}
@@ -187,7 +204,12 @@ function RecipeCard({ recipe, onPress, onToggleFavorite, isLast = false }: Recip
               <AppText size="sm">{recipe.rating.toFixed(1).replace('.', ',')}</AppText>
             </AppContainer>
 
-            <AppContainer align="center" direction="row" style={{ gap: theme.spacing.xs }}>
+            <AppContainer
+              backgroundColor="surface"
+              align="center"
+              direction="row"
+              style={{ backgroundColor: '#FFFFFF', gap: theme.spacing.xs }}
+            >
               <UsersRound color={theme.colors.text} size={theme.spacing.md + theme.spacing.xs} />
               <AppText size="sm">{recipe.servings}</AppText>
             </AppContainer>

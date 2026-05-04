@@ -307,6 +307,20 @@ export class RecipeRepository {
     return this.buildRecipeAggregates(rows);
   }
 
+  async listPublishedRecipes(): Promise<RecipeAggregate[]> {
+    await this.ensureTables();
+
+    const [rows] = await database.execute<(RowDataPacket & RecipeDatabaseRow)[]>(
+      `
+        ${baseSelectQuery}
+        WHERE r.status = 'PUBLICADA'
+        ORDER BY r.updated_at DESC, r.created_at DESC
+      `,
+    );
+
+    return this.buildRecipeAggregates(rows);
+  }
+
   async findRecipeByIdAndAuthorId(
     recipeId: string,
     authorId: string,
@@ -320,6 +334,25 @@ export class RecipeRepository {
           AND r.author_id = ?
       `,
       [recipeId, authorId],
+    );
+
+    if (!rows.length) {
+      return null;
+    }
+
+    return this.buildRecipeAggregates(rows)[0] ?? null;
+  }
+
+  async findPublishedRecipeById(recipeId: string): Promise<RecipeAggregate | null> {
+    await this.ensureTables();
+
+    const [rows] = await database.execute<(RowDataPacket & RecipeDatabaseRow)[]>(
+      `
+        ${baseSelectQuery}
+        WHERE r.id = ?
+          AND r.status = 'PUBLICADA'
+      `,
+      [recipeId],
     );
 
     if (!rows.length) {
@@ -538,6 +571,7 @@ const baseSelectQuery = `
   SELECT
     r.id AS recipe_id,
     r.author_id,
+    u.username AS author_username,
     r.name,
     r.preparation_time_minutes,
     r.yield_portions,
@@ -568,6 +602,8 @@ const baseSelectQuery = `
     rm.sort_order AS media_sort_order,
     rm.created_at AS media_created_at
   FROM recipes r
+  LEFT JOIN users u
+    ON u.id = r.author_id
   LEFT JOIN recipe_ingredients ri
     ON ri.recipe_id = r.id
   LEFT JOIN recipe_nutrition rn
@@ -645,6 +681,7 @@ interface CreateRecipeMediaRepositoryInput {
 interface RecipeDatabaseRow {
   recipe_id: string;
   author_id: string;
+  author_username: string | null;
   name: string;
   preparation_time_minutes: number | null;
   yield_portions: number | null;
@@ -684,6 +721,8 @@ function mapRecipeRow(row: RecipeDatabaseRow): RecipeModel {
   return {
     id: row.recipe_id,
     authorId: row.author_id,
+    authorName: row.author_username ?? row.author_id,
+    authorUsername: row.author_username,
     name: row.name,
     preparationTimeMinutes: row.preparation_time_minutes,
     yieldPortions: row.yield_portions,

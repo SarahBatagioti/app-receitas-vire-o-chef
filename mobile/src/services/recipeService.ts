@@ -45,6 +45,8 @@ export interface RecipeRecord {
   status: RecipeApiStatus;
   avaliacaoMedia: number;
   autorId: string;
+  autorNome: string;
+  autorUsername: string | null;
   createdAt: string;
   updatedAt: string;
   midiaPrincipal: RecipeMediaRecord | null;
@@ -257,6 +259,8 @@ function normalizeRecipeRecord(
     status,
     avaliacaoMedia: readNumber(recipePayload.avaliacaoMedia) ?? 0,
     autorId: readString(recipePayload.autorId) ?? '',
+    autorNome: readString(recipePayload.autorNome) ?? readString(recipePayload.autorUsername) ?? '',
+    autorUsername: readString(recipePayload.autorUsername) ?? null,
     createdAt: readString(recipePayload.createdAt) ?? '',
     updatedAt: readString(recipePayload.updatedAt) ?? '',
     midiaPrincipal: normalizeRecipeMedia(recipePayload.midiaPrincipal),
@@ -292,6 +296,11 @@ class RecipeService {
   async listMyRecipes(): Promise<RecipeRecord[]> {
     const response = await api.get<unknown>('/receitas/minhas', true);
     return normalizeRecipeRecords(response, 'Resposta invalida recebida ao listar receitas.');
+  }
+
+  async listPublicRecipes(): Promise<RecipeRecord[]> {
+    const response = await api.get<unknown>('/receitas/publicadas', true);
+    return normalizeRecipeRecords(response, 'Resposta invalida recebida ao listar receitas publicas.');
   }
 
   async getRecipeById(recipeId: string): Promise<RecipeRecord> {

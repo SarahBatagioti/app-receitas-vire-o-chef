@@ -48,7 +48,7 @@ function AuthContainer({
   const logoHeight =
     variant === 'access' ? Math.min(width * 0.42, 172) : Math.min(width * 0.22, 92);
   const logoWidth = logoHeight * LOGO_VIRE_O_CHEF_ASPECT_RATIO;
-  const titleColor = variant === 'access' && themeMode === 'dark' ? 'text' : 'primary';
+  const titleColor = 'primary';
   const containerBackgroundColor = variant === 'access' ? 'surface' : 'background';
   const logoThemeMode = variant === 'access' ? 'light' : themeMode;
 
@@ -137,7 +137,7 @@ function AuthContainer({
                   color={titleColor}
                   size={titleSize}
                   style={{
-                    color: variant === 'access' ? '#D7070C' : undefined,
+                    color: theme.colors.primary,
                     fontFamily: theme.fonts.secondary.regular,
                     fontSize: resolvedTitleFontSize,
                     lineHeight: resolvedTitleFontSize * (variant === 'access' ? 0.95 : 1.05),

@@ -25,6 +25,13 @@ export class RecipeController {
     return response.status(200).json(buildSuccessResponse(recipes));
   }
 
+  async listPublished(request: Request, response: Response) {
+    await getAuthenticatedUser(request);
+    const recipes = await recipeService.listarReceitasPublicadas();
+
+    return response.status(200).json(buildSuccessResponse(recipes));
+  }
+
   async getById(request: Request, response: Response) {
     const authUser = getAuthenticatedUser(request);
     const recipeId = getRecipeId(request);
