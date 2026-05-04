@@ -61,6 +61,10 @@ function buildUrl(path: string): string {
   return `${baseUrl}${normalizedPath}`;
 }
 
+export function buildApiUrl(path: string): string {
+  return buildUrl(path);
+}
+
 function extractErrorMessage(payload: unknown, fallbackMessage: string): string {
   if (!payload || typeof payload !== 'object') {
     return fallbackMessage;

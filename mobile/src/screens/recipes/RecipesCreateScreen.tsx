@@ -3,6 +3,7 @@ import { ScrollView } from 'react-native';
 
 import { AppButton, AppContainer, AppInput, AppText } from '../../components/ui';
 import { useAppTheme } from '../../contexts';
+import { getErrorMessage } from '../../services/api';
 import {
   RecipeCollaborativeSwitch,
   RecipeDifficultyField,
@@ -21,7 +22,7 @@ import {
 
 type RecipesCreateScreenProps = {
   onBack: () => void;
-  onSubmitRecipe: (values: RecipeCreateFormValues, status: RecipeStatus) => void;
+  onSubmitRecipe: (values: RecipeCreateFormValues, status: RecipeStatus) => Promise<void>;
 };
 
 const initialFormValues: RecipeCreateFormValues = {
@@ -56,17 +57,29 @@ function RecipesCreateScreen({ onBack, onSubmitRecipe }: RecipesCreateScreenProp
   const { theme } = useAppTheme();
   const [formValues, setFormValues] = React.useState<RecipeCreateFormValues>(initialFormValues);
   const [validationErrors, setValidationErrors] = React.useState<RecipeCreateValidationErrors>({});
+  const [submissionError, setSubmissionError] = React.useState<string | null>(null);
+  const [submitIntent, setSubmitIntent] = React.useState<RecipeStatus | null>(null);
   const nextPreparationStepId = React.useRef(2);
+  const isSubmitting = submitIntent !== null;
+
+  const clearSubmitFeedback = () => {
+    setSubmissionError(null);
+    setValidationErrors((current) => ({
+      ...current,
+      submit: undefined,
+    }));
+  };
 
   const updateField = <Key extends keyof RecipeCreateFormValues>(
     field: Key,
     value: RecipeCreateFormValues[Key],
   ) => {
+    clearSubmitFeedback();
+
     if (field === 'title' || field === 'prepMinutes' || field === 'servings') {
       setValidationErrors((current) => ({
         ...current,
         [field]: undefined,
-        submit: undefined,
       }));
     }
 
@@ -77,6 +90,8 @@ function RecipesCreateScreen({ onBack, onSubmitRecipe }: RecipesCreateScreenProp
   };
 
   const handleSelectIngredient = (ingredientId: string) => {
+    clearSubmitFeedback();
+
     const ingredientToAdd = recipeIngredientsCatalogMock.find(
       (ingredient) => ingredient.id === ingredientId,
     );
@@ -98,11 +113,11 @@ function RecipesCreateScreen({ onBack, onSubmitRecipe }: RecipesCreateScreenProp
     setValidationErrors((current) => ({
       ...current,
       selectedIngredients: undefined,
-      submit: undefined,
     }));
   };
 
   const handleRemoveIngredient = (ingredientId: string) => {
+    clearSubmitFeedback();
     setFormValues((current) => ({
       ...current,
       selectedIngredients: current.selectedIngredients.filter(
@@ -115,6 +130,7 @@ function RecipesCreateScreen({ onBack, onSubmitRecipe }: RecipesCreateScreenProp
     field: keyof RecipeCreateFormValues['nutrition'],
     value: string,
   ) => {
+    clearSubmitFeedback();
     setFormValues((current) => ({
       ...current,
       nutrition: {
@@ -125,6 +141,7 @@ function RecipesCreateScreen({ onBack, onSubmitRecipe }: RecipesCreateScreenProp
   };
 
   const handleAddPreparationStep = () => {
+    clearSubmitFeedback();
     const newStepId = `step-create-${nextPreparationStepId.current}`;
     nextPreparationStepId.current += 1;
 
@@ -141,6 +158,7 @@ function RecipesCreateScreen({ onBack, onSubmitRecipe }: RecipesCreateScreenProp
   };
 
   const handleChangePreparationStepDescription = (stepId: string, value: string) => {
+    clearSubmitFeedback();
     setFormValues((current) => ({
       ...current,
       preparationSteps: current.preparationSteps.map((step) =>
@@ -155,11 +173,11 @@ function RecipesCreateScreen({ onBack, onSubmitRecipe }: RecipesCreateScreenProp
     setValidationErrors((current) => ({
       ...current,
       preparationSteps: undefined,
-      submit: undefined,
     }));
   };
 
   const handleChangePreparationStepFile = (stepId: string, nextFileName?: string) => {
+    clearSubmitFeedback();
     setFormValues((current) => ({
       ...current,
       preparationSteps: current.preparationSteps.map((step) =>
@@ -174,6 +192,7 @@ function RecipesCreateScreen({ onBack, onSubmitRecipe }: RecipesCreateScreenProp
   };
 
   const handleRemovePreparationStep = (stepId: string) => {
+    clearSubmitFeedback();
     setFormValues((current) => {
       if (current.preparationSteps.length <= 1) {
         return current;
@@ -187,6 +206,7 @@ function RecipesCreateScreen({ onBack, onSubmitRecipe }: RecipesCreateScreenProp
   };
 
   const handleAddMedia = (type: 'image' | 'video') => {
+    clearSubmitFeedback();
     const timestamp = Date.now();
     const nextMedia = {
       id: `media-create-${timestamp}`,
@@ -204,6 +224,7 @@ function RecipesCreateScreen({ onBack, onSubmitRecipe }: RecipesCreateScreenProp
   };
 
   const handleRemoveMedia = (mediaId: string) => {
+    clearSubmitFeedback();
     setFormValues((current) => ({
       ...current,
       media: current.media.filter((item) => item.id !== mediaId),
@@ -219,10 +240,14 @@ function RecipesCreateScreen({ onBack, onSubmitRecipe }: RecipesCreateScreenProp
 
     if (!formValues.prepMinutes.trim()) {
       errors.prepMinutes = 'Informe o tempo de preparo.';
+    } else if (Number(formValues.prepMinutes) <= 0) {
+      errors.prepMinutes = 'Informe um tempo de preparo positivo.';
     }
 
     if (!formValues.servings.trim()) {
       errors.servings = 'Informe o rendimento.';
+    } else if (Number(formValues.servings) <= 0) {
+      errors.servings = 'Informe um rendimento positivo.';
     }
 
     if (!formValues.selectedIngredients.length) {
@@ -240,21 +265,43 @@ function RecipesCreateScreen({ onBack, onSubmitRecipe }: RecipesCreateScreenProp
     return errors;
   };
 
-  const handlePublishRecipe = () => {
-    const errors = validateForPublish();
+  const validateForDraft = (): RecipeCreateValidationErrors => {
+    const errors: RecipeCreateValidationErrors = {};
+
+    if (!formValues.title.trim()) {
+      errors.title = 'Informe o nome da receita.';
+      errors.submit = 'Informe ao menos o nome da receita para salvar como rascunho.';
+    }
+
+    return errors;
+  };
+
+  const handleSubmit = async (status: RecipeStatus) => {
+    if (isSubmitting) {
+      return;
+    }
+
+    const errors = status === 'published' ? validateForPublish() : validateForDraft();
 
     if (Object.keys(errors).length) {
       setValidationErrors(errors);
+      setSubmissionError(null);
       return;
     }
 
     setValidationErrors({});
-    onSubmitRecipe(formValues, 'published');
-  };
+    setSubmissionError(null);
+    setSubmitIntent(status);
 
-  const handleSaveDraft = () => {
-    setValidationErrors({});
-    onSubmitRecipe(formValues, 'draft');
+    try {
+      await onSubmitRecipe(formValues, status);
+    } catch (error) {
+      setSubmissionError(
+        getErrorMessage(error, 'Nao foi possivel salvar a receita no momento.'),
+      );
+    } finally {
+      setSubmitIntent(null);
+    }
   };
 
   return (
@@ -390,7 +437,7 @@ function RecipesCreateScreen({ onBack, onSubmitRecipe }: RecipesCreateScreenProp
         onRemoveMedia={handleRemoveMedia}
       />
 
-      {validationErrors.submit ? (
+      {submissionError || validationErrors.submit ? (
         <AppContainer
           backgroundColor="error"
           borderRadius="3xl"
@@ -398,35 +445,43 @@ function RecipesCreateScreen({ onBack, onSubmitRecipe }: RecipesCreateScreenProp
           marginBottom="xl"
         >
           <AppText color="textInverse" size="md" style={{ fontWeight: theme.fontWeights.semibold }}>
-            {validationErrors.submit}
+            {submissionError ?? validationErrors.submit}
           </AppText>
         </AppContainer>
       ) : null}
 
       {formValues.isCollaborative ? (
         <AppButton
+          disabled={isSubmitting}
           fullWidth
           label="Postar rascunho"
+          loading={submitIntent === 'draft'}
           size="lg"
           style={{
             marginBottom: theme.spacing.lg,
             minHeight: theme.spacing['7xl'],
           }}
           textStyle={{ fontSize: theme.fontSizes.md }}
-          onPress={handleSaveDraft}
+          onPress={() => {
+            handleSubmit('draft');
+          }}
         />
       ) : null}
 
       <AppButton
+        disabled={isSubmitting}
         fullWidth
         label="Postar receita"
+        loading={submitIntent === 'published'}
         size="lg"
         variant={formValues.isCollaborative ? 'outline' : 'primary'}
         style={{
           minHeight: theme.spacing['7xl'],
         }}
         textStyle={{ fontSize: theme.fontSizes.md }}
-        onPress={handlePublishRecipe}
+        onPress={() => {
+          handleSubmit('published');
+        }}
       />
     </ScrollView>
   );
