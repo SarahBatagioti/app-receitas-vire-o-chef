@@ -65,6 +65,18 @@ export function buildApiUrl(path: string): string {
   return buildUrl(path);
 }
 
+export function buildServerUrl(path: string): string {
+  const normalizedBaseUrl = normalizeBaseUrl(env.apiBaseUrl);
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+
+  try {
+    const url = new URL(normalizedBaseUrl);
+    return `${url.origin}${normalizedPath}`;
+  } catch {
+    return buildUrl(path);
+  }
+}
+
 function extractErrorMessage(payload: unknown, fallbackMessage: string): string {
   if (!payload || typeof payload !== 'object') {
     return fallbackMessage;

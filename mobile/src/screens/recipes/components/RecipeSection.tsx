@@ -10,9 +10,10 @@ type RecipeSectionProps = {
   title: string;
   recipes: RecipeListItem[];
   onRecipePress?: (recipe: RecipeListItem) => void;
+  onToggleFavorite?: (recipe: RecipeListItem) => void;
 };
 
-function RecipeSection({ title, recipes, onRecipePress }: RecipeSectionProps) {
+function RecipeSection({ title, recipes, onRecipePress, onToggleFavorite }: RecipeSectionProps) {
   const { theme } = useAppTheme();
 
   return (
@@ -45,6 +46,7 @@ function RecipeSection({ title, recipes, onRecipePress }: RecipeSectionProps) {
               key={recipe.id}
               isLast={index === recipes.length - 1}
               onPress={onRecipePress}
+              onToggleFavorite={onToggleFavorite}
               recipe={recipe}
             />
           ))}

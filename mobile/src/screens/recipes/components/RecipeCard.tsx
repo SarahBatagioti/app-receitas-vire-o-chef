@@ -9,6 +9,7 @@ import { RecipeDifficulty, RecipeListItem } from '../types';
 type RecipeCardProps = {
   recipe: RecipeListItem;
   onPress?: (recipe: RecipeListItem) => void;
+  onToggleFavorite?: (recipe: RecipeListItem) => void;
   isLast?: boolean;
 };
 
@@ -37,13 +38,14 @@ const difficultyMeta: Record<
   },
 };
 
-function RecipeCard({ recipe, onPress, isLast = false }: RecipeCardProps) {
+function RecipeCard({ recipe, onPress, onToggleFavorite, isLast = false }: RecipeCardProps) {
   const { theme } = useAppTheme();
   const { width } = useWindowDimensions();
   const cardWidth = Math.min(width * 0.41, theme.spacing['7xl'] * 2.85);
   const imageHeight = theme.spacing['6xl'] * 2;
   const infoMeta = difficultyMeta[recipe.difficulty];
   const heartColor = recipe.isFavorite ? theme.colors.primary : theme.colors.surface;
+  const heartFill = recipe.isFavorite ? theme.colors.primary : 'transparent';
 
   return (
     <Pressable
@@ -69,18 +71,42 @@ function RecipeCard({ recipe, onPress, isLast = false }: RecipeCardProps) {
             position: 'relative',
           }}
         >
-          <Image
-            resizeMode="cover"
-            source={{ uri: recipe.imageUrl }}
-            style={{
-              height: imageHeight,
-              width: '100%',
-            }}
-          />
+          {recipe.imageUrl ? (
+            <Image
+              resizeMode="cover"
+              source={{ uri: recipe.imageUrl }}
+              style={{
+                height: imageHeight,
+                width: '100%',
+              }}
+            />
+          ) : (
+            <AppContainer
+              align="center"
+              backgroundColor="surfaceSecondary"
+              justify="center"
+              style={{
+                height: imageHeight,
+                width: '100%',
+              }}
+            >
+              <AppText color="textSecondary" size="md" style={{ fontWeight: theme.fontWeights.semibold }}>
+                Sem midia principal
+              </AppText>
+            </AppContainer>
+          )}
         </AppContainer>
 
         <Pressable
-          accessibilityLabel={`Favoritar ${recipe.title}`}
+          accessibilityLabel={
+            recipe.isFavorite
+              ? `Remover ${recipe.title} dos favoritos`
+              : `Adicionar ${recipe.title} aos favoritos`
+          }
+          onPress={(event) => {
+            event.stopPropagation();
+            onToggleFavorite?.(recipe);
+          }}
           style={{
             alignItems: 'center',
             backgroundColor: 'transparent',
@@ -95,7 +121,7 @@ function RecipeCard({ recipe, onPress, isLast = false }: RecipeCardProps) {
         >
           <Heart
             color={heartColor}
-            fill={heartColor}
+            fill={heartFill}
             size={theme.spacing.xl}
             strokeWidth={1.8}
           />

@@ -1,4 +1,4 @@
-import { buildApiUrl, api } from './api';
+import { buildServerUrl, api } from './api';
 
 export type RecipeApiDifficulty = 'FACIL' | 'INTERMEDIARIO' | 'DIFICIL';
 export type RecipeApiStatus = 'PUBLICADA' | 'RASCUNHO';
@@ -102,9 +102,12 @@ function readBoolean(value: unknown): boolean {
   return Boolean(value);
 }
 
-function extractDataPayload(payload: unknown): unknown {
+function extractDataPayload(
+  payload: unknown,
+  invalidResponseMessage = 'Resposta invalida recebida da API.',
+): unknown {
   if (!isRecord(payload)) {
-    throw new Error('Resposta invalida recebida ao cadastrar receita.');
+    throw new Error(invalidResponseMessage);
   }
 
   const nestedData = payload.data;
@@ -201,11 +204,14 @@ function normalizeRecipePreparationStep(payload: unknown): RecipePreparationStep
   };
 }
 
-function normalizeRecipeRecord(payload: unknown): RecipeRecord {
-  const extractedPayload = extractDataPayload(payload);
+function normalizeRecipeRecord(
+  payload: unknown,
+  invalidResponseMessage = 'Resposta invalida recebida da API.',
+): RecipeRecord {
+  const extractedPayload = extractDataPayload(payload, invalidResponseMessage);
 
   if (!isRecord(extractedPayload)) {
-    throw new Error('Resposta invalida recebida ao cadastrar receita.');
+    throw new Error(invalidResponseMessage);
   }
 
   const recipePayload = extractedPayload;
@@ -214,7 +220,7 @@ function normalizeRecipeRecord(payload: unknown): RecipeRecord {
   const status = recipePayload.status;
 
   if (!id || !nome || (status !== 'PUBLICADA' && status !== 'RASCUNHO')) {
-    throw new Error('Resposta invalida recebida ao cadastrar receita.');
+    throw new Error(invalidResponseMessage);
   }
 
   const dificuldade = recipePayload.dificuldade;
@@ -261,18 +267,41 @@ function normalizeRecipeRecord(payload: unknown): RecipeRecord {
   };
 }
 
+function normalizeRecipeRecords(
+  payload: unknown,
+  invalidResponseMessage = 'Resposta invalida recebida da API.',
+): RecipeRecord[] {
+  const extractedPayload = extractDataPayload(payload, invalidResponseMessage);
+
+  if (!Array.isArray(extractedPayload)) {
+    throw new Error(invalidResponseMessage);
+  }
+
+  return extractedPayload.map((item) => normalizeRecipeRecord(item, invalidResponseMessage));
+}
+
 function resolveRecipeMediaUrl(url: string): string {
   if (/^https?:\/\//i.test(url)) {
     return url;
   }
 
-  return buildApiUrl(url.startsWith('/') ? url : `/${url}`);
+  return buildServerUrl(url.startsWith('/') ? url : `/${url}`);
 }
 
 class RecipeService {
+  async listMyRecipes(): Promise<RecipeRecord[]> {
+    const response = await api.get<unknown>('/receitas/minhas', true);
+    return normalizeRecipeRecords(response, 'Resposta invalida recebida ao listar receitas.');
+  }
+
+  async getRecipeById(recipeId: string): Promise<RecipeRecord> {
+    const response = await api.get<unknown>(`/receitas/${recipeId}`, true);
+    return normalizeRecipeRecord(response, 'Resposta invalida recebida ao buscar a receita.');
+  }
+
   async createRecipe(payload: CreateRecipePayload): Promise<RecipeRecord> {
     const response = await api.post<unknown, CreateRecipePayload>('/receitas', payload, true);
-    return normalizeRecipeRecord(response);
+    return normalizeRecipeRecord(response, 'Resposta invalida recebida ao cadastrar receita.');
   }
 
   async uploadRecipeMedia(
@@ -295,7 +324,10 @@ class RecipeService {
       formData,
       true,
     );
-    const payload = extractDataPayload(response);
+    const payload = extractDataPayload(
+      response,
+      'Resposta invalida recebida ao enviar as midias.',
+    );
 
     if (!Array.isArray(payload)) {
       throw new Error('Resposta invalida recebida ao enviar as midias.');

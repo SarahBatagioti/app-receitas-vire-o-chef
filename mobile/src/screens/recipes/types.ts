@@ -64,7 +64,7 @@ export type RecipeCreateMedia = {
 export type RecipeListItem = {
   id: string;
   title: string;
-  imageUrl: string;
+  imageUrl: string | null;
   difficulty: RecipeDifficulty;
   prepMinutes: number;
   rating: number;
@@ -76,8 +76,8 @@ export type RecipeListItem = {
 
 export type RecipeAuthor = {
   name: string;
-  followers: number;
-  avatarUrl: string;
+  subtitle?: string;
+  avatarUrl?: string | null;
 };
 
 export type RecipeNutrition = {
@@ -91,7 +91,7 @@ export type RecipeIngredient = {
   id: string;
   name: string;
   quantity: string;
-  imageUrl: string;
+  imageUrl?: string | null;
   checked?: boolean;
 };
 
@@ -113,6 +113,7 @@ export type RecipeDetail = RecipeListItem & {
   reviewsCount: number;
   commentsCount: number;
   author: RecipeAuthor;
+  primaryMedia: RecipeDetailMedia | null;
   nutrition: RecipeNutrition;
   ingredients: RecipeIngredient[];
   steps: RecipeStep[];

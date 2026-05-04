@@ -1,6 +1,7 @@
 import React from 'react';
 
 import { useAuth } from '../../hooks/useAuth';
+import { AuthUser } from '../../types/auth';
 import { getErrorMessage } from '../../services/api';
 import {
   CreateRecipePayload,
@@ -11,21 +12,18 @@ import {
   RecipeRecord,
   recipeService,
 } from '../../services/recipeService';
-import { cloneRecipeDetails, cloneRecipesCollections } from './mocks/recipes';
 import RecipeDetailScreen from './RecipeDetailScreen';
 import RecipesCreateScreen from './RecipesCreateScreen';
 import RecipesHomeScreen from './RecipesHomeScreen';
 import {
   RecipeCreateFormValues,
   RecipeDetail,
+  RecipeDetailMedia,
   RecipeListItem,
   RecipeStatus,
   RecipesHomeCollections,
   RecipesRoute,
 } from './types';
-
-const RECIPE_PLACEHOLDER_IMAGE =
-  'https://images.unsplash.com/photo-1495521821757-a1efb6729352?auto=format&fit=crop&w=900&q=80';
 
 const STEP_ACCENTS: Array<'brandGreen' | 'brandYellow' | 'brandOrange'> = [
   'brandGreen',
@@ -36,6 +34,14 @@ const STEP_ACCENTS: Array<'brandGreen' | 'brandYellow' | 'brandOrange'> = [
 type SubmitRecipeOptions = {
   onUploadStart?: () => void;
 };
+
+function createEmptyCollections(): RecipesHomeCollections {
+  return {
+    myPublications: [],
+    favoriteRecipes: [],
+    draftRecipes: [],
+  };
+}
 
 function mapApiDifficultyToUi(
   difficulty: RecipeApiDifficulty | null,
@@ -128,12 +134,20 @@ function buildCreateRecipePayload(
   };
 }
 
-function getPrimaryImageUrl(recipe: RecipeRecord): string {
-  const primaryImage =
+function getPrimaryMedia(recipe: RecipeRecord): RecipeMediaRecord | null {
+  if (recipe.midiaPrincipal) {
+    return recipe.midiaPrincipal;
+  }
+
+  return recipe.midias[0] ?? null;
+}
+
+function getPrimaryImageUrl(recipe: RecipeRecord): string | null {
+  const primaryMedia =
     recipe.midias.find((media) => media.tipo === 'IMAGEM') ??
     (recipe.midiaPrincipal?.tipo === 'IMAGEM' ? recipe.midiaPrincipal : null);
 
-  return primaryImage?.url ?? RECIPE_PLACEHOLDER_IMAGE;
+  return primaryMedia?.url ?? null;
 }
 
 function mergeUploadedMedia(recipe: RecipeRecord, uploadedMedia: RecipeMediaRecord[]): RecipeRecord {
@@ -148,7 +162,10 @@ function mergeUploadedMedia(recipe: RecipeRecord, uploadedMedia: RecipeMediaReco
   };
 }
 
-function buildRecipeListItem(recipe: RecipeRecord): RecipeListItem {
+function buildRecipeListItem(
+  recipe: RecipeRecord,
+  favoriteRecipeIds: string[] = [],
+): RecipeListItem {
   return {
     id: recipe.id,
     title: recipe.nome,
@@ -157,28 +174,113 @@ function buildRecipeListItem(recipe: RecipeRecord): RecipeListItem {
     prepMinutes: recipe.tempoPreparoMinutos ?? 0,
     rating: recipe.avaliacaoMedia,
     servings: recipe.rendimentoPorcoes ?? 0,
+    isFavorite: favoriteRecipeIds.includes(recipe.id),
     isCollaborative: recipe.isColaborativa,
     status: mapApiStatusToUi(recipe.status),
   };
+}
+
+function syncCollectionsWithFavorites(
+  collections: RecipesHomeCollections,
+  favoriteRecipeIds: string[],
+): RecipesHomeCollections {
+  const favoriteIdsSet = new Set(favoriteRecipeIds);
+  const applyFavoriteFlag = (recipes: RecipeListItem[]) =>
+    recipes.map((recipe) => ({
+      ...recipe,
+      isFavorite: favoriteIdsSet.has(recipe.id),
+    }));
+
+  const myPublications = applyFavoriteFlag(collections.myPublications);
+  const draftRecipes = applyFavoriteFlag(collections.draftRecipes);
+  const allRecipes = [...myPublications, ...draftRecipes];
+  const favoriteRecipes = favoriteRecipeIds.reduce<RecipeListItem[]>((recipes, recipeId) => {
+    const matchingRecipe = allRecipes.find((recipe) => recipe.id === recipeId);
+
+    if (matchingRecipe) {
+      recipes.push(matchingRecipe);
+    }
+
+    return recipes;
+  }, []);
+
+  return {
+    myPublications,
+    favoriteRecipes,
+    draftRecipes,
+  };
+}
+
+function buildRecipesCollections(
+  recipes: RecipeRecord[],
+  favoriteRecipeIds: string[] = [],
+): RecipesHomeCollections {
+  return recipes.reduce<RecipesHomeCollections>(
+    (collections, recipe) => {
+      const listItem = buildRecipeListItem(recipe, favoriteRecipeIds);
+
+      if (recipe.status === 'RASCUNHO') {
+        collections.draftRecipes.push(listItem);
+      } else {
+        collections.myPublications.push(listItem);
+      }
+
+      if (listItem.isFavorite) {
+        collections.favoriteRecipes.push(listItem);
+      }
+
+      return collections;
+    },
+    createEmptyCollections(),
+  );
 }
 
 function formatNutritionValue(value: number | null, suffix: string) {
   return value !== null ? `${value} ${suffix}` : `0 ${suffix}`;
 }
 
-function buildRecipeDetail(recipe: RecipeRecord, authorName: string): RecipeDetail {
-  const listItem = buildRecipeListItem(recipe);
+function formatIngredientQuantity(quantity: string | null, unit: string | null): string {
+  const valueParts = [quantity, unit].filter(
+    (item): item is string => Boolean(item && item.trim()),
+  );
+
+  return valueParts.length ? valueParts.join(' ') : 'A gosto';
+}
+
+function mapRecipeDetailMedia(media: RecipeMediaRecord): RecipeDetailMedia {
+  return {
+    id: media.id,
+    type: mapApiMediaTypeToUi(media.tipo),
+    url: media.url,
+    fileName: media.nomeArquivo ?? `${media.tipo.toLowerCase()}-${media.ordem}`,
+  };
+}
+
+function buildRecipeDetail(
+  recipe: RecipeRecord,
+  user: AuthUser | null,
+  favoriteRecipeIds: string[] = [],
+): RecipeDetail {
+  const listItem = buildRecipeListItem(recipe, favoriteRecipeIds);
+  const orderedMedia = [...recipe.midias].sort((left, right) => left.ordem - right.ordem);
+  const media = orderedMedia.map(mapRecipeDetailMedia);
+  const primaryMediaRecord = getPrimaryMedia(recipe);
+  const primaryMedia = primaryMediaRecord ? mapRecipeDetailMedia(primaryMediaRecord) : media[0] ?? null;
+  const mediaWithPrimary =
+    primaryMedia && !media.some((item) => item.id === primaryMedia.id)
+      ? [primaryMedia, ...media]
+      : media;
 
   return {
     ...listItem,
     reviewsCount: 0,
     commentsCount: 0,
     author: {
-      name: authorName,
-      followers: 1258,
-      avatarUrl:
-        'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80',
+      name: user?.name ?? 'Voce',
+      subtitle: user?.email ?? 'Autor da receita',
+      avatarUrl: user?.avatarUrl ?? null,
     },
+    primaryMedia,
     nutrition: {
       calories: formatNutritionValue(recipe.informacaoNutricional?.calorias ?? null, 'kcal'),
       proteins: formatNutritionValue(recipe.informacaoNutricional?.proteinas ?? null, 'g'),
@@ -188,9 +290,8 @@ function buildRecipeDetail(recipe: RecipeRecord, authorName: string): RecipeDeta
     ingredients: recipe.ingredientes.map((ingredient) => ({
       id: ingredient.id,
       name: ingredient.nome,
-      quantity: ingredient.quantidade ?? ingredient.unidade ?? 'a gosto',
-      imageUrl:
-        'https://images.unsplash.com/photo-1495521821757-a1efb6729352?auto=format&fit=crop&w=300&q=80',
+      quantity: formatIngredientQuantity(ingredient.quantidade, ingredient.unidade),
+      imageUrl: null,
     })),
     steps: recipe.modoPreparo.map((step, index) => ({
       id: step.id,
@@ -198,12 +299,7 @@ function buildRecipeDetail(recipe: RecipeRecord, authorName: string): RecipeDeta
       description: step.descricao,
       accentColor: STEP_ACCENTS[index % STEP_ACCENTS.length],
     })),
-    media: recipe.midias.map((media) => ({
-      id: media.id,
-      type: mapApiMediaTypeToUi(media.tipo),
-      url: media.url,
-      fileName: media.nomeArquivo ?? `${media.tipo.toLowerCase()}-${media.ordem}`,
-    })),
+    media: mediaWithPrimary,
   };
 }
 
@@ -211,19 +307,79 @@ function RecipesFlow() {
   const { user } = useAuth();
   const [currentRoute, setCurrentRoute] = React.useState<RecipesRoute>('home');
   const [selectedRecipeId, setSelectedRecipeId] = React.useState<string | null>(null);
+  const [selectedRecipeDetail, setSelectedRecipeDetail] = React.useState<RecipeDetail | null>(null);
   const [collections, setCollections] = React.useState<RecipesHomeCollections>(() =>
-    cloneRecipesCollections(),
-  );
-  const [recipeDetails, setRecipeDetails] = React.useState<Record<string, RecipeDetail>>(() =>
-    cloneRecipeDetails(),
+    createEmptyCollections(),
   );
   const [feedbackMessage, setFeedbackMessage] = React.useState<string | null>(null);
+  const [isCollectionsLoading, setIsCollectionsLoading] = React.useState(true);
+  const [collectionsError, setCollectionsError] = React.useState<string | null>(null);
+  const [isRecipeLoading, setIsRecipeLoading] = React.useState(false);
+  const [recipeError, setRecipeError] = React.useState<string | null>(null);
+  const [, setFavoriteRecipeIds] = React.useState<string[]>([]);
+  const latestRequestedRecipeIdRef = React.useRef<string | null>(null);
+  const favoriteRecipeIdsRef = React.useRef<string[]>([]);
 
-  const selectedRecipeDetail = selectedRecipeId ? recipeDetails[selectedRecipeId] : undefined;
+  const loadRecipes = React.useCallback(async () => {
+    setCollectionsError(null);
+    setIsCollectionsLoading(true);
+
+    try {
+      const recipes = await recipeService.listMyRecipes();
+      setCollections(buildRecipesCollections(recipes, favoriteRecipeIdsRef.current));
+    } catch (error) {
+      setCollections(createEmptyCollections());
+      setCollectionsError(
+        getErrorMessage(error, 'Nao foi possivel carregar suas receitas no momento.'),
+      );
+    } finally {
+      setIsCollectionsLoading(false);
+    }
+  }, []);
+
+  const loadRecipeDetail = React.useCallback(
+    async (recipeId: string) => {
+      latestRequestedRecipeIdRef.current = recipeId;
+      setRecipeError(null);
+      setIsRecipeLoading(true);
+
+      try {
+        const recipe = await recipeService.getRecipeById(recipeId);
+
+        if (latestRequestedRecipeIdRef.current !== recipeId) {
+          return;
+        }
+
+        setSelectedRecipeDetail(buildRecipeDetail(recipe, user, favoriteRecipeIdsRef.current));
+      } catch (error) {
+        if (latestRequestedRecipeIdRef.current !== recipeId) {
+          return;
+        }
+
+        setSelectedRecipeDetail(null);
+        setRecipeError(
+          getErrorMessage(error, 'Nao foi possivel carregar os detalhes da receita.'),
+        );
+      } finally {
+        if (latestRequestedRecipeIdRef.current === recipeId) {
+          setIsRecipeLoading(false);
+        }
+      }
+    },
+    [user],
+  );
+
+  React.useEffect(() => {
+    loadRecipes().catch(() => undefined);
+  }, [loadRecipes]);
 
   const handleGoHome = React.useCallback(() => {
+    latestRequestedRecipeIdRef.current = null;
     setCurrentRoute('home');
     setSelectedRecipeId(null);
+    setSelectedRecipeDetail(null);
+    setRecipeError(null);
+    setIsRecipeLoading(false);
   }, []);
 
   const handleOpenCreate = React.useCallback(() => {
@@ -231,11 +387,54 @@ function RecipesFlow() {
     setCurrentRoute('create');
   }, []);
 
-  const handleOpenRecipe = React.useCallback((recipe: RecipeListItem) => {
-    setFeedbackMessage(null);
-    setSelectedRecipeId(recipe.id);
-    setCurrentRoute('detail');
+  const handleOpenRecipe = React.useCallback(
+    (recipe: RecipeListItem) => {
+      setFeedbackMessage(null);
+      setSelectedRecipeId(recipe.id);
+      setSelectedRecipeDetail(null);
+      setCurrentRoute('detail');
+      loadRecipeDetail(recipe.id).catch(() => undefined);
+    },
+    [loadRecipeDetail],
+  );
+
+  const handleRetryRecipe = React.useCallback(() => {
+    if (!selectedRecipeId) {
+      return;
+    }
+
+    loadRecipeDetail(selectedRecipeId).catch(() => undefined);
+  }, [loadRecipeDetail, selectedRecipeId]);
+
+  const handleToggleFavorite = React.useCallback((recipeId: string) => {
+    setFavoriteRecipeIds((currentFavoriteRecipeIds) => {
+      const nextFavoriteRecipeIds = currentFavoriteRecipeIds.includes(recipeId)
+        ? currentFavoriteRecipeIds.filter((currentRecipeId) => currentRecipeId !== recipeId)
+        : [recipeId, ...currentFavoriteRecipeIds];
+
+      favoriteRecipeIdsRef.current = nextFavoriteRecipeIds;
+      setCollections((currentCollections) =>
+        syncCollectionsWithFavorites(currentCollections, nextFavoriteRecipeIds),
+      );
+      setSelectedRecipeDetail((currentRecipeDetail) =>
+        currentRecipeDetail && currentRecipeDetail.id === recipeId
+          ? {
+              ...currentRecipeDetail,
+              isFavorite: nextFavoriteRecipeIds.includes(recipeId),
+            }
+          : currentRecipeDetail,
+      );
+
+      return nextFavoriteRecipeIds;
+    });
   }, []);
+
+  const handleToggleFavoriteFromList = React.useCallback(
+    (recipe: RecipeListItem) => {
+      handleToggleFavorite(recipe.id);
+    },
+    [handleToggleFavorite],
+  );
 
   const handleSubmitRecipe = React.useCallback(
     async (
@@ -272,8 +471,8 @@ function RecipesFlow() {
         }
       }
 
-      const nextListItem = buildRecipeListItem(nextRecipe);
-      const nextDetail = buildRecipeDetail(nextRecipe, user?.name ?? 'Voce');
+      const nextListItem = buildRecipeListItem(nextRecipe, favoriteRecipeIdsRef.current);
+      const nextDetail = buildRecipeDetail(nextRecipe, user, favoriteRecipeIdsRef.current);
       const nextStatus = mapApiStatusToUi(nextRecipe.status);
 
       setCollections((current) => ({
@@ -290,14 +489,13 @@ function RecipesFlow() {
         draftRecipes:
           nextStatus === 'draft' ? [nextListItem, ...current.draftRecipes] : current.draftRecipes,
       }));
-      setRecipeDetails((current) => ({
-        ...current,
-        [nextRecipe.id]: nextDetail,
-      }));
 
       if (nextStatus === 'published') {
         setFeedbackMessage(uploadFeedbackMessage ?? 'Receita publicada com sucesso.');
         setSelectedRecipeId(nextRecipe.id);
+        setSelectedRecipeDetail(nextDetail);
+        setRecipeError(null);
+        setIsRecipeLoading(false);
         setCurrentRoute('detail');
         return;
       }
@@ -305,24 +503,38 @@ function RecipesFlow() {
       setFeedbackMessage(uploadFeedbackMessage ?? 'Rascunho salvo com sucesso.');
       setCurrentRoute('home');
       setSelectedRecipeId(null);
+      setSelectedRecipeDetail(null);
     },
-    [user?.name],
+    [user],
   );
 
   if (currentRoute === 'create') {
     return <RecipesCreateScreen onBack={handleGoHome} onSubmitRecipe={handleSubmitRecipe} />;
   }
 
-  if (currentRoute === 'detail' && selectedRecipeDetail) {
-    return <RecipeDetailScreen onBack={handleGoHome} recipe={selectedRecipeDetail} />;
+  if (currentRoute === 'detail' && selectedRecipeId) {
+    return (
+      <RecipeDetailScreen
+        errorMessage={recipeError}
+        isLoading={isRecipeLoading}
+        onBack={handleGoHome}
+        onRetry={handleRetryRecipe}
+        onToggleFavorite={handleToggleFavorite}
+        recipe={selectedRecipeDetail}
+      />
+    );
   }
 
   return (
     <RecipesHomeScreen
       collections={collections}
       feedbackMessage={feedbackMessage}
+      isLoading={isCollectionsLoading}
+      loadError={collectionsError}
       onAddRecipe={handleOpenCreate}
       onOpenRecipe={handleOpenRecipe}
+      onToggleFavorite={handleToggleFavoriteFromList}
+      onRetryLoad={loadRecipes}
     />
   );
 }

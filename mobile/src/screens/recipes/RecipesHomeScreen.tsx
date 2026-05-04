@@ -1,7 +1,7 @@
 import React from 'react';
 import { ScrollView } from 'react-native';
 
-import { AppContainer, AppHeader, AppText } from '../../components/ui';
+import { AppButton, AppContainer, AppHeader, AppText } from '../../components/ui';
 import { useAppTheme } from '../../contexts';
 import { RecipeListItem, RecipesHomeCollections } from './types';
 import { RecipeSearchBar, RecipeSection } from './components';
@@ -9,15 +9,23 @@ import { RecipeSearchBar, RecipeSection } from './components';
 type RecipesHomeScreenProps = {
   collections: RecipesHomeCollections;
   feedbackMessage?: string | null;
+  isLoading?: boolean;
+  loadError?: string | null;
   onAddRecipe: () => void;
   onOpenRecipe: (recipe: RecipeListItem) => void;
+  onToggleFavorite: (recipe: RecipeListItem) => void;
+  onRetryLoad?: () => void;
 };
 
 function RecipesHomeScreen({
   collections,
   feedbackMessage,
+  isLoading = false,
+  loadError,
   onAddRecipe,
   onOpenRecipe,
+  onToggleFavorite,
+  onRetryLoad,
 }: RecipesHomeScreenProps) {
   const { theme } = useAppTheme();
   const [searchValue, setSearchValue] = React.useState('');
@@ -64,14 +72,46 @@ function RecipesHomeScreen({
           value={searchValue}
         />
 
+        {isLoading ? (
+          <AppContainer backgroundColor="surface" borderRadius="3xl" marginBottom="xl" padding="lg" shadow="sm">
+            <AppText color="text" size="md" style={{ fontWeight: theme.fontWeights.semibold }}>
+              Carregando receitas...
+            </AppText>
+            <AppText color="textSecondary" marginTop="xs" size="md">
+              Buscando suas publicacoes e rascunhos mais recentes.
+            </AppText>
+          </AppContainer>
+        ) : null}
+
+        {loadError ? (
+          <AppContainer backgroundColor="surface" borderRadius="3xl" marginBottom="xl" padding="lg" shadow="sm">
+            <AppText color="error" size="md" style={{ fontWeight: theme.fontWeights.semibold }}>
+              Nao foi possivel carregar suas receitas.
+            </AppText>
+            <AppText color="textSecondary" marginTop="xs" size="md">
+              {loadError}
+            </AppText>
+            {onRetryLoad ? (
+              <AppButton
+                label="Tentar novamente"
+                onPress={onRetryLoad}
+                size="md"
+                style={{ alignSelf: 'flex-start', marginTop: theme.spacing.md }}
+              />
+            ) : null}
+          </AppContainer>
+        ) : null}
+
         <RecipeSection
           onRecipePress={onOpenRecipe}
+          onToggleFavorite={onToggleFavorite}
           recipes={myPublications}
           title="Minhas publicações"
         />
 
         <RecipeSection
           onRecipePress={onOpenRecipe}
+          onToggleFavorite={onToggleFavorite}
           recipes={favoriteRecipes}
           title="Favoritos"
         />
@@ -79,6 +119,7 @@ function RecipesHomeScreen({
         {draftRecipes.length ? (
           <RecipeSection
             onRecipePress={onOpenRecipe}
+            onToggleFavorite={onToggleFavorite}
             recipes={draftRecipes}
             title="Rascunhos"
           />

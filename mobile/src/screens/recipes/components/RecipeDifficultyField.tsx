@@ -104,6 +104,7 @@ function RecipeDifficultyField({ value, onChange }: RecipeDifficultyFieldProps) 
                 <Pressable key={option.value} onPress={() => handleSelect(option.value)}>
                   <AppContainer
                     align="center"
+                    backgroundColor="surface"
                     direction="row"
                     justify="space-between"
                     paddingVertical="md"

@@ -95,11 +95,17 @@ export function cloneRecipesCollections(): RecipesHomeCollections {
 export const recipeDetailsMock: Record<string, RecipeDetail> = {
   'recipe-1': {
     ...recipesMock.myPublications[0],
+    primaryMedia: {
+      id: 'recipe-1-media-1',
+      type: 'image',
+      url: recipesMock.myPublications[0].imageUrl ?? '',
+      fileName: 'salada-de-frutas.jpg',
+    },
     media: [
       {
         id: 'recipe-1-media-1',
         type: 'image',
-        url: recipesMock.myPublications[0].imageUrl,
+        url: recipesMock.myPublications[0].imageUrl ?? '',
         fileName: 'salada-de-frutas.jpg',
       },
     ],
@@ -107,7 +113,7 @@ export const recipeDetailsMock: Record<string, RecipeDetail> = {
     commentsCount: 2548,
     author: {
       name: 'Sarah Batagioti',
-      followers: 1258,
+      subtitle: 'Autora da receita',
       avatarUrl:
         'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80',
     },
@@ -165,11 +171,17 @@ export const recipeDetailsMock: Record<string, RecipeDetail> = {
   },
   'recipe-2': {
     ...recipesMock.myPublications[1],
+    primaryMedia: {
+      id: 'recipe-2-media-1',
+      type: 'image',
+      url: recipesMock.myPublications[1].imageUrl ?? '',
+      fileName: 'panqueca-de-quinoa.jpg',
+    },
     media: [
       {
         id: 'recipe-2-media-1',
         type: 'image',
-        url: recipesMock.myPublications[1].imageUrl,
+        url: recipesMock.myPublications[1].imageUrl ?? '',
         fileName: 'panqueca-de-quinoa.jpg',
       },
     ],
@@ -177,7 +189,7 @@ export const recipeDetailsMock: Record<string, RecipeDetail> = {
     commentsCount: 418,
     author: {
       name: 'Sarah Batagioti',
-      followers: 1258,
+      subtitle: 'Autora da receita',
       avatarUrl:
         'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80',
     },
@@ -228,11 +240,17 @@ export const recipeDetailsMock: Record<string, RecipeDetail> = {
   },
   'recipe-3': {
     ...recipesMock.myPublications[2],
+    primaryMedia: {
+      id: 'recipe-3-media-1',
+      type: 'image',
+      url: recipesMock.myPublications[2].imageUrl ?? '',
+      fileName: 'drink-de-morango.jpg',
+    },
     media: [
       {
         id: 'recipe-3-media-1',
         type: 'image',
-        url: recipesMock.myPublications[2].imageUrl,
+        url: recipesMock.myPublications[2].imageUrl ?? '',
         fileName: 'drink-de-morango.jpg',
       },
     ],
@@ -240,7 +258,7 @@ export const recipeDetailsMock: Record<string, RecipeDetail> = {
     commentsCount: 96,
     author: {
       name: 'Sarah Batagioti',
-      followers: 1258,
+      subtitle: 'Autora da receita',
       avatarUrl:
         'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80',
     },
@@ -278,11 +296,17 @@ export const recipeDetailsMock: Record<string, RecipeDetail> = {
   },
   'recipe-7': {
     ...recipesMock.draftRecipes[0],
+    primaryMedia: {
+      id: 'recipe-7-media-1',
+      type: 'image',
+      url: recipesMock.draftRecipes[0].imageUrl ?? '',
+      fileName: 'bolo-de-banana.jpg',
+    },
     media: [
       {
         id: 'recipe-7-media-1',
         type: 'image',
-        url: recipesMock.draftRecipes[0].imageUrl,
+        url: recipesMock.draftRecipes[0].imageUrl ?? '',
         fileName: 'bolo-de-banana.jpg',
       },
     ],
@@ -290,7 +314,7 @@ export const recipeDetailsMock: Record<string, RecipeDetail> = {
     commentsCount: 0,
     author: {
       name: 'Sarah Batagioti',
-      followers: 1258,
+      subtitle: 'Autora da receita',
       avatarUrl:
         'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80',
     },
