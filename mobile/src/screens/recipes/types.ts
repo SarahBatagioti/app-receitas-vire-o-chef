@@ -9,6 +9,7 @@ export type RecipeCreateFormValues = {
   isCollaborative: boolean;
   selectedIngredients: RecipeCreateIngredient[];
   nutrition: RecipeCreateNutrition;
+  preparationSteps: RecipeCreateStep[];
 };
 
 export type RecipeCreateIngredient = {
@@ -23,6 +24,12 @@ export type RecipeCreateNutrition = {
   proteins: string;
   carbohydrates: string;
   fats: string;
+};
+
+export type RecipeCreateStep = {
+  id: string;
+  description: string;
+  fileName?: string;
 };
 
 export type RecipeListItem = {

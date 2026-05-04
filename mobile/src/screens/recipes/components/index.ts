@@ -3,6 +3,7 @@ export { default as RecipeCollaborativeSwitch } from './RecipeCollaborativeSwitc
 export { default as RecipeDifficultyField } from './RecipeDifficultyField';
 export { default as RecipeIngredientsSection } from './RecipeIngredientsSection';
 export { default as RecipeNutritionSection } from './RecipeNutritionSection';
+export { default as RecipePreparationSection } from './RecipePreparationSection';
 export { default as RecipeSearchBar } from './RecipeSearchBar';
 export { default as RecipeSection } from './RecipeSection';
 export { default as RecipesTopBar } from './RecipesTopBar';

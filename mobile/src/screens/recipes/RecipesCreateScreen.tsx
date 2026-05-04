@@ -8,6 +8,7 @@ import {
   RecipeDifficultyField,
   RecipeIngredientsSection,
   RecipeNutritionSection,
+  RecipePreparationSection,
   RecipesTopBar,
 } from './components';
 import { recipeIngredientsCatalogMock } from './mocks/ingredients';
@@ -36,11 +37,18 @@ const initialFormValues: RecipeCreateFormValues = {
     carbohydrates: '120',
     fats: '3',
   },
+  preparationSteps: [
+    {
+      id: 'step-create-1',
+      description: '',
+    },
+  ],
 };
 
 function RecipesCreateScreen({ onBack }: RecipesCreateScreenProps) {
   const { theme } = useAppTheme();
   const [formValues, setFormValues] = React.useState<RecipeCreateFormValues>(initialFormValues);
+  const nextPreparationStepId = React.useRef(2);
 
   const updateField = <Key extends keyof RecipeCreateFormValues>(
     field: Key,
@@ -91,6 +99,63 @@ function RecipesCreateScreen({ onBack }: RecipesCreateScreenProps) {
         [field]: value,
       },
     }));
+  };
+
+  const handleAddPreparationStep = () => {
+    const newStepId = `step-create-${nextPreparationStepId.current}`;
+    nextPreparationStepId.current += 1;
+
+    setFormValues((current) => ({
+      ...current,
+      preparationSteps: [
+        ...current.preparationSteps,
+        {
+          id: newStepId,
+          description: '',
+        },
+      ],
+    }));
+  };
+
+  const handleChangePreparationStepDescription = (stepId: string, value: string) => {
+    setFormValues((current) => ({
+      ...current,
+      preparationSteps: current.preparationSteps.map((step) =>
+        step.id === stepId
+          ? {
+              ...step,
+              description: value,
+            }
+          : step,
+      ),
+    }));
+  };
+
+  const handleChangePreparationStepFile = (stepId: string, nextFileName?: string) => {
+    setFormValues((current) => ({
+      ...current,
+      preparationSteps: current.preparationSteps.map((step) =>
+        step.id === stepId
+          ? {
+              ...step,
+              fileName: nextFileName,
+            }
+          : step,
+      ),
+    }));
+  };
+
+  const handleRemovePreparationStep = (stepId: string) => {
+    setFormValues((current) => {
+      if (current.preparationSteps.length <= 1) {
+        return current;
+      }
+
+      return {
+        ...current,
+        preparationSteps: current.preparationSteps.filter((step) => step.id !== stepId),
+      };
+    });
   };
 
   return (
@@ -207,13 +272,21 @@ function RecipesCreateScreen({ onBack }: RecipesCreateScreenProps) {
         values={formValues.nutrition}
       />
 
+      <RecipePreparationSection
+        onAddStep={handleAddPreparationStep}
+        onChangeStepDescription={handleChangePreparationStepDescription}
+        onChangeStepFile={handleChangePreparationStepFile}
+        onRemoveStep={handleRemovePreparationStep}
+        steps={formValues.preparationSteps}
+      />
+
       <AppContainer marginBottom="5xl">
         <AppText
           color="textSecondary"
           size="md"
           lineHeight="relaxed"
         >
-          O modo de preparo e as mídias serão adicionados na próxima etapa.
+          As mídias serão adicionadas na próxima etapa.
         </AppText>
       </AppContainer>
 
