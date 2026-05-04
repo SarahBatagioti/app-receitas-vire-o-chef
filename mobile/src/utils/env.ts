@@ -9,10 +9,12 @@ type RequiredEnvKey =
   | 'FIREBASE_MESSAGING_SENDER_ID'
   | 'FIREBASE_APP_ID'
   | 'GOOGLE_WEB_CLIENT_ID'
-  | 'GOOGLE_ANDROID_CLIENT_ID'
-  | 'GOOGLE_IOS_CLIENT_ID'
   | 'FACEBOOK_APP_ID'
   | 'FACEBOOK_CLIENT_TOKEN';
+
+type OptionalEnvKey =
+  | 'GOOGLE_ANDROID_CLIENT_ID'
+  | 'GOOGLE_IOS_CLIENT_ID';
 
 function readRuntimeEnv(): RuntimeEnv {
   try {
@@ -37,6 +39,11 @@ function getRequiredEnv(key: RequiredEnvKey): string {
   }
 
   return value;
+}
+
+function getOptionalEnv(key: OptionalEnvKey): string | undefined {
+  const value = readRuntimeEnv()[key]?.trim();
+  return value ? value : undefined;
 }
 
 export const env = {
@@ -65,10 +72,10 @@ export const env = {
     return getRequiredEnv('GOOGLE_WEB_CLIENT_ID');
   },
   get googleAndroidClientId() {
-    return getRequiredEnv('GOOGLE_ANDROID_CLIENT_ID');
+    return getOptionalEnv('GOOGLE_ANDROID_CLIENT_ID');
   },
   get googleIosClientId() {
-    return getRequiredEnv('GOOGLE_IOS_CLIENT_ID');
+    return getOptionalEnv('GOOGLE_IOS_CLIENT_ID');
   },
   get facebookAppId() {
     return getRequiredEnv('FACEBOOK_APP_ID');

@@ -34,6 +34,8 @@ function AppContent() {
   const { isAuthenticated, isInitializing, pendingSocialAuth } = useAuth();
   const isMainScreen = activeScreen in SCREENS;
   const ActiveScreen = isMainScreen ? SCREENS[activeScreen as ScreenKey] : null;
+  const screenBackgroundColor =
+    !isInitializing && activeScreen === 'access' ? theme.colors.surface : theme.colors.background;
 
   const goBackToAccess = React.useCallback(() => {
     setActiveScreen('access');
@@ -64,13 +66,13 @@ function AppContent() {
     <SafeAreaView
       style={{
         flex: 1,
-        backgroundColor: theme.colors.background,
+        backgroundColor: screenBackgroundColor,
       }}
       edges={['top']}
     >
       <StatusBar
         barStyle={themeMode === 'light' ? 'dark-content' : 'light-content'}
-        backgroundColor={theme.colors.background}
+        backgroundColor={screenBackgroundColor}
       />
 
       <AppContainer flex direction="column" justify="flex-start" backgroundColor="background">
@@ -80,7 +82,7 @@ function AppContent() {
 
             <AppContainer flex align="center" justify="center" padding="xl">
               <AppText color="primary" size="xl" weight="bold">
-              Carregando sua sessão...
+                Carregando sua sessão...
               </AppText>
             </AppContainer>
           </AppContainer>
@@ -89,7 +91,6 @@ function AppContent() {
         {!isInitializing && activeScreen === 'access' ? (
           <AccessScreen
             onEmailPress={() => setActiveScreen('login')}
-            onGooglePress={() => setActiveScreen('login')}
             onRegisterPress={() => setActiveScreen('register')}
           />
         ) : null}
@@ -99,7 +100,6 @@ function AppContent() {
             onBack={goBackToAccess}
             onForgotPassword={() => setActiveScreen('forgot-password')}
             onRegister={() => setActiveScreen('register')}
-            onSocialRegisterRequired={() => setActiveScreen('complete-social-register')}
           />
         ) : null}
 
@@ -107,7 +107,6 @@ function AppContent() {
           <RegisterScreen
             onBack={goBackToAccess}
             onLogin={() => setActiveScreen('login')}
-            onSocialRegisterRequired={() => setActiveScreen('complete-social-register')}
           />
         ) : null}
 

@@ -18,6 +18,12 @@ function CompleteSocialRegisterScreen({ onBack, onComplete }: CompleteSocialRegi
   const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
 
+  React.useEffect(() => {
+    if (!username && pendingSocialAuth?.name) {
+      setUsername(pendingSocialAuth.name);
+    }
+  }, [pendingSocialAuth?.name, username]);
+
   const handleCompleteSocialRegister = React.useCallback(async () => {
     clearAuthError();
     setError(null);
@@ -50,20 +56,11 @@ function CompleteSocialRegisterScreen({ onBack, onComplete }: CompleteSocialRegi
 
   return (
     <AuthContainer onBack={onBack} showBackButton title="Cadastro">
-      <AppText
-        color="text"
-        size="lg"
-        weight="bold"
-        style={{ marginBottom: theme.spacing.md }}
-      >
+      <AppText color="text" size="lg" weight="bold" style={{ marginBottom: theme.spacing.md }}>
         E-mail vinculado:
       </AppText>
 
-      <AppText
-        color="textSecondary"
-        size="lg"
-        style={{ marginBottom: theme.spacing.xl }}
-      >
+      <AppText color="textSecondary" size="lg" style={{ marginBottom: theme.spacing.xl }}>
         {email}
       </AppText>
 
@@ -92,7 +89,7 @@ function CompleteSocialRegisterScreen({ onBack, onComplete }: CompleteSocialRegi
         onPress={handleCompleteSocialRegister}
       />
 
-      {resolvedError && username && password ? (
+      {resolvedError ? (
         <AppText color="error" size="sm" style={{ marginTop: theme.spacing.md }}>
           {resolvedError}
         </AppText>

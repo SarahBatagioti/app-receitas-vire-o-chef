@@ -1,31 +1,32 @@
 import React from 'react';
 
-import { AuthButton, AuthContainer, AuthInput, SocialButton } from '../../components/auth';
-import { AppContainer, AppText } from '../../components/ui';
+import { AuthButton, AuthContainer, AuthInput } from '../../components/auth';
+import { AppText } from '../../components/ui';
 import { useAppTheme } from '../../contexts';
 import { useAuth } from '../../hooks/useAuth';
 
 type RegisterScreenProps = {
   onBack: () => void;
   onLogin: () => void;
-  onSocialRegisterRequired: () => void;
 };
 
-function RegisterScreen({ onBack, onLogin, onSocialRegisterRequired }: RegisterScreenProps) {
+function RegisterScreen({ onBack, onLogin }: RegisterScreenProps) {
   const { theme } = useAppTheme();
-  const { authError, clearAuthError, loginWithFacebook, loginWithGoogle, register } = useAuth();
+  const { authError, clearAuthError, register } = useAuth();
   const [email, setEmail] = React.useState('');
   const [username, setUsername] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [error, setError] = React.useState<string | null>(null);
+  const [showEmailRegisterValidation, setShowEmailRegisterValidation] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
-  const [socialLoading, setSocialLoading] = React.useState<'google' | 'facebook' | null>(null);
 
   const handleRegister = React.useCallback(async () => {
     clearAuthError();
     setError(null);
+    setShowEmailRegisterValidation(false);
 
     if (!email || !username || !password) {
+      setShowEmailRegisterValidation(true);
       setError('Preencha os campos para concluir o cadastro.');
       return;
     }
@@ -48,63 +49,13 @@ function RegisterScreen({ onBack, onLogin, onSocialRegisterRequired }: RegisterS
     }
   }, [clearAuthError, email, password, register, username]);
 
-  const handleGoogleAuth = React.useCallback(async () => {
-    clearAuthError();
-    setError(null);
-    setSocialLoading('google');
-
-    try {
-      const response = await loginWithGoogle();
-
-      if (response.cancelled) {
-        setError('Cadastro com Google cancelado.');
-        return;
-      }
-
-      if (response.requiresSocialCompletion) {
-        onSocialRegisterRequired();
-      }
-    } catch (requestError) {
-      const message =
-        requestError instanceof Error ? requestError.message : 'Não foi possível iniciar o cadastro com Google.';
-      setError(message);
-    } finally {
-      setSocialLoading(null);
-    }
-  }, [clearAuthError, loginWithGoogle, onSocialRegisterRequired]);
-
-  const handleFacebookAuth = React.useCallback(async () => {
-    clearAuthError();
-    setError(null);
-    setSocialLoading('facebook');
-
-    try {
-      const response = await loginWithFacebook();
-
-      if (response.cancelled) {
-        setError('Cadastro com Facebook cancelado.');
-        return;
-      }
-
-      if (response.requiresSocialCompletion) {
-        onSocialRegisterRequired();
-      }
-    } catch (requestError) {
-      const message =
-        requestError instanceof Error ? requestError.message : 'Não foi possível iniciar o cadastro com Facebook.';
-      setError(message);
-    } finally {
-      setSocialLoading(null);
-    }
-  }, [clearAuthError, loginWithFacebook, onSocialRegisterRequired]);
-
   const resolvedError = error ?? authError;
 
   return (
     <AuthContainer onBack={onBack} showBackButton title="Cadastro">
       <AuthInput
         accessibilityLabel="Campo de e-mail para cadastro"
-        error={!email && resolvedError ? 'Informe seu e-mail.' : undefined}
+        error={!email && showEmailRegisterValidation ? 'Informe seu e-mail.' : undefined}
         inputType="email"
         label="Seu e-mail:"
         onChangeText={setEmail}
@@ -114,7 +65,7 @@ function RegisterScreen({ onBack, onLogin, onSocialRegisterRequired }: RegisterS
 
       <AuthInput
         accessibilityLabel="Campo de nome de usuário"
-        error={!username && resolvedError ? 'Informe seu nome de usuário.' : undefined}
+        error={!username && showEmailRegisterValidation ? 'Informe seu nome de usuário.' : undefined}
         label="Nome de usuário:"
         onChangeText={setUsername}
         placeholder="**********"
@@ -123,7 +74,7 @@ function RegisterScreen({ onBack, onLogin, onSocialRegisterRequired }: RegisterS
 
       <AuthInput
         accessibilityLabel="Campo de senha para cadastro"
-        error={!password && resolvedError ? 'Informe sua senha.' : undefined}
+        error={!password && showEmailRegisterValidation ? 'Informe sua senha.' : undefined}
         inputType="password"
         label="Senha:"
         onChangeText={setPassword}
@@ -133,12 +84,13 @@ function RegisterScreen({ onBack, onLogin, onSocialRegisterRequired }: RegisterS
 
       <AuthButton label="Cadastrar" loading={loading} onPress={handleRegister} />
 
-      {resolvedError && email && username && password ? (
+      {resolvedError ? (
         <AppText color="error" size="sm" style={{ marginTop: theme.spacing.md }}>
           {resolvedError}
         </AppText>
       ) : null}
 
+      {/* Fluxo social pausado por enquanto.
       <AppContainer
         align="center"
         backgroundColor="background"
@@ -174,6 +126,7 @@ function RegisterScreen({ onBack, onLogin, onSocialRegisterRequired }: RegisterS
       />
 
       <AppContainer style={{ height: theme.spacing.xl, backgroundColor: 'transparent' }} />
+      */}
 
       <AppText color="textSecondary" size="lg" style={{ textAlign: 'center' }}>
         Já tem uma conta?{' '}

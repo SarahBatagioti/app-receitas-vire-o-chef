@@ -52,11 +52,15 @@ Observacoes sobre a API no mobile:
 
 ## Android
 
+- Para usar Google apenas no Android, mantenha `GOOGLE_WEB_CLIENT_ID` configurado. `GOOGLE_IOS_CLIENT_ID` nao e exigido nesse fluxo.
+
 - Depois de instalar dependências, rode a sincronização normal do Gradle.
 - O `AndroidManifest.xml` já foi preparado para Facebook Login.
 - O `android/app/build.gradle` lê `FACEBOOK_APP_ID` e `FACEBOOK_CLIENT_TOKEN` via `react-native-config`.
 
 ## iOS
+
+- Configure `GOOGLE_IOS_CLIENT_ID` somente se voce for gerar o app iOS.
 
 - Rode `bundle exec pod install` dentro de `ios/` após instalar as dependências.
 - O `Info.plist` já contém as chaves base de Facebook.

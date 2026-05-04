@@ -43,6 +43,7 @@ function AuthContainer({
     variant === 'access' ? Math.min(width * 0.42, 172) : Math.min(width * 0.22, 92);
   const logoWidth = logoHeight * LOGO_VIRE_O_CHEF_ASPECT_RATIO;
   const titleColor = variant === 'access' && themeMode === 'dark' ? 'text' : 'primary';
+  const containerBackgroundColor = variant === 'access' ? 'surface' : 'background';
 
   return (
     <KeyboardAvoidingView
@@ -56,9 +57,13 @@ function AuthContainer({
         }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
-        style={{ flex: 1, backgroundColor: theme.colors.background }}
+        style={{
+          flex: 1,
+          backgroundColor:
+            variant === 'access' ? theme.colors.surface : theme.colors.background,
+        }}
       >
-        <AppContainer flex backgroundColor="background" style={{ minHeight: height }}>
+        <AppContainer flex backgroundColor={containerBackgroundColor} style={{ minHeight: height }}>
           {variant === 'access' ? (
             <>
               <AppContainer
@@ -102,9 +107,10 @@ function AuthContainer({
 
           <AppContainer
             flex
+            justify={variant === 'access' ? 'center' : 'flex-start'}
             paddingHorizontal={variant === 'access' ? '2xl' : 'xl'}
             paddingVertical={variant === 'access' ? '3xl' : '2xl'}
-            backgroundColor="background"
+            backgroundColor={containerBackgroundColor}
             style={{ backgroundColor: 'transparent' }}
           >
             {showBackButton ? (
@@ -124,16 +130,16 @@ function AuthContainer({
 
             <AppContainer
               align="center"
-              backgroundColor="background"
+              backgroundColor={containerBackgroundColor}
               style={{
                 backgroundColor: 'transparent',
-                marginTop: variant === 'access' ? theme.spacing['2xl'] : theme.spacing.lg,
+                marginTop: variant === 'access' ? 0 : theme.spacing.lg,
                 marginBottom: variant === 'access' ? theme.spacing['4xl'] : theme.spacing['3xl'],
               }}
             >
               <AppContainer
                 align="center"
-                backgroundColor="background"
+                backgroundColor={containerBackgroundColor}
                 style={{
                   backgroundColor: 'transparent',
                   width: logoWidth,
@@ -191,7 +197,7 @@ function AuthContainer({
             </AppContainer>
 
             <AppContainer
-              backgroundColor="background"
+              backgroundColor={containerBackgroundColor}
               style={{
                 width: '100%',
                 maxWidth: 420,

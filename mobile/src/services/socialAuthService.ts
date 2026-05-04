@@ -1,4 +1,5 @@
 import { FacebookAuthProvider, GoogleAuthProvider, signInWithCredential, signOut } from 'firebase/auth';
+import { Platform } from 'react-native';
 
 import { getFirebaseAuth } from '../config/firebase';
 import { SocialAuthResult, SocialProvider } from '../types/auth';
@@ -114,6 +115,24 @@ function isGooglePlayServicesError(error: unknown): boolean {
   return (error as { code?: string }).code === 'PLAY_SERVICES_NOT_AVAILABLE';
 }
 
+function isGoogleConfigurationError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+
+  const googleError = error as { code?: string; message?: string };
+  const normalizedMessage = googleError.message?.toLowerCase() ?? '';
+
+  return (
+    googleError.code === '10' ||
+    googleError.code === '12500' ||
+    googleError.code === 'DEVELOPER_ERROR' ||
+    normalizedMessage.includes('non-recoverable sign in failure') ||
+    normalizedMessage.includes('developer console is not set up correctly') ||
+    normalizedMessage.includes('developer_error')
+  );
+}
+
 function buildFirebaseTokenResult(
   provider: SocialProvider,
   email?: string,
@@ -150,12 +169,16 @@ class SocialAuthService {
     }
 
     const { GoogleSignin } = getGoogleModule();
-
-    GoogleSignin.configure({
+    const googleConfig: Record<string, unknown> = {
       webClientId: env.googleWebClientId,
-      iosClientId: env.googleIosClientId,
       offlineAccess: false,
-    });
+    };
+
+    if (Platform.OS === 'ios') {
+      googleConfig.iosClientId = env.googleIosClientId;
+    }
+
+    GoogleSignin.configure(googleConfig);
 
     this.isGoogleConfigured = true;
   }
@@ -194,7 +217,7 @@ class SocialAuthService {
       const idToken = extractGoogleIdToken(result);
 
       if (!idToken) {
-        throw new Error('Não foi possível obter o token do Google.');
+        throw new Error('NÃ£o foi possÃ­vel obter o token do Google.');
       }
 
       return buildFirebaseTokenResult(
@@ -212,18 +235,24 @@ class SocialAuthService {
       }
 
       if (isGoogleInProgress(error)) {
-        throw new Error('O login com Google já está em andamento.');
+        throw new Error('O login com Google jÃ¡ estÃ¡ em andamento.');
       }
 
       if (isGooglePlayServicesError(error)) {
-        throw new Error('Os serviços do Google Play não estão disponíveis neste dispositivo.');
+        throw new Error('Os serviÃ§os do Google Play nÃ£o estÃ£o disponÃ­veis neste dispositivo.');
+      }
+
+      if (isGoogleConfigurationError(error)) {
+        throw new Error(
+          'O login com Google no Android nÃ£o estÃ¡ configurado corretamente. Habilite o provider Google no Firebase, cadastre o app Android com package `com.mobile`, adicione o SHA1 `5E:8F:16:06:2E:A3:CD:2C:4A:0D:54:78:76:BA:A6:F3:8C:AB:F6:25`, baixe o `google-services.json` atualizado e coloque em `mobile/android/app/google-services.json`, depois gere um novo build do app.',
+        );
       }
 
       if (error instanceof Error) {
         throw error;
       }
 
-      throw new Error('Não foi possível iniciar o login com Google.');
+      throw new Error('NÃ£o foi possÃ­vel iniciar o login com Google.');
     }
   }
 
@@ -245,7 +274,7 @@ class SocialAuthService {
       const currentAccessToken = await AccessToken.getCurrentAccessToken();
 
       if (!currentAccessToken?.accessToken) {
-        throw new Error('Não foi possível obter o token do Facebook.');
+        throw new Error('NÃ£o foi possÃ­vel obter o token do Facebook.');
       }
 
       return buildFirebaseTokenResult('facebook')(currentAccessToken.accessToken);
@@ -254,7 +283,7 @@ class SocialAuthService {
         throw error;
       }
 
-      throw new Error('Não foi possível iniciar o login com Facebook.');
+      throw new Error('NÃ£o foi possÃ­vel iniciar o login com Facebook.');
     }
   }
 

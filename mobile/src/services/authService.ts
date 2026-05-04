@@ -120,7 +120,24 @@ function normalizePendingSocialAuth(
 class AuthService {
   async register(payload: RegisterPayload): Promise<AuthResponse> {
     const response = await api.post<unknown, RegisterPayload>('/auth/register', payload);
-    return normalizeAuthResponse(response);
+    const responsePayload = isRecord(response) ? response : {};
+
+    try {
+      return normalizeAuthResponse(responsePayload);
+    } catch (error) {
+      const wrappedData = extractNestedRecord(responsePayload, 'data');
+      const looksLikeSuccessfulRegistration =
+        responsePayload.success === true || Boolean(wrappedData && extractUser(wrappedData));
+
+      if (looksLikeSuccessfulRegistration) {
+        return this.login({
+          email: payload.email,
+          password: payload.password,
+        });
+      }
+
+      throw error;
+    }
   }
 
   async login(payload: LoginPayload): Promise<AuthResponse> {
