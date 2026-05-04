@@ -7,6 +7,14 @@ export type RecipeCreateFormValues = {
   servings: string;
   difficulty: RecipeDifficulty;
   isCollaborative: boolean;
+  selectedIngredients: RecipeCreateIngredient[];
+};
+
+export type RecipeCreateIngredient = {
+  id: string;
+  name: string;
+  unit?: string;
+  quantity?: string;
 };
 
 export type RecipeListItem = {

@@ -6,8 +6,10 @@ import { useAppTheme } from '../../contexts';
 import {
   RecipeCollaborativeSwitch,
   RecipeDifficultyField,
+  RecipeIngredientsSection,
   RecipesTopBar,
 } from './components';
+import { recipeIngredientsCatalogMock } from './mocks/ingredients';
 import { RecipeCreateFormValues } from './types';
 
 type RecipesCreateScreenProps = {
@@ -20,6 +22,13 @@ const initialFormValues: RecipeCreateFormValues = {
   servings: '3',
   difficulty: 'intermediario',
   isCollaborative: true,
+  selectedIngredients: [
+    { id: 'ingredient-create-1', name: 'Leite condensado', unit: 'lata' },
+    { id: 'ingredient-create-2', name: 'Creme de leite', unit: 'caixa' },
+    { id: 'ingredient-create-3', name: 'Leite', unit: 'ml' },
+    { id: 'ingredient-create-4', name: 'Gema de ovo', unit: 'unidade' },
+    { id: 'ingredient-create-5', name: 'Farinha de trigo', unit: 'g' },
+  ],
 };
 
 function RecipesCreateScreen({ onBack }: RecipesCreateScreenProps) {
@@ -33,6 +42,34 @@ function RecipesCreateScreen({ onBack }: RecipesCreateScreenProps) {
     setFormValues((current) => ({
       ...current,
       [field]: value,
+    }));
+  };
+
+  const handleSelectIngredient = (ingredientId: string) => {
+    const ingredientToAdd = recipeIngredientsCatalogMock.find(
+      (ingredient) => ingredient.id === ingredientId,
+    );
+
+    if (!ingredientToAdd) {
+      return;
+    }
+
+    setFormValues((current) => {
+      if (current.selectedIngredients.some((ingredient) => ingredient.id === ingredientId)) {
+        return current;
+      }
+
+      return {
+        ...current,
+        selectedIngredients: [...current.selectedIngredients, ingredientToAdd],
+      };
+    });
+  };
+
+  const handleRemoveIngredient = (ingredientId: string) => {
+    setFormValues((current) => ({
+      ...current,
+      selectedIngredients: current.selectedIngredients.filter((ingredient) => ingredient.id !== ingredientId),
     }));
   };
 
@@ -138,14 +175,20 @@ function RecipesCreateScreen({ onBack }: RecipesCreateScreenProps) {
         value={formValues.isCollaborative}
       />
 
+      <RecipeIngredientsSection
+        availableIngredients={recipeIngredientsCatalogMock}
+        onRemoveIngredient={handleRemoveIngredient}
+        onSelectIngredient={(ingredient) => handleSelectIngredient(ingredient.id)}
+        selectedIngredients={formValues.selectedIngredients}
+      />
+
       <AppContainer marginBottom="5xl">
         <AppText
           color="textSecondary"
           size="md"
           lineHeight="relaxed"
         >
-          Os ingredientes, informações nutricionais, modo de preparo e mídias serão adicionados na
-          próxima etapa.
+          As informações nutricionais, modo de preparo e mídias serão adicionados na próxima etapa.
         </AppText>
       </AppContainer>
 
