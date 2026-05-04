@@ -1,5 +1,20 @@
-import { RowDataPacket } from 'mysql2/promise';
+import { randomUUID } from 'crypto';
+import {
+  Pool,
+  PoolConnection,
+  ResultSetHeader,
+  RowDataPacket,
+} from 'mysql2/promise';
 import { database } from '../config/database';
+import {
+  RecipeIngredientInputDto,
+  RecipeNutritionInputDto,
+  RecipePreparationStepInputDto,
+} from '../dtos/recipe.dto';
+import { RecipeIngredientModel } from '../models/recipe-ingredient.model';
+import { RecipeNutritionModel } from '../models/recipe-nutrition.model';
+import { RecipePreparationStepModel } from '../models/recipe-preparation-step.model';
+import { RecipeDifficulty, RecipeModel, RecipeStatus } from '../models/recipe.model';
 
 export class RecipeRepository {
   async ensureTables(): Promise<void> {
@@ -11,15 +26,274 @@ export class RecipeRepository {
     await this.ensureRelationships();
   }
 
+  async createRecipe(
+    input: CreateRecipeRepositoryInput,
+    executor?: QueryExecutor,
+  ): Promise<string> {
+    if (!executor) {
+      await this.ensureTables();
+    }
+
+    const recipeId = randomUUID();
+
+    await getExecutor(executor).execute<ResultSetHeader>(
+      `
+        INSERT INTO recipes (
+          id,
+          author_id,
+          name,
+          preparation_time_minutes,
+          yield_portions,
+          difficulty,
+          is_collaborative,
+          status,
+          average_rating
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0.00)
+      `,
+      [
+        recipeId,
+        input.usuarioId,
+        input.nome,
+        input.tempoPreparoMinutos ?? null,
+        input.rendimentoPorcoes ?? null,
+        input.dificuldade ?? null,
+        input.isColaborativa,
+        input.status,
+      ],
+    );
+
+    return recipeId;
+  }
+
+  async updateRecipe(
+    recipeId: string,
+    authorId: string,
+    input: UpdateRecipeRepositoryInput,
+    executor?: QueryExecutor,
+  ): Promise<void> {
+    if (!executor) {
+      await this.ensureTables();
+    }
+
+    await getExecutor(executor).execute<ResultSetHeader>(
+      `
+        UPDATE recipes
+        SET
+          name = ?,
+          preparation_time_minutes = ?,
+          yield_portions = ?,
+          difficulty = ?,
+          is_collaborative = ?,
+          status = ?
+        WHERE id = ?
+          AND author_id = ?
+      `,
+      [
+        input.nome,
+        input.tempoPreparoMinutos ?? null,
+        input.rendimentoPorcoes ?? null,
+        input.dificuldade ?? null,
+        input.isColaborativa,
+        input.status,
+        recipeId,
+        authorId,
+      ],
+    );
+  }
+
+  async replaceRecipeIngredients(
+    recipeId: string,
+    ingredients: RecipeIngredientInputDto[],
+    executor?: QueryExecutor,
+  ): Promise<void> {
+    if (!executor) {
+      await this.ensureTables();
+    }
+
+    const queryExecutor = getExecutor(executor);
+
+    await queryExecutor.execute<ResultSetHeader>(
+      `
+        DELETE FROM recipe_ingredients
+        WHERE recipe_id = ?
+      `,
+      [recipeId],
+    );
+
+    for (const ingredient of ingredients) {
+      await queryExecutor.execute<ResultSetHeader>(
+        `
+          INSERT INTO recipe_ingredients (
+            id,
+            recipe_id,
+            name,
+            quantity,
+            unit
+          )
+          VALUES (?, ?, ?, ?, ?)
+        `,
+        [
+          randomUUID(),
+          recipeId,
+          ingredient.nome,
+          ingredient.quantidade ?? null,
+          ingredient.unidade ?? null,
+        ],
+      );
+    }
+  }
+
+  async replaceRecipeNutrition(
+    recipeId: string,
+    nutrition: RecipeNutritionInputDto | null,
+    executor?: QueryExecutor,
+  ): Promise<void> {
+    if (!executor) {
+      await this.ensureTables();
+    }
+
+    const queryExecutor = getExecutor(executor);
+
+    await queryExecutor.execute<ResultSetHeader>(
+      `
+        DELETE FROM recipe_nutrition
+        WHERE recipe_id = ?
+      `,
+      [recipeId],
+    );
+
+    if (!nutrition) {
+      return;
+    }
+
+    await queryExecutor.execute<ResultSetHeader>(
+      `
+        INSERT INTO recipe_nutrition (
+          id,
+          recipe_id,
+          calories,
+          proteins,
+          carbohydrates,
+          fats
+        )
+        VALUES (?, ?, ?, ?, ?, ?)
+      `,
+      [
+        randomUUID(),
+        recipeId,
+        nutrition.calorias ?? null,
+        nutrition.proteinas ?? null,
+        nutrition.carboidratos ?? null,
+        nutrition.gorduras ?? null,
+      ],
+    );
+  }
+
+  async replaceRecipePreparationSteps(
+    recipeId: string,
+    steps: RecipePreparationStepInputDto[],
+    executor?: QueryExecutor,
+  ): Promise<void> {
+    if (!executor) {
+      await this.ensureTables();
+    }
+
+    const queryExecutor = getExecutor(executor);
+
+    await queryExecutor.execute<ResultSetHeader>(
+      `
+        DELETE FROM recipe_preparation_steps
+        WHERE recipe_id = ?
+      `,
+      [recipeId],
+    );
+
+    for (const step of steps) {
+      await queryExecutor.execute<ResultSetHeader>(
+        `
+          INSERT INTO recipe_preparation_steps (
+            id,
+            recipe_id,
+            sort_order,
+            description
+          )
+          VALUES (?, ?, ?, ?)
+        `,
+        [
+          randomUUID(),
+          recipeId,
+          step.ordem,
+          step.descricao,
+        ],
+      );
+    }
+  }
+
+  async listRecipesByAuthorId(authorId: string): Promise<RecipeAggregate[]> {
+    await this.ensureTables();
+
+    const [rows] = await database.execute<(RowDataPacket & RecipeDatabaseRow)[]>(
+      `
+        ${baseSelectQuery}
+        WHERE r.author_id = ?
+        ORDER BY r.updated_at DESC, r.created_at DESC
+      `,
+      [authorId],
+    );
+
+    return this.buildRecipeAggregates(rows);
+  }
+
+  async findRecipeByIdAndAuthorId(
+    recipeId: string,
+    authorId: string,
+  ): Promise<RecipeAggregate | null> {
+    await this.ensureTables();
+
+    const [rows] = await database.execute<(RowDataPacket & RecipeDatabaseRow)[]>(
+      `
+        ${baseSelectQuery}
+        WHERE r.id = ?
+          AND r.author_id = ?
+      `,
+      [recipeId, authorId],
+    );
+
+    if (!rows.length) {
+      return null;
+    }
+
+    return this.buildRecipeAggregates(rows)[0] ?? null;
+  }
+
+  async deleteRecipeByIdAndAuthorId(
+    recipeId: string,
+    authorId: string,
+  ): Promise<boolean> {
+    await this.ensureTables();
+
+    const [result] = await database.execute<ResultSetHeader>(
+      `
+        DELETE FROM recipes
+        WHERE id = ?
+          AND author_id = ?
+      `,
+      [recipeId, authorId],
+    );
+
+    return result.affectedRows > 0;
+  }
+
   private async ensureRecipesTable(): Promise<void> {
     await database.execute(`
       CREATE TABLE IF NOT EXISTS recipes (
         id CHAR(36) NOT NULL PRIMARY KEY,
         author_id CHAR(36) NOT NULL,
         name VARCHAR(255) NOT NULL,
-        preparation_time_minutes INT UNSIGNED NOT NULL,
-        yield_portions INT UNSIGNED NOT NULL,
-        difficulty ENUM('FACIL', 'INTERMEDIARIO', 'DIFICIL') NOT NULL,
+        preparation_time_minutes INT UNSIGNED NULL,
+        yield_portions INT UNSIGNED NULL,
+        difficulty ENUM('FACIL', 'INTERMEDIARIO', 'DIFICIL') NULL,
         is_collaborative BOOLEAN NOT NULL DEFAULT FALSE,
         status ENUM('PUBLICADA', 'RASCUNHO') NOT NULL DEFAULT 'RASCUNHO',
         average_rating DECIMAL(3,2) NOT NULL DEFAULT 0.00,
@@ -29,6 +303,13 @@ export class RecipeRepository {
         INDEX idx_recipes_status (status),
         INDEX idx_recipes_is_collaborative (is_collaborative)
       )
+    `);
+
+    await database.execute(`
+      ALTER TABLE recipes
+      MODIFY COLUMN preparation_time_minutes INT UNSIGNED NULL,
+      MODIFY COLUMN yield_portions INT UNSIGNED NULL,
+      MODIFY COLUMN difficulty ENUM('FACIL', 'INTERMEDIARIO', 'DIFICIL') NULL
     `);
   }
 
@@ -132,7 +413,88 @@ export class RecipeRepository {
       'id',
     );
   }
+
+  private buildRecipeAggregates(
+    rows: RecipeDatabaseRow[],
+  ): RecipeAggregate[] {
+    const recipeMap = new Map<string, RecipeAggregate>();
+
+    for (const row of rows) {
+      const existingRecipe = recipeMap.get(row.recipe_id);
+
+      if (!existingRecipe) {
+        recipeMap.set(row.recipe_id, {
+          ...mapRecipeRow(row),
+          ingredients: [],
+          nutrition: row.nutrition_id ? mapRecipeNutritionRow(row) : null,
+          preparationSteps: [],
+        });
+      }
+
+      const recipe = recipeMap.get(row.recipe_id)!;
+
+      if (
+        row.ingredient_id &&
+        !recipe.ingredients.some((ingredient) => ingredient.id === row.ingredient_id)
+      ) {
+        recipe.ingredients.push(mapRecipeIngredientRow(row));
+      }
+
+      if (
+        row.preparation_step_id &&
+        !recipe.preparationSteps.some((step) => step.id === row.preparation_step_id)
+      ) {
+        recipe.preparationSteps.push(mapRecipePreparationStepRow(row));
+      }
+    }
+
+    for (const recipe of recipeMap.values()) {
+      recipe.preparationSteps.sort((left, right) => left.order - right.order);
+    }
+
+    return Array.from(recipeMap.values());
+  }
 }
+
+export interface RecipeAggregate extends RecipeModel {
+  ingredients: RecipeIngredientModel[];
+  nutrition: RecipeNutritionModel | null;
+  preparationSteps: RecipePreparationStepModel[];
+}
+
+const baseSelectQuery = `
+  SELECT
+    r.id AS recipe_id,
+    r.author_id,
+    r.name,
+    r.preparation_time_minutes,
+    r.yield_portions,
+    r.difficulty,
+    r.is_collaborative,
+    r.status,
+    r.average_rating,
+    r.created_at,
+    r.updated_at,
+    ri.id AS ingredient_id,
+    ri.name AS ingredient_name,
+    ri.quantity AS ingredient_quantity,
+    ri.unit AS ingredient_unit,
+    rn.id AS nutrition_id,
+    rn.calories AS nutrition_calories,
+    rn.proteins AS nutrition_proteins,
+    rn.carbohydrates AS nutrition_carbohydrates,
+    rn.fats AS nutrition_fats,
+    rps.id AS preparation_step_id,
+    rps.sort_order AS preparation_step_order,
+    rps.description AS preparation_step_description
+  FROM recipes r
+  LEFT JOIN recipe_ingredients ri
+    ON ri.recipe_id = r.id
+  LEFT JOIN recipe_nutrition rn
+    ON rn.recipe_id = r.id
+  LEFT JOIN recipe_preparation_steps rps
+    ON rps.recipe_id = r.id
+`;
 
 async function ensureForeignKey(
   tableName: string,
@@ -166,4 +528,119 @@ async function ensureForeignKey(
 
 interface ForeignKeyConstraintRow {
   CONSTRAINT_NAME: string;
+}
+
+type QueryExecutor = Pool | PoolConnection;
+
+interface CreateRecipeRepositoryInput {
+  nome: string;
+  tempoPreparoMinutos?: number;
+  rendimentoPorcoes?: number;
+  dificuldade?: RecipeDifficulty;
+  isColaborativa: boolean;
+  status: RecipeStatus;
+  usuarioId: string;
+}
+
+interface UpdateRecipeRepositoryInput {
+  nome: string;
+  tempoPreparoMinutos?: number;
+  rendimentoPorcoes?: number;
+  dificuldade?: RecipeDifficulty;
+  isColaborativa: boolean;
+  status: RecipeStatus;
+}
+
+interface RecipeDatabaseRow {
+  recipe_id: string;
+  author_id: string;
+  name: string;
+  preparation_time_minutes: number | null;
+  yield_portions: number | null;
+  difficulty: RecipeDifficulty | null;
+  is_collaborative: number | boolean;
+  status: RecipeStatus;
+  average_rating: string | number;
+  created_at: Date | string;
+  updated_at: Date | string;
+  ingredient_id: string | null;
+  ingredient_name: string | null;
+  ingredient_quantity: string | null;
+  ingredient_unit: string | null;
+  nutrition_id: string | null;
+  nutrition_calories: string | number | null;
+  nutrition_proteins: string | number | null;
+  nutrition_carbohydrates: string | number | null;
+  nutrition_fats: string | number | null;
+  preparation_step_id: string | null;
+  preparation_step_order: number | null;
+  preparation_step_description: string | null;
+}
+
+function getExecutor(executor?: QueryExecutor): QueryExecutor {
+  return executor ?? database;
+}
+
+function mapRecipeRow(row: RecipeDatabaseRow): RecipeModel {
+  return {
+    id: row.recipe_id,
+    authorId: row.author_id,
+    name: row.name,
+    preparationTimeMinutes: row.preparation_time_minutes,
+    yieldPortions: row.yield_portions,
+    difficulty: row.difficulty,
+    isCollaborative: Boolean(row.is_collaborative),
+    status: row.status,
+    averageRating: Number(row.average_rating),
+    createdAt: toIsoString(row.created_at),
+    updatedAt: toIsoString(row.updated_at),
+  };
+}
+
+function mapRecipeIngredientRow(
+  row: RecipeDatabaseRow,
+): RecipeIngredientModel {
+  return {
+    id: row.ingredient_id!,
+    recipeId: row.recipe_id,
+    name: row.ingredient_name!,
+    quantity: row.ingredient_quantity,
+    unit: row.ingredient_unit,
+  };
+}
+
+function mapRecipeNutritionRow(
+  row: RecipeDatabaseRow,
+): RecipeNutritionModel {
+  return {
+    id: row.nutrition_id!,
+    recipeId: row.recipe_id,
+    calories: toNullableNumber(row.nutrition_calories),
+    proteins: toNullableNumber(row.nutrition_proteins),
+    carbohydrates: toNullableNumber(row.nutrition_carbohydrates),
+    fats: toNullableNumber(row.nutrition_fats),
+  };
+}
+
+function mapRecipePreparationStepRow(
+  row: RecipeDatabaseRow,
+): RecipePreparationStepModel {
+  return {
+    id: row.preparation_step_id!,
+    recipeId: row.recipe_id,
+    order: row.preparation_step_order!,
+    description: row.preparation_step_description!,
+  };
+}
+
+function toNullableNumber(value: string | number | null): number | null {
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  return Number(value);
+}
+
+function toIsoString(value: Date | string): string {
+  return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
 }

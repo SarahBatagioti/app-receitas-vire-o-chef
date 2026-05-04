@@ -5,9 +5,9 @@ export type RecipeStatus = 'PUBLICADA' | 'RASCUNHO';
 export interface RecipeModel {
   id: string;
   name: string;
-  preparationTimeMinutes: number;
-  yieldPortions: number;
-  difficulty: RecipeDifficulty;
+  preparationTimeMinutes: number | null;
+  yieldPortions: number | null;
+  difficulty: RecipeDifficulty | null;
   isCollaborative: boolean;
   status: RecipeStatus;
   averageRating: number;
