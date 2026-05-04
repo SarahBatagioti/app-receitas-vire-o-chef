@@ -2,6 +2,7 @@ import {
   RecipeDifficulty,
   RecipeStatus,
 } from '../models/recipe.model';
+import { RecipeMediaType } from '../models/recipe-media.model';
 
 export interface RecipeIngredientInputDto {
   nome: string;
@@ -66,6 +67,17 @@ export interface RecipePreparationStepDto {
   descricao: string;
 }
 
+export interface RecipeMediaDto {
+  id: string;
+  url: string;
+  tipo: RecipeMediaType;
+  nomeArquivo: string | null;
+  mimeType: string | null;
+  tamanho: number | null;
+  ordem: number;
+  createdAt: string;
+}
+
 export interface RecipeSummaryDto {
   id: string;
   nome: string;
@@ -75,6 +87,7 @@ export interface RecipeSummaryDto {
   isColaborativa: boolean;
   status: RecipeStatus;
   avaliacaoMedia: number;
+  midiaPrincipal: RecipeMediaDto | null;
   autorId: string;
   createdAt: string;
   updatedAt: string;
@@ -84,4 +97,5 @@ export interface RecipeDetailsDto extends RecipeSummaryDto {
   ingredientes: RecipeIngredientDto[];
   informacaoNutricional: RecipeNutritionDto | null;
   modoPreparo: RecipePreparationStepDto[];
+  midias: RecipeMediaDto[];
 }

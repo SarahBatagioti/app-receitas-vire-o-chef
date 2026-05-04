@@ -12,6 +12,7 @@ import {
   RecipePreparationStepInputDto,
 } from '../dtos/recipe.dto';
 import { RecipeIngredientModel } from '../models/recipe-ingredient.model';
+import { RecipeMediaModel, RecipeMediaType } from '../models/recipe-media.model';
 import { RecipeNutritionModel } from '../models/recipe-nutrition.model';
 import { RecipePreparationStepModel } from '../models/recipe-preparation-step.model';
 import { RecipeDifficulty, RecipeModel, RecipeStatus } from '../models/recipe.model';
@@ -428,6 +429,7 @@ export class RecipeRepository {
           ingredients: [],
           nutrition: row.nutrition_id ? mapRecipeNutritionRow(row) : null,
           preparationSteps: [],
+          media: [],
         });
       }
 
@@ -446,10 +448,18 @@ export class RecipeRepository {
       ) {
         recipe.preparationSteps.push(mapRecipePreparationStepRow(row));
       }
+
+      if (
+        row.media_id &&
+        !recipe.media.some((media) => media.id === row.media_id)
+      ) {
+        recipe.media.push(mapRecipeMediaRow(row));
+      }
     }
 
     for (const recipe of recipeMap.values()) {
       recipe.preparationSteps.sort((left, right) => left.order - right.order);
+      recipe.media.sort((left, right) => left.order - right.order);
     }
 
     return Array.from(recipeMap.values());
@@ -460,6 +470,7 @@ export interface RecipeAggregate extends RecipeModel {
   ingredients: RecipeIngredientModel[];
   nutrition: RecipeNutritionModel | null;
   preparationSteps: RecipePreparationStepModel[];
+  media: RecipeMediaModel[];
 }
 
 const baseSelectQuery = `
@@ -486,7 +497,15 @@ const baseSelectQuery = `
     rn.fats AS nutrition_fats,
     rps.id AS preparation_step_id,
     rps.sort_order AS preparation_step_order,
-    rps.description AS preparation_step_description
+    rps.description AS preparation_step_description,
+    rm.id AS media_id,
+    rm.url AS media_url,
+    rm.type AS media_type,
+    rm.file_name AS media_file_name,
+    rm.mime_type AS media_mime_type,
+    rm.size AS media_size,
+    rm.sort_order AS media_sort_order,
+    rm.created_at AS media_created_at
   FROM recipes r
   LEFT JOIN recipe_ingredients ri
     ON ri.recipe_id = r.id
@@ -494,6 +513,8 @@ const baseSelectQuery = `
     ON rn.recipe_id = r.id
   LEFT JOIN recipe_preparation_steps rps
     ON rps.recipe_id = r.id
+  LEFT JOIN recipe_media rm
+    ON rm.recipe_id = r.id
 `;
 
 async function ensureForeignKey(
@@ -575,6 +596,14 @@ interface RecipeDatabaseRow {
   preparation_step_id: string | null;
   preparation_step_order: number | null;
   preparation_step_description: string | null;
+  media_id: string | null;
+  media_url: string | null;
+  media_type: RecipeMediaType | null;
+  media_file_name: string | null;
+  media_mime_type: string | null;
+  media_size: string | number | null;
+  media_sort_order: number | null;
+  media_created_at: Date | string | null;
 }
 
 function getExecutor(executor?: QueryExecutor): QueryExecutor {
@@ -630,6 +659,22 @@ function mapRecipePreparationStepRow(
     recipeId: row.recipe_id,
     order: row.preparation_step_order!,
     description: row.preparation_step_description!,
+  };
+}
+
+function mapRecipeMediaRow(
+  row: RecipeDatabaseRow,
+): RecipeMediaModel {
+  return {
+    id: row.media_id!,
+    recipeId: row.recipe_id,
+    url: row.media_url!,
+    type: row.media_type!,
+    fileName: row.media_file_name,
+    mimeType: row.media_mime_type,
+    size: toNullableNumber(row.media_size),
+    order: row.media_sort_order!,
+    createdAt: toIsoString(row.media_created_at!),
   };
 }
 

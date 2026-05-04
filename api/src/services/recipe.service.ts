@@ -217,6 +217,7 @@ function mapRecipeSummary(recipe: RecipeAggregate): RecipeSummaryDto {
     isColaborativa: recipe.isCollaborative,
     status: recipe.status,
     avaliacaoMedia: recipe.averageRating,
+    midiaPrincipal: recipe.media[0] ? mapRecipeMedia(recipe.media[0]) : null,
     autorId: recipe.authorId,
     createdAt: recipe.createdAt,
     updatedAt: recipe.updatedAt,
@@ -246,6 +247,7 @@ function mapRecipeAggregate(recipe: RecipeAggregate): RecipeDetailsDto {
       ordem: step.order,
       descricao: step.description,
     })),
+    midias: recipe.media.map(mapRecipeMedia),
   };
 }
 
@@ -295,5 +297,18 @@ function mergeRecipeUpdatePayload(
             ordem: step.order,
             descricao: step.description,
           })),
+  };
+}
+
+function mapRecipeMedia(media: RecipeAggregate['media'][number]) {
+  return {
+    id: media.id,
+    url: media.url,
+    tipo: media.type,
+    nomeArquivo: media.fileName,
+    mimeType: media.mimeType,
+    tamanho: media.size,
+    ordem: media.order,
+    createdAt: media.createdAt,
   };
 }

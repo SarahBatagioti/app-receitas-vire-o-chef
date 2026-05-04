@@ -1,3 +1,4 @@
+import { NextFunction, Request, Response } from 'express';
 import {
   CreateRecipeDto,
   RecipeIngredientInputDto,
@@ -9,7 +10,63 @@ import {
   RecipeDifficulty,
   RecipeStatus,
 } from '../models/recipe.model';
+import { buildErrorResponse } from '../utils/api-response';
 import { AppError } from '../utils/app-error';
+
+export function validateCreateRecipeRequest(
+  request: Request,
+  response: Response,
+  next: NextFunction,
+) {
+  try {
+    request.body = validateCreateRecipeDto(request.body as Partial<CreateRecipeDto>);
+    return next();
+  } catch (error) {
+    return handleRecipeValidationError(error, response, next);
+  }
+}
+
+export function validateUpdateRecipeRequest(
+  request: Request,
+  response: Response,
+  next: NextFunction,
+) {
+  try {
+    const payload = request.body as Partial<UpdateRecipeDto>;
+
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+      return response
+        .status(422)
+        .json(buildErrorResponse('Dados de receita invalidos.', [
+          'O corpo da requisicao deve ser um objeto JSON valido.',
+        ]));
+    }
+
+    request.body = payload;
+    return next();
+  } catch (error) {
+    return handleRecipeValidationError(error, response, next);
+  }
+}
+
+export function validateRecipeIdParam(
+  request: Request,
+  response: Response,
+  next: NextFunction,
+) {
+  const { id } = request.params;
+
+  if (typeof id !== 'string' || !id.trim()) {
+    return response
+      .status(422)
+      .json(buildErrorResponse('Identificador da receita invalido.', [
+        'Informe um id de receita valido.',
+      ]));
+  }
+
+  request.params.id = id.trim();
+  return next();
+}
 
 export function validateCreateRecipeDto(
   input: Partial<CreateRecipeDto>,
@@ -290,4 +347,18 @@ function normalizeStatus(
   }
 
   return status;
+}
+
+function handleRecipeValidationError(
+  error: unknown,
+  response: Response,
+  next: NextFunction,
+) {
+  if (error instanceof AppError) {
+    return response
+      .status(error.statusCode)
+      .json(buildErrorResponse(error.message, error.details));
+  }
+
+  return next(error);
 }
