@@ -1,4 +1,4 @@
-import { RecipesHomeCollections } from '../types';
+import { RecipeDetail, RecipeListItem, RecipesHomeCollections } from '../types';
 
 export const recipesMock: RecipesHomeCollections = {
   myPublications: [
@@ -81,3 +81,179 @@ export const recipesMock: RecipesHomeCollections = {
     },
   ],
 };
+
+export const recipeDetailsMock: Record<string, RecipeDetail> = {
+  'recipe-1': {
+    ...recipesMock.myPublications[0],
+    reviewsCount: 1250,
+    commentsCount: 2548,
+    author: {
+      name: 'Sarah Batagioti',
+      followers: 1258,
+      avatarUrl:
+        'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80',
+    },
+    nutrition: {
+      calories: '120 kcal',
+      proteins: '10 g',
+      carbohydrates: '18 g',
+      fats: '28 g',
+    },
+    ingredients: [
+      {
+        id: 'ingredient-1',
+        name: 'Biscoite maisena',
+        quantity: '1 pacote',
+        imageUrl:
+          'https://images.unsplash.com/photo-1589367920969-ab8e050bbb04?auto=format&fit=crop&w=300&q=80',
+        checked: true,
+      },
+      {
+        id: 'ingredient-2',
+        name: 'Leite condensado',
+        quantity: '1 lata',
+        imageUrl:
+          'https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=300&q=80',
+      },
+      {
+        id: 'ingredient-3',
+        name: 'Creme de leite',
+        quantity: '1 caixa',
+        imageUrl:
+          'https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=300&q=80',
+      },
+    ],
+    steps: [
+      {
+        id: 'step-1',
+        title: 'Passo 1',
+        description:
+          'Em uma panela, coloque o leite condensado, o leite e a farinha misturada no leite reservado.',
+        accentColor: 'brandGreen',
+      },
+      {
+        id: 'step-2',
+        title: 'Passo 2',
+        description: 'Mexa até engrossar sem parar e reserve para esfriar.',
+        accentColor: 'brandYellow',
+      },
+      {
+        id: 'step-3',
+        title: 'Passo 3',
+        description: 'Finalize com o creme de leite e monte a receita em camadas.',
+        accentColor: 'brandOrange',
+      },
+    ],
+  },
+  'recipe-2': {
+    ...recipesMock.myPublications[1],
+    reviewsCount: 860,
+    commentsCount: 418,
+    author: {
+      name: 'Sarah Batagioti',
+      followers: 1258,
+      avatarUrl:
+        'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80',
+    },
+    nutrition: {
+      calories: '180 kcal',
+      proteins: '12 g',
+      carbohydrates: '20 g',
+      fats: '9 g',
+    },
+    ingredients: [
+      {
+        id: 'ingredient-4',
+        name: 'Quinoa cozida',
+        quantity: '2 xicaras',
+        imageUrl:
+          'https://images.unsplash.com/photo-1515543237350-b3eea1ec8082?auto=format&fit=crop&w=300&q=80',
+        checked: true,
+      },
+      {
+        id: 'ingredient-5',
+        name: 'Ovos',
+        quantity: '2 unidades',
+        imageUrl:
+          'https://images.unsplash.com/photo-1506976785307-8732e854ad03?auto=format&fit=crop&w=300&q=80',
+      },
+      {
+        id: 'ingredient-6',
+        name: 'Cebolinha',
+        quantity: 'a gosto',
+        imageUrl:
+          'https://images.unsplash.com/photo-1615485290382-441e4d049cb5?auto=format&fit=crop&w=300&q=80',
+      },
+    ],
+    steps: [
+      {
+        id: 'step-4',
+        title: 'Passo 1',
+        description: 'Misture todos os ingredientes até formar uma massa uniforme.',
+        accentColor: 'brandGreen',
+      },
+      {
+        id: 'step-5',
+        title: 'Passo 2',
+        description: 'Molde pequenos discos e doure dos dois lados na frigideira.',
+        accentColor: 'brandYellow',
+      },
+    ],
+  },
+  'recipe-3': {
+    ...recipesMock.myPublications[2],
+    reviewsCount: 430,
+    commentsCount: 96,
+    author: {
+      name: 'Sarah Batagioti',
+      followers: 1258,
+      avatarUrl:
+        'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80',
+    },
+    nutrition: {
+      calories: '95 kcal',
+      proteins: '1 g',
+      carbohydrates: '17 g',
+      fats: '2 g',
+    },
+    ingredients: [
+      {
+        id: 'ingredient-7',
+        name: 'Morango',
+        quantity: '8 unidades',
+        imageUrl:
+          'https://images.unsplash.com/photo-1464965911861-746a04b4bca6?auto=format&fit=crop&w=300&q=80',
+        checked: true,
+      },
+      {
+        id: 'ingredient-8',
+        name: 'Agua com gas',
+        quantity: '200 ml',
+        imageUrl:
+          'https://images.unsplash.com/photo-1544145945-f90425340c7e?auto=format&fit=crop&w=300&q=80',
+      },
+    ],
+    steps: [
+      {
+        id: 'step-6',
+        title: 'Passo 1',
+        description: 'Macere os morangos com gelo e adicione os demais ingredientes.',
+        accentColor: 'brandOrange',
+      },
+    ],
+  },
+};
+
+const allRecipes = [
+  ...recipesMock.myPublications,
+  ...recipesMock.favoriteRecipes,
+  ...recipesMock.draftRecipes,
+];
+
+export function getRecipeById(recipeId: string): RecipeListItem | undefined {
+  return allRecipes.find((recipe) => recipe.id === recipeId);
+}
+
+export function getRecipeDetailById(recipeId: string): RecipeDetail | undefined {
+  return recipeDetailsMock[recipeId];
+}

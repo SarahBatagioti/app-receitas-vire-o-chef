@@ -127,8 +127,10 @@ function AppContent() {
 
         {!isInitializing && ActiveScreen ? (
           <AppContainer flex padding="lg" backgroundColor="background">
-            <AppHeader />
-            <AppContainer style={{ height: theme.spacing.lg, backgroundColor: 'transparent' }} />
+            {activeScreen !== 'receitas' ? <AppHeader /> : null}
+            {activeScreen !== 'receitas' ? (
+              <AppContainer style={{ height: theme.spacing.lg, backgroundColor: 'transparent' }} />
+            ) : null}
             <ActiveScreen />
           </AppContainer>
         ) : null}

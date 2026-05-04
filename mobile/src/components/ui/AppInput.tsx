@@ -25,6 +25,7 @@ interface AppInputProps extends Omit<TextInputProps, 'style'> {
   onChangeText?: (text: string) => void;
   value?: string;
   style?: ViewStyle;
+  inputStyle?: TextStyle;
 }
 
 const AppInput = React.forwardRef<TextInput, AppInputProps>(
@@ -47,6 +48,7 @@ const AppInput = React.forwardRef<TextInput, AppInputProps>(
       onChangeText,
       value,
       style,
+      inputStyle: customInputStyle,
       ...props
     },
     ref,
@@ -132,7 +134,7 @@ const AppInput = React.forwardRef<TextInput, AppInputProps>(
             placeholder={placeholder}
             placeholderTextColor={theme.colors.textTertiary}
             secureTextEntry={secureTextEntry}
-            style={inputStyle}
+            style={[inputStyle, customInputStyle]}
             value={value}
             {...props}
           />

@@ -1,13 +1,18 @@
 import React from 'react';
-import { Alert, ScrollView } from 'react-native';
+import { ScrollView } from 'react-native';
 
-import { AppContainer } from '../../components/ui';
+import { AppContainer, AppHeader } from '../../components/ui';
 import { useAppTheme } from '../../contexts';
 import { recipesMock } from './mocks/recipes';
 import { RecipeListItem } from './types';
 import { RecipeSearchBar, RecipeSection } from './components';
 
-function RecipesHomeScreen() {
+type RecipesHomeScreenProps = {
+  onAddRecipe: () => void;
+  onOpenRecipe: (recipe: RecipeListItem) => void;
+};
+
+function RecipesHomeScreen({ onAddRecipe, onOpenRecipe }: RecipesHomeScreenProps) {
   const { theme } = useAppTheme();
   const [searchValue, setSearchValue] = React.useState('');
 
@@ -19,14 +24,6 @@ function RecipesHomeScreen() {
     recipe.title.toLowerCase().includes(normalizedSearch),
   );
 
-  const handleAddRecipe = () => {
-    Alert.alert('Receitas', 'O cadastro completo da receita será implementado na próxima etapa.');
-  };
-
-  const handleOpenRecipe = (recipe: RecipeListItem) => {
-    Alert.alert('Receita', `A visualização de "${recipe.title}" será implementada na próxima etapa.`);
-  };
-
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: theme.colors.background }}
@@ -36,20 +33,23 @@ function RecipesHomeScreen() {
       showsVerticalScrollIndicator={false}
     >
       <AppContainer>
+        <AppHeader />
+        <AppContainer marginBottom="2xl" />
+
         <RecipeSearchBar
-          onAddRecipe={handleAddRecipe}
+          onAddRecipe={onAddRecipe}
           onChangeText={setSearchValue}
           value={searchValue}
         />
 
         <RecipeSection
-          onRecipePress={handleOpenRecipe}
+          onRecipePress={onOpenRecipe}
           recipes={myPublications}
           title="Minhas publicações"
         />
 
         <RecipeSection
-          onRecipePress={handleOpenRecipe}
+          onRecipePress={onOpenRecipe}
           recipes={favoriteRecipes}
           title="Favoritos"
         />

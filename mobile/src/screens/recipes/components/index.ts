@@ -1,3 +1,6 @@
 export { default as RecipeCard } from './RecipeCard';
+export { default as RecipeCollaborativeSwitch } from './RecipeCollaborativeSwitch';
+export { default as RecipeDifficultyField } from './RecipeDifficultyField';
 export { default as RecipeSearchBar } from './RecipeSearchBar';
 export { default as RecipeSection } from './RecipeSection';
+export { default as RecipesTopBar } from './RecipesTopBar';
