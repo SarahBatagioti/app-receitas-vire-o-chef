@@ -10,6 +10,7 @@ export type RecipeCreateFormValues = {
   selectedIngredients: RecipeCreateIngredient[];
   nutrition: RecipeCreateNutrition;
   preparationSteps: RecipeCreateStep[];
+  media: RecipeCreateMedia[];
 };
 
 export type RecipeCreateIngredient = {
@@ -30,6 +31,12 @@ export type RecipeCreateStep = {
   id: string;
   description: string;
   fileName?: string;
+};
+
+export type RecipeCreateMedia = {
+  id: string;
+  type: 'image' | 'video';
+  fileName: string;
 };
 
 export type RecipeListItem = {

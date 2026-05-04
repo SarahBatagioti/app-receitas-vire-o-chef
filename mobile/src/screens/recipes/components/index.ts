@@ -2,6 +2,7 @@ export { default as RecipeCard } from './RecipeCard';
 export { default as RecipeCollaborativeSwitch } from './RecipeCollaborativeSwitch';
 export { default as RecipeDifficultyField } from './RecipeDifficultyField';
 export { default as RecipeIngredientsSection } from './RecipeIngredientsSection';
+export { default as RecipeMediaSection } from './RecipeMediaSection';
 export { default as RecipeNutritionSection } from './RecipeNutritionSection';
 export { default as RecipePreparationSection } from './RecipePreparationSection';
 export { default as RecipeSearchBar } from './RecipeSearchBar';

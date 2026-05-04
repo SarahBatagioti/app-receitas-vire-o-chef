@@ -7,6 +7,7 @@ import {
   RecipeCollaborativeSwitch,
   RecipeDifficultyField,
   RecipeIngredientsSection,
+  RecipeMediaSection,
   RecipeNutritionSection,
   RecipePreparationSection,
   RecipesTopBar,
@@ -43,6 +44,7 @@ const initialFormValues: RecipeCreateFormValues = {
       description: '',
     },
   ],
+  media: [],
 };
 
 function RecipesCreateScreen({ onBack }: RecipesCreateScreenProps) {
@@ -156,6 +158,30 @@ function RecipesCreateScreen({ onBack }: RecipesCreateScreenProps) {
         preparationSteps: current.preparationSteps.filter((step) => step.id !== stepId),
       };
     });
+  };
+
+  const handleAddMedia = (type: 'image' | 'video') => {
+    const timestamp = Date.now();
+    const nextMedia = {
+      id: `media-create-${timestamp}`,
+      type,
+      fileName:
+        type === 'image'
+          ? `receita-imagem-${formValues.media.length + 1}.jpg`
+          : `receita-video-${formValues.media.length + 1}.mp4`,
+    } as const;
+
+    setFormValues((current) => ({
+      ...current,
+      media: [...current.media, nextMedia],
+    }));
+  };
+
+  const handleRemoveMedia = (mediaId: string) => {
+    setFormValues((current) => ({
+      ...current,
+      media: current.media.filter((item) => item.id !== mediaId),
+    }));
   };
 
   return (
@@ -280,15 +306,11 @@ function RecipesCreateScreen({ onBack }: RecipesCreateScreenProps) {
         steps={formValues.preparationSteps}
       />
 
-      <AppContainer marginBottom="5xl">
-        <AppText
-          color="textSecondary"
-          size="md"
-          lineHeight="relaxed"
-        >
-          As mídias serão adicionadas na próxima etapa.
-        </AppText>
-      </AppContainer>
+      <RecipeMediaSection
+        media={formValues.media}
+        onAddMedia={handleAddMedia}
+        onRemoveMedia={handleRemoveMedia}
+      />
 
       {formValues.isCollaborative ? (
         <AppButton
