@@ -8,6 +8,7 @@ export type RecipeCreateFormValues = {
   difficulty: RecipeDifficulty;
   isCollaborative: boolean;
   selectedIngredients: RecipeCreateIngredient[];
+  nutrition: RecipeCreateNutrition;
 };
 
 export type RecipeCreateIngredient = {
@@ -15,6 +16,13 @@ export type RecipeCreateIngredient = {
   name: string;
   unit?: string;
   quantity?: string;
+};
+
+export type RecipeCreateNutrition = {
+  calories: string;
+  proteins: string;
+  carbohydrates: string;
+  fats: string;
 };
 
 export type RecipeListItem = {

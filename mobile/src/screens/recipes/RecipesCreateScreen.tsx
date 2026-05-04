@@ -7,6 +7,7 @@ import {
   RecipeCollaborativeSwitch,
   RecipeDifficultyField,
   RecipeIngredientsSection,
+  RecipeNutritionSection,
   RecipesTopBar,
 } from './components';
 import { recipeIngredientsCatalogMock } from './mocks/ingredients';
@@ -29,6 +30,12 @@ const initialFormValues: RecipeCreateFormValues = {
     { id: 'ingredient-create-4', name: 'Gema de ovo', unit: 'unidade' },
     { id: 'ingredient-create-5', name: 'Farinha de trigo', unit: 'g' },
   ],
+  nutrition: {
+    calories: '120',
+    proteins: '3',
+    carbohydrates: '120',
+    fats: '3',
+  },
 };
 
 function RecipesCreateScreen({ onBack }: RecipesCreateScreenProps) {
@@ -70,6 +77,19 @@ function RecipesCreateScreen({ onBack }: RecipesCreateScreenProps) {
     setFormValues((current) => ({
       ...current,
       selectedIngredients: current.selectedIngredients.filter((ingredient) => ingredient.id !== ingredientId),
+    }));
+  };
+
+  const handleNutritionChange = (
+    field: keyof RecipeCreateFormValues['nutrition'],
+    value: string,
+  ) => {
+    setFormValues((current) => ({
+      ...current,
+      nutrition: {
+        ...current.nutrition,
+        [field]: value,
+      },
     }));
   };
 
@@ -182,13 +202,18 @@ function RecipesCreateScreen({ onBack }: RecipesCreateScreenProps) {
         selectedIngredients={formValues.selectedIngredients}
       />
 
+      <RecipeNutritionSection
+        onChange={handleNutritionChange}
+        values={formValues.nutrition}
+      />
+
       <AppContainer marginBottom="5xl">
         <AppText
           color="textSecondary"
           size="md"
           lineHeight="relaxed"
         >
-          As informações nutricionais, modo de preparo e mídias serão adicionados na próxima etapa.
+          O modo de preparo e as mídias serão adicionados na próxima etapa.
         </AppText>
       </AppContainer>
 
