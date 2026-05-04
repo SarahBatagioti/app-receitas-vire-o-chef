@@ -78,6 +78,21 @@ export interface RecipeMediaDto {
   createdAt: string;
 }
 
+export interface RecipeMediaUploadDto {
+  arquivos: UploadedRecipeMediaFileDto[];
+  campos: Record<string, string[]>;
+}
+
+export interface UploadedRecipeMediaFileDto {
+  fieldName: string;
+  fileName: string;
+  mimeType: string;
+  size: number;
+  absolutePath: string;
+  publicUrl: string;
+  inferredType: RecipeMediaType;
+}
+
 export interface RecipeSummaryDto {
   id: string;
   nome: string;

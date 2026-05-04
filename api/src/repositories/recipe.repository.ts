@@ -231,6 +231,67 @@ export class RecipeRepository {
     }
   }
 
+  async createRecipeMedia(
+    recipeId: string,
+    media: CreateRecipeMediaRepositoryInput[],
+    executor?: QueryExecutor,
+  ): Promise<void> {
+    if (!executor) {
+      await this.ensureTables();
+    }
+
+    const queryExecutor = getExecutor(executor);
+
+    for (const item of media) {
+      await queryExecutor.execute<ResultSetHeader>(
+        `
+          INSERT INTO recipe_media (
+            id,
+            recipe_id,
+            url,
+            type,
+            file_name,
+            mime_type,
+            size,
+            sort_order
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `,
+        [
+          randomUUID(),
+          recipeId,
+          item.url,
+          item.tipo,
+          item.nomeArquivo,
+          item.mimeType,
+          item.tamanho,
+          item.ordem,
+        ],
+      );
+    }
+  }
+
+  async deleteRecipeMediaByIdAndRecipeId(
+    mediaId: string,
+    recipeId: string,
+    executor?: QueryExecutor,
+  ): Promise<boolean> {
+    if (!executor) {
+      await this.ensureTables();
+    }
+
+    const [result] = await getExecutor(executor).execute<ResultSetHeader>(
+      `
+        DELETE FROM recipe_media
+        WHERE id = ?
+          AND recipe_id = ?
+      `,
+      [mediaId, recipeId],
+    );
+
+    return result.affectedRows > 0;
+  }
+
   async listRecipesByAuthorId(authorId: string): Promise<RecipeAggregate[]> {
     await this.ensureTables();
 
@@ -570,6 +631,15 @@ interface UpdateRecipeRepositoryInput {
   dificuldade?: RecipeDifficulty;
   isColaborativa: boolean;
   status: RecipeStatus;
+}
+
+interface CreateRecipeMediaRepositoryInput {
+  url: string;
+  tipo: RecipeMediaType;
+  nomeArquivo: string;
+  mimeType: string;
+  tamanho: number;
+  ordem: number;
 }
 
 interface RecipeDatabaseRow {

@@ -1,9 +1,11 @@
 import { Router } from 'express';
 import { RecipeController } from '../controllers/recipe.controller';
 import { authenticateJwt } from '../middlewares/auth.middleware';
+import { uploadRecipeMediaFiles } from '../middlewares/recipe-media-upload.middleware';
 import {
   validateCreateRecipeRequest,
   validateRecipeIdParam,
+  validateRecipeMediaIdParam,
   validateUpdateRecipeRequest,
 } from '../validators/recipe.validator';
 
@@ -22,6 +24,26 @@ recipeRoutes.get('/minhas', (request, response, next) =>
 
 recipeRoutes.get('/:id', validateRecipeIdParam, (request, response, next) =>
   recipeController.getById(request, response).catch(next),
+);
+
+recipeRoutes.post(
+  '/:id/midias',
+  validateRecipeIdParam,
+  uploadRecipeMediaFiles,
+  (request, response, next) =>
+    recipeController.addMedia(request, response).catch(next),
+);
+
+recipeRoutes.get('/:id/midias', validateRecipeIdParam, (request, response, next) =>
+  recipeController.listMedia(request, response).catch(next),
+);
+
+recipeRoutes.delete(
+  '/:id/midias/:midiaId',
+  validateRecipeIdParam,
+  validateRecipeMediaIdParam,
+  (request, response, next) =>
+    recipeController.deleteMedia(request, response).catch(next),
 );
 
 recipeRoutes.put('/:id', validateRecipeIdParam, validateUpdateRecipeRequest, (request, response, next) =>

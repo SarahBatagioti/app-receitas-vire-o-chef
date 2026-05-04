@@ -36,6 +36,10 @@ export const env = {
     password: process.env.DATABASE_PASSWORD ?? '',
     name: process.env.DATABASE_NAME ?? '',
   },
+  upload: {
+    maxFileSizeBytes: toNumber(process.env.UPLOAD_MAX_FILE_SIZE_BYTES, 25 * 1024 * 1024),
+    maxFiles: toNumber(process.env.UPLOAD_MAX_FILES, 10),
+  },
 };
 
 export const isProduction = env.nodeEnv === 'production';

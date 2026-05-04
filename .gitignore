@@ -27,6 +27,7 @@ api/build/
 api/.turbo/
 api/.cache/
 api/.tsbuildinfo
+api/uploads/
 
 # React Native / Metro / Expo
 .expo/

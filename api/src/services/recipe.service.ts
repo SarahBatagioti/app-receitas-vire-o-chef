@@ -2,15 +2,23 @@ import { database } from '../config/database';
 import {
   CreateRecipeDto,
   RecipeDetailsDto,
+  RecipeMediaDto,
+  RecipeMediaUploadDto,
   RecipeSummaryDto,
   UpdateRecipeDto,
 } from '../dtos/recipe.dto';
+import { RecipeMediaType } from '../models/recipe-media.model';
 import { UserRepository } from '../repositories/user.repository';
 import {
   RecipeAggregate,
   RecipeRepository,
 } from '../repositories/recipe.repository';
 import { AppError } from '../utils/app-error';
+import {
+  deleteRecipeMediaFiles,
+  removeRecipeMediaDirectoryIfEmpty,
+  resolveRecipeMediaAbsolutePath,
+} from '../utils/recipe-media-storage';
 import {
   validateCreateRecipeDto,
   validateUpdateRecipeDto,
@@ -186,11 +194,99 @@ export class RecipeService {
     await this.ensureInfrastructure();
     await this.ensureUserExists(usuarioId);
 
+    const recipe = await recipeRepository.findRecipeByIdAndAuthorId(id, usuarioId);
+
+    if (!recipe) {
+      throw new AppError('Receita nao encontrada.', 404);
+    }
+
     const deleted = await recipeRepository.deleteRecipeByIdAndAuthorId(id, usuarioId);
 
     if (!deleted) {
       throw new AppError('Receita nao encontrada.', 404);
     }
+
+    await cleanupPersistedRecipeMedia(recipe.id, recipe.media);
+  }
+
+  async adicionarMidiasReceita(
+    receitaId: string,
+    upload: RecipeMediaUploadDto,
+    usuarioId: string,
+  ): Promise<RecipeMediaDto[]> {
+    await this.ensureInfrastructure();
+    await this.ensureUserExists(usuarioId);
+
+    let mediaPersisted = false;
+
+    try {
+      const recipe = await this.getOwnedRecipe(receitaId, usuarioId);
+      const mediaToCreate = buildRecipeMediaCreatePayload(recipe, upload);
+      const connection = await database.getConnection();
+
+      try {
+        await connection.beginTransaction();
+        await recipeRepository.createRecipeMedia(receitaId, mediaToCreate, connection);
+        await connection.commit();
+        mediaPersisted = true;
+      } catch (error) {
+        await connection.rollback();
+        throw error;
+      } finally {
+        connection.release();
+      }
+
+      const updatedRecipe = await this.getOwnedRecipe(receitaId, usuarioId);
+      const createdUrls = new Set(mediaToCreate.map((media) => media.url));
+
+      return updatedRecipe.media
+        .filter((media) => createdUrls.has(media.url))
+        .map(mapRecipeMedia);
+    } catch (error) {
+      if (!mediaPersisted) {
+        await cleanupUploadedRecipeMedia(upload);
+      }
+
+      throw error;
+    }
+  }
+
+  async listarMidiasReceita(
+    receitaId: string,
+    usuarioId: string,
+  ): Promise<RecipeMediaDto[]> {
+    await this.ensureInfrastructure();
+    await this.ensureUserExists(usuarioId);
+
+    const recipe = await this.getOwnedRecipe(receitaId, usuarioId);
+    return recipe.media.map(mapRecipeMedia);
+  }
+
+  async removerMidiaReceita(
+    receitaId: string,
+    midiaId: string,
+    usuarioId: string,
+  ): Promise<void> {
+    await this.ensureInfrastructure();
+    await this.ensureUserExists(usuarioId);
+
+    const recipe = await this.getOwnedRecipe(receitaId, usuarioId);
+    const media = recipe.media.find((item) => item.id === midiaId);
+
+    if (!media) {
+      throw new AppError('Midia nao encontrada.', 404);
+    }
+
+    const deleted = await recipeRepository.deleteRecipeMediaByIdAndRecipeId(
+      midiaId,
+      receitaId,
+    );
+
+    if (!deleted) {
+      throw new AppError('Midia nao encontrada.', 404);
+    }
+
+    await cleanupPersistedRecipeMedia(recipe.id, [media]);
   }
 
   private async ensureInfrastructure(): Promise<void> {
@@ -204,6 +300,19 @@ export class RecipeService {
     if (!user) {
       throw new AppError('Usuario autor nao encontrado.', 404);
     }
+  }
+
+  private async getOwnedRecipe(
+    receitaId: string,
+    usuarioId: string,
+  ): Promise<RecipeAggregate> {
+    const recipe = await recipeRepository.findRecipeByIdAndAuthorId(receitaId, usuarioId);
+
+    if (!recipe) {
+      throw new AppError('Receita nao encontrada.', 404);
+    }
+
+    return recipe;
   }
 }
 
@@ -311,4 +420,179 @@ function mapRecipeMedia(media: RecipeAggregate['media'][number]) {
     ordem: media.order,
     createdAt: media.createdAt,
   };
+}
+
+function buildRecipeMediaCreatePayload(
+  recipe: RecipeAggregate,
+  upload: RecipeMediaUploadDto,
+) {
+  const requestedTypes = getRequestedRecipeMediaTypes(upload.campos);
+  const requestedOrders = getRequestedRecipeMediaOrders(upload.campos);
+  const existingOrders = new Set(recipe.media.map((media) => media.order));
+  const nextOrder = recipe.media.reduce(
+    (highestOrder, media) => Math.max(highestOrder, media.order),
+    0,
+  ) + 1;
+
+  validateRequestedTypes(upload, requestedTypes);
+  validateRequestedOrders(upload, requestedOrders, existingOrders);
+
+  return upload.arquivos.map((file, index) => ({
+    url: file.publicUrl,
+    tipo: resolveRecipeMediaType(file.inferredType, requestedTypes[index]),
+    nomeArquivo: file.fileName,
+    mimeType: file.mimeType,
+    tamanho: file.size,
+    ordem: requestedOrders[index] ?? (nextOrder + index),
+  }));
+}
+
+function validateRequestedTypes(
+  upload: RecipeMediaUploadDto,
+  requestedTypes: Array<RecipeMediaType | undefined>,
+) {
+  if (requestedTypes.length === 0) {
+    return;
+  }
+
+  if (requestedTypes.length !== upload.arquivos.length) {
+    throw new AppError('Quantidade de tipos de midia invalida.', 422, [
+      'Informe um tipo para cada arquivo enviado ou omita o campo para usar deteccao automatica.',
+    ]);
+  }
+
+  for (const [index, requestedType] of requestedTypes.entries()) {
+    if (!requestedType) {
+      throw new AppError('Tipo de midia invalido.', 422, [
+        `Arquivo ${index + 1}: tipo deve ser IMAGEM ou VIDEO.`,
+      ]);
+    }
+
+    if (requestedType !== upload.arquivos[index].inferredType) {
+      throw new AppError('Tipo de midia nao corresponde ao arquivo enviado.', 422, [
+        `Arquivo ${index + 1}: o mimeType enviado corresponde a ${upload.arquivos[index].inferredType}.`,
+      ]);
+    }
+  }
+}
+
+function validateRequestedOrders(
+  upload: RecipeMediaUploadDto,
+  requestedOrders: Array<number | undefined>,
+  existingOrders: Set<number>,
+) {
+  if (requestedOrders.length === 0) {
+    return;
+  }
+
+  if (requestedOrders.length !== upload.arquivos.length) {
+    throw new AppError('Quantidade de ordens invalida.', 422, [
+      'Informe uma ordem para cada arquivo enviado ou omita o campo para usar ordenacao automatica.',
+    ]);
+  }
+
+  const receivedOrders = new Set<number>();
+
+  for (const [index, order] of requestedOrders.entries()) {
+    if (!order) {
+      throw new AppError('Ordem de midia invalida.', 422, [
+        `Arquivo ${index + 1}: ordem deve ser um numero positivo.`,
+      ]);
+    }
+
+    if (receivedOrders.has(order) || existingOrders.has(order)) {
+      throw new AppError('Ordem de midia duplicada.', 422, [
+        `Arquivo ${index + 1}: ordem ${order} ja esta em uso para esta receita.`,
+      ]);
+    }
+
+    receivedOrders.add(order);
+  }
+}
+
+function getIndexedFieldValues(
+  fields: Record<string, string[]>,
+  supportedNames: string[],
+): string[] {
+  for (const name of supportedNames) {
+    if (fields[name]?.length) {
+      return fields[name];
+    }
+  }
+
+  return [];
+}
+
+function getRequestedRecipeMediaTypes(
+  fields: Record<string, string[]>,
+): Array<RecipeMediaType | undefined> {
+  return getIndexedFieldValues(fields, ['tipo', 'tipos', 'tipos[]']).map((value) => {
+    if (value === 'IMAGEM' || value === 'VIDEO') {
+      return value;
+    }
+
+    return undefined;
+  });
+}
+
+function getRequestedRecipeMediaOrders(
+  fields: Record<string, string[]>,
+): Array<number | undefined> {
+  return getIndexedFieldValues(fields, ['ordem', 'ordens', 'ordens[]']).map((value) => {
+    const parsed = Number(value);
+
+    if (!Number.isInteger(parsed) || parsed <= 0) {
+      return undefined;
+    }
+
+    return parsed;
+  });
+}
+
+function resolveRecipeMediaType(
+  inferredType: RecipeMediaType,
+  requestedType?: string,
+): RecipeMediaType {
+  if (!requestedType) {
+    return inferredType;
+  }
+
+  if (requestedType !== 'IMAGEM' && requestedType !== 'VIDEO') {
+    throw new AppError('Tipo de midia invalido.', 422, [
+      'Tipo deve ser IMAGEM ou VIDEO.',
+    ]);
+  }
+
+  return requestedType;
+}
+
+async function cleanupUploadedRecipeMedia(upload: RecipeMediaUploadDto): Promise<void> {
+  if (upload.arquivos.length === 0) {
+    return;
+  }
+
+  const recipeId = getRecipeIdFromMediaUrl(upload.arquivos[0].publicUrl);
+
+  await deleteRecipeMediaFiles(upload.arquivos);
+
+  if (recipeId) {
+    await removeRecipeMediaDirectoryIfEmpty(recipeId);
+  }
+}
+
+async function cleanupPersistedRecipeMedia(
+  recipeId: string,
+  media: RecipeAggregate['media'],
+): Promise<void> {
+  await deleteRecipeMediaFiles(
+    media.map((item) => ({
+      absolutePath: resolveRecipeMediaAbsolutePath(recipeId, item.fileName, item.url),
+    })),
+  );
+  await removeRecipeMediaDirectoryIfEmpty(recipeId);
+}
+
+function getRecipeIdFromMediaUrl(url: string): string | null {
+  const parts = url.split('/').filter(Boolean);
+  return parts.length >= 3 ? parts[2] : null;
 }

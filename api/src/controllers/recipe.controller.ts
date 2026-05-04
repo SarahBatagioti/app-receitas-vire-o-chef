@@ -59,6 +59,41 @@ export class RecipeController {
       }),
     );
   }
+
+  async addMedia(request: Request, response: Response) {
+    const authUser = getAuthenticatedUser(request);
+    const recipeId = getRecipeId(request);
+    const upload = getRecipeMediaUpload(request);
+    const createdMedia = await recipeService.adicionarMidiasReceita(
+      recipeId,
+      upload,
+      authUser.id,
+    );
+
+    return response.status(201).json(buildSuccessResponse(createdMedia));
+  }
+
+  async listMedia(request: Request, response: Response) {
+    const authUser = getAuthenticatedUser(request);
+    const recipeId = getRecipeId(request);
+    const media = await recipeService.listarMidiasReceita(recipeId, authUser.id);
+
+    return response.status(200).json(buildSuccessResponse(media));
+  }
+
+  async deleteMedia(request: Request, response: Response) {
+    const authUser = getAuthenticatedUser(request);
+    const recipeId = getRecipeId(request);
+    const mediaId = getRecipeMediaId(request);
+
+    await recipeService.removerMidiaReceita(recipeId, mediaId, authUser.id);
+
+    return response.status(200).json(
+      buildSuccessResponse({
+        message: 'Midia removida com sucesso.',
+      }),
+    );
+  }
 }
 
 function getAuthenticatedUser(request: Request) {
@@ -77,4 +112,22 @@ function getRecipeId(request: Request): string {
   }
 
   return id;
+}
+
+function getRecipeMediaId(request: Request): string {
+  const { midiaId } = request.params;
+
+  if (typeof midiaId !== 'string') {
+    throw new AppError('Identificador da midia invalido.', 422);
+  }
+
+  return midiaId;
+}
+
+function getRecipeMediaUpload(request: Request) {
+  if (!request.recipeMediaUpload) {
+    throw new AppError('Nenhum arquivo enviado.', 422);
+  }
+
+  return request.recipeMediaUpload;
 }

@@ -54,18 +54,27 @@ export function validateRecipeIdParam(
   response: Response,
   next: NextFunction,
 ) {
-  const { id } = request.params;
+  return validateStringRouteParam(
+    request,
+    response,
+    next,
+    'id',
+    'Identificador da receita invalido.',
+  );
+}
 
-  if (typeof id !== 'string' || !id.trim()) {
-    return response
-      .status(422)
-      .json(buildErrorResponse('Identificador da receita invalido.', [
-        'Informe um id de receita valido.',
-      ]));
-  }
-
-  request.params.id = id.trim();
-  return next();
+export function validateRecipeMediaIdParam(
+  request: Request,
+  response: Response,
+  next: NextFunction,
+) {
+  return validateStringRouteParam(
+    request,
+    response,
+    next,
+    'midiaId',
+    'Identificador da midia invalido.',
+  );
 }
 
 export function validateCreateRecipeDto(
@@ -361,4 +370,25 @@ function handleRecipeValidationError(
   }
 
   return next(error);
+}
+
+function validateStringRouteParam(
+  request: Request,
+  response: Response,
+  next: NextFunction,
+  parameterName: 'id' | 'midiaId',
+  message: string,
+) {
+  const parameterValue = request.params[parameterName];
+
+  if (typeof parameterValue !== 'string' || !parameterValue.trim()) {
+    return response
+      .status(422)
+      .json(buildErrorResponse(message, [
+        `Informe um ${parameterName} valido.`,
+      ]));
+  }
+
+  request.params[parameterName] = parameterValue.trim();
+  return next();
 }
