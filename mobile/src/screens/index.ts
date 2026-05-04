@@ -4,6 +4,7 @@ export { default as ProdutosScreen } from './ProdutosScreen';
 export { default as ReceitasScreen } from './ReceitasScreen';
 export { default as RefeicoesScreen } from './RefeicoesScreen';
 export { default as ExampleThemeScreen } from './ExampleThemeScreen';
+export { RecipesHomeScreen } from './recipes';
 export {
   AccessScreen,
   AuthWelcomeScreen,

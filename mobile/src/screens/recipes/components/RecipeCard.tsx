@@ -1,0 +1,175 @@
+import React from 'react';
+import { Image, Pressable, useWindowDimensions } from 'react-native';
+import { Clock3, Heart, Star, UsersRound } from 'lucide-react-native';
+
+import { AppContainer, AppText } from '../../../components/ui';
+import { useAppTheme } from '../../../contexts';
+import { RecipeDifficulty, RecipeListItem } from '../types';
+
+type RecipeCardProps = {
+  recipe: RecipeListItem;
+  onPress?: (recipe: RecipeListItem) => void;
+  isLast?: boolean;
+};
+
+const difficultyMeta: Record<
+  RecipeDifficulty,
+  {
+    badgeColor: 'brandGreen' | 'brandOrange' | 'brandRed';
+    borderColor: 'brandGreen' | 'brandOrange' | 'brandRed';
+    label: string;
+  }
+> = {
+  facil: {
+    badgeColor: 'brandGreen',
+    borderColor: 'brandGreen',
+    label: 'Fácil',
+  },
+  intermediario: {
+    badgeColor: 'brandOrange',
+    borderColor: 'brandOrange',
+    label: 'Intermediário',
+  },
+  dificil: {
+    badgeColor: 'brandRed',
+    borderColor: 'brandRed',
+    label: 'Difícil',
+  },
+};
+
+function RecipeCard({ recipe, onPress, isLast = false }: RecipeCardProps) {
+  const { theme } = useAppTheme();
+  const { width } = useWindowDimensions();
+  const cardWidth = Math.min(width * 0.41, theme.spacing['7xl'] * 2.85);
+  const imageHeight = theme.spacing['6xl'] * 2;
+  const infoMeta = difficultyMeta[recipe.difficulty];
+  const heartColor = recipe.isFavorite ? theme.colors.primary : theme.colors.surface;
+
+  return (
+    <Pressable
+      onPress={() => onPress?.(recipe)}
+      style={{ marginRight: isLast ? 0 : theme.spacing.md }}
+    >
+      <AppContainer
+        backgroundColor="surface"
+        borderRadius="3xl"
+        shadow="sm"
+        style={{
+          borderColor: theme.colors[infoMeta.borderColor],
+          borderWidth: 1.5,
+          overflow: 'visible',
+          width: cardWidth,
+        }}
+      >
+        <AppContainer
+          style={{
+            borderTopLeftRadius: theme.borderRadius['3xl'],
+            borderTopRightRadius: theme.borderRadius['3xl'],
+            overflow: 'hidden',
+            position: 'relative',
+          }}
+        >
+          <Image
+            resizeMode="cover"
+            source={{ uri: recipe.imageUrl }}
+            style={{
+              height: imageHeight,
+              width: '100%',
+            }}
+          />
+        </AppContainer>
+
+        <Pressable
+          accessibilityLabel={`Favoritar ${recipe.title}`}
+          style={{
+            alignItems: 'center',
+            backgroundColor: 'transparent',
+            height: theme.spacing['4xl'],
+            justifyContent: 'center',
+            position: 'absolute',
+            right: theme.spacing.sm,
+            top: theme.spacing.sm,
+            width: theme.spacing['4xl'],
+            zIndex: 4,
+          }}
+        >
+          <Heart
+            color={heartColor}
+            fill={heartColor}
+            size={theme.spacing.xl}
+            strokeWidth={1.8}
+          />
+        </Pressable>
+
+        <AppContainer
+          backgroundColor={infoMeta.badgeColor}
+          borderRadius="full"
+          paddingHorizontal="md"
+          paddingVertical="xs"
+          style={{
+            left: theme.spacing.sm,
+            position: 'absolute',
+            top: imageHeight - theme.spacing.md,
+            elevation: 4,
+            zIndex: 5,
+          }}
+        >
+          <AppText color="textInverse" size="sm" weight="bold">
+            {infoMeta.label}
+          </AppText>
+        </AppContainer>
+
+        <AppContainer
+          paddingHorizontal="md"
+          paddingVertical="md"
+          style={{
+            borderBottomLeftRadius: theme.borderRadius['3xl'],
+            borderBottomRightRadius: theme.borderRadius['3xl'],
+            paddingTop: theme.spacing.lg + theme.spacing.sm,
+          }}
+        >
+          <AppText
+            color="text"
+            numberOfLines={2}
+            size="xl"
+            style={{
+              fontWeight: theme.fontWeights.bold,
+              lineHeight: theme.fontSizes.xl * 1.05,
+              minHeight: theme.spacing['5xl'],
+            }}
+          >
+            {recipe.title}
+          </AppText>
+
+          <AppContainer
+            align="center"
+            direction="row"
+            justify="space-between"
+            marginTop="sm"
+          >
+            <AppContainer align="center" direction="row" style={{ gap: theme.spacing.xs }}>
+              <Clock3 color={theme.colors.text} size={theme.spacing.md + theme.spacing.xs} />
+              <AppText size="sm">{`${recipe.prepMinutes} min`}</AppText>
+            </AppContainer>
+
+            <AppContainer align="center" direction="row" style={{ gap: theme.spacing.xs }}>
+              <Star
+                color={theme.colors.brandYellow}
+                fill={theme.colors.brandYellow}
+                size={theme.spacing.md + theme.spacing.xs}
+              />
+              <AppText size="sm">{recipe.rating.toFixed(1).replace('.', ',')}</AppText>
+            </AppContainer>
+
+            <AppContainer align="center" direction="row" style={{ gap: theme.spacing.xs }}>
+              <UsersRound color={theme.colors.text} size={theme.spacing.md + theme.spacing.xs} />
+              <AppText size="sm">{recipe.servings}</AppText>
+            </AppContainer>
+          </AppContainer>
+        </AppContainer>
+      </AppContainer>
+    </Pressable>
+  );
+}
+
+export default RecipeCard;
