@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -15,6 +16,8 @@ import {
   LOGO_VIRE_O_CHEF_ASPECT_RATIO,
 } from '../../assets/images/logoVireOChefXml';
 import { AppContainer, AppText } from '../ui';
+
+const accessBackground = require('../../assets/images/accessBackground.png');
 
 type AuthContainerProps = {
   children: React.ReactNode;
@@ -39,11 +42,15 @@ function AuthContainer({
   const { width, height } = useWindowDimensions();
   const isCompact = height < 760;
   const titleSize = variant === 'access' ? '5xl' : isCompact ? '4xl' : '5xl';
+  const accessTitleFontSize = Math.min(width * 0.145, 62);
+  const resolvedTitleFontSize =
+    variant === 'access' ? accessTitleFontSize : theme.fontSizes[titleSize];
   const logoHeight =
     variant === 'access' ? Math.min(width * 0.42, 172) : Math.min(width * 0.22, 92);
   const logoWidth = logoHeight * LOGO_VIRE_O_CHEF_ASPECT_RATIO;
   const titleColor = variant === 'access' && themeMode === 'dark' ? 'text' : 'primary';
   const containerBackgroundColor = variant === 'access' ? 'surface' : 'background';
+  const logoThemeMode = variant === 'access' ? 'light' : themeMode;
 
   return (
     <KeyboardAvoidingView
@@ -65,44 +72,17 @@ function AuthContainer({
       >
         <AppContainer flex backgroundColor={containerBackgroundColor} style={{ minHeight: height }}>
           {variant === 'access' ? (
-            <>
-              <AppContainer
-                backgroundColor="brandGreen"
-                style={{
-                  position: 'absolute',
-                  top: -height * 0.08,
-                  left: -width * 0.3,
-                  width: width * 0.75,
-                  height: height * 0.46,
-                  borderBottomRightRadius: width,
-                  borderTopRightRadius: width * 0.3,
-                }}
-              />
-              <AppContainer
-                backgroundColor="brandOrange"
-                style={{
-                  position: 'absolute',
-                  top: height * 0.1,
-                  right: -width * 0.25,
-                  width: width * 0.55,
-                  height: height * 0.22,
-                  borderTopLeftRadius: width,
-                  borderBottomLeftRadius: width * 0.35,
-                }}
-              />
-              <AppContainer
-                backgroundColor="brandYellow"
-                style={{
-                  position: 'absolute',
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  minHeight: height * 0.34,
-                  borderTopLeftRadius: width * 0.38,
-                  borderTopRightRadius: width * 0.28,
-                }}
-              />
-            </>
+            <Image
+              source={accessBackground}
+              resizeMode="stretch"
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width,
+                height,
+              }}
+            />
           ) : null}
 
           <AppContainer
@@ -145,7 +125,11 @@ function AuthContainer({
                   width: logoWidth,
                 }}
               >
-                <SvgXml xml={getLogoVireOChefXml(themeMode)} width={logoWidth} height={logoHeight} />
+                <SvgXml
+                  xml={getLogoVireOChefXml(logoThemeMode)}
+                  width={logoWidth}
+                  height={logoHeight}
+                />
               </AppContainer>
 
               {title ? (
@@ -153,8 +137,10 @@ function AuthContainer({
                   color={titleColor}
                   size={titleSize}
                   style={{
+                    color: variant === 'access' ? '#D7070C' : undefined,
                     fontFamily: theme.fonts.secondary.regular,
-                    lineHeight: theme.fontSizes[titleSize] * 1.05,
+                    fontSize: resolvedTitleFontSize,
+                    lineHeight: resolvedTitleFontSize * (variant === 'access' ? 0.95 : 1.05),
                     marginTop: theme.spacing.lg,
                     maxWidth: width * 0.82,
                     textAlign: 'center',
