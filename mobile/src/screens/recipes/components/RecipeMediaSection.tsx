@@ -1,5 +1,5 @@
 import React from 'react';
-import { Alert, Pressable } from 'react-native';
+import { Pressable } from 'react-native';
 import { ImagePlus, Play, Trash2 } from 'lucide-react-native';
 
 import { AppContainer, AppText } from '../../../components/ui';
@@ -7,20 +7,34 @@ import { useAppTheme } from '../../../contexts';
 import { RecipeCreateMedia } from '../types';
 
 type RecipeMediaSectionProps = {
+  error?: string | null;
+  isUploading?: boolean;
   media: RecipeCreateMedia[];
-  onAddMedia: (type: RecipeCreateMedia['type']) => void;
+  onAddMedia: () => void | Promise<void>;
   onRemoveMedia: (mediaId: string) => void;
 };
 
-function RecipeMediaSection({ media, onAddMedia, onRemoveMedia }: RecipeMediaSectionProps) {
+function RecipeMediaSection({
+  error,
+  isUploading = false,
+  media,
+  onAddMedia,
+  onRemoveMedia,
+}: RecipeMediaSectionProps) {
   const { theme } = useAppTheme();
 
-  const handleAddMedia = () => {
-    Alert.alert('Adicionar mídia', 'Escolha o tipo de mídia mockada para esta etapa.', [
-      { text: 'Cancelar', style: 'cancel' },
-      { text: 'Imagem', onPress: () => onAddMedia('image') },
-      { text: 'Vídeo', onPress: () => onAddMedia('video') },
-    ]);
+  const handlePressAddMedia = () => {
+    try {
+      const result = onAddMedia();
+
+      if (result && typeof result === 'object' && 'catch' in result && typeof result.catch === 'function') {
+        result.catch(() => {
+          // O tratamento visivel acontece no handler da tela.
+        });
+      }
+    } catch {
+      // O tratamento visivel acontece no handler da tela.
+    }
   };
 
   return (
@@ -33,10 +47,10 @@ function RecipeMediaSection({ media, onAddMedia, onRemoveMedia }: RecipeMediaSec
           marginBottom: theme.spacing.md,
         }}
       >
-        Adicionar mídias:
+        Adicionar midias:
       </AppText>
 
-      <Pressable onPress={handleAddMedia}>
+      <Pressable disabled={isUploading} onPress={handlePressAddMedia}>
         <AppContainer
           align="center"
           backgroundColor="surface"
@@ -44,18 +58,23 @@ function RecipeMediaSection({ media, onAddMedia, onRemoveMedia }: RecipeMediaSec
           direction="row"
           paddingHorizontal="lg"
           paddingVertical="md"
-          style={{ minHeight: theme.spacing['6xl'] }}
+          style={{
+            minHeight: theme.spacing['6xl'],
+            opacity: isUploading ? 0.65 : 1,
+          }}
         >
           <ImagePlus color={theme.colors.success} size={theme.spacing['2xl']} strokeWidth={2} />
-          <AppText
-            color="textSecondary"
-            size="md"
-            style={{ marginLeft: theme.spacing.md }}
-          >
-            Adicionar foto e/ou vídeo
+          <AppText color="textSecondary" size="md" style={{ marginLeft: theme.spacing.md }}>
+            {isUploading ? 'Upload em andamento...' : 'Adicionar foto e/ou video'}
           </AppText>
         </AppContainer>
       </Pressable>
+
+      {error ? (
+        <AppText color="error" size="md" marginTop="sm">
+          {error}
+        </AppText>
+      ) : null}
 
       {media.length ? (
         <AppContainer marginTop="md">
@@ -67,9 +86,9 @@ function RecipeMediaSection({ media, onAddMedia, onRemoveMedia }: RecipeMediaSec
               borderRadius="3xl"
               direction="row"
               justify="space-between"
+              marginBottom="sm"
               padding="md"
               shadow="sm"
-              marginBottom="sm"
             >
               <AppContainer align="center" direction="row" style={{ flex: 1 }}>
                 <AppContainer
@@ -84,15 +103,24 @@ function RecipeMediaSection({ media, onAddMedia, onRemoveMedia }: RecipeMediaSec
                   }}
                 >
                   {item.type === 'image' ? (
-                    <ImagePlus color={theme.colors.textInverse} size={theme.spacing.xl} strokeWidth={2} />
+                    <ImagePlus
+                      color={theme.colors.textInverse}
+                      size={theme.spacing.xl}
+                      strokeWidth={2}
+                    />
                   ) : (
-                    <Play color={theme.colors.textInverse} fill={theme.colors.textInverse} size={theme.spacing.xl} strokeWidth={1.8} />
+                    <Play
+                      color={theme.colors.textInverse}
+                      fill={theme.colors.textInverse}
+                      size={theme.spacing.xl}
+                      strokeWidth={1.8}
+                    />
                   )}
                 </AppContainer>
 
                 <AppContainer style={{ flex: 1 }}>
                   <AppText color="text" size="md" style={{ fontWeight: theme.fontWeights.semibold }}>
-                    {item.type === 'image' ? 'Imagem adicionada' : 'Vídeo adicionado'}
+                    {item.type === 'image' ? 'Imagem selecionada' : 'Video selecionado'}
                   </AppText>
                   <AppText color="textSecondary" size="md">
                     {item.fileName}
@@ -100,7 +128,7 @@ function RecipeMediaSection({ media, onAddMedia, onRemoveMedia }: RecipeMediaSec
                 </AppContainer>
               </AppContainer>
 
-              <Pressable onPress={() => onRemoveMedia(item.id)}>
+              <Pressable disabled={isUploading} onPress={() => onRemoveMedia(item.id)}>
                 <Trash2 color={theme.colors.primary} size={theme.spacing.xl} strokeWidth={2} />
               </Pressable>
             </AppContainer>

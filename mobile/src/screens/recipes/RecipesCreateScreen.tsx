@@ -1,5 +1,6 @@
 import React from 'react';
 import { ScrollView } from 'react-native';
+import { Asset, launchImageLibrary } from 'react-native-image-picker';
 
 import { AppButton, AppContainer, AppInput, AppText } from '../../components/ui';
 import { useAppTheme } from '../../contexts';
@@ -16,17 +17,29 @@ import {
 import { recipeIngredientsCatalogMock } from './mocks/ingredients';
 import {
   RecipeCreateFormValues,
+  RecipeCreateMedia,
+  RecipeCreateStepAttachment,
   RecipeCreateValidationErrors,
   RecipeStatus,
 } from './types';
 
-type RecipesCreateScreenProps = {
-  onBack: () => void;
-  onSubmitRecipe: (values: RecipeCreateFormValues, status: RecipeStatus) => Promise<void>;
+type SubmitRecipeOptions = {
+  onUploadStart?: () => void;
 };
 
+type RecipesCreateScreenProps = {
+  onBack: () => void;
+  onSubmitRecipe: (
+    values: RecipeCreateFormValues,
+    status: RecipeStatus,
+    options?: SubmitRecipeOptions,
+  ) => Promise<void>;
+};
+
+type SubmissionPhase = 'creating' | 'uploading' | null;
+
 const initialFormValues: RecipeCreateFormValues = {
-  title: 'Pavê de Morango da Thaís',
+  title: 'Pave de Morango da Thais',
   prepMinutes: '120',
   servings: '3',
   difficulty: 'intermediario',
@@ -53,17 +66,67 @@ const initialFormValues: RecipeCreateFormValues = {
   media: [],
 };
 
+const MAX_MEDIA_SELECTION = 10;
+
+function inferMediaType(mimeType?: string): RecipeCreateMedia['type'] | null {
+  if (!mimeType) {
+    return null;
+  }
+
+  if (mimeType.startsWith('image/')) {
+    return 'image';
+  }
+
+  if (mimeType.startsWith('video/')) {
+    return 'video';
+  }
+
+  return null;
+}
+
+function buildFallbackFileName(
+  mediaType: RecipeCreateMedia['type'],
+  mimeType: string,
+  order: number,
+): string {
+  const extension = mimeType.split('/')[1]?.toLowerCase() || (mediaType === 'image' ? 'jpg' : 'mp4');
+  return `receita-${mediaType}-${order}.${extension}`;
+}
+
+function normalizeSelectedAsset(asset: Asset, order: number): RecipeCreateMedia | null {
+  const mediaType = inferMediaType(asset.type);
+
+  if (!asset.uri || !asset.type || !mediaType) {
+    return null;
+  }
+
+  return {
+    id: `media-create-${Date.now()}-${order}-${Math.round(Math.random() * 1000)}`,
+    type: mediaType,
+    fileName:
+      asset.fileName?.trim() || buildFallbackFileName(mediaType, asset.type, order + 1),
+    mimeType: asset.type,
+    uri: asset.uri,
+    fileSize: asset.fileSize,
+  };
+}
+
 function RecipesCreateScreen({ onBack, onSubmitRecipe }: RecipesCreateScreenProps) {
   const { theme } = useAppTheme();
   const [formValues, setFormValues] = React.useState<RecipeCreateFormValues>(initialFormValues);
   const [validationErrors, setValidationErrors] = React.useState<RecipeCreateValidationErrors>({});
   const [submissionError, setSubmissionError] = React.useState<string | null>(null);
+  const [mediaSelectionError, setMediaSelectionError] = React.useState<string | null>(null);
+  const [stepMediaSelectionError, setStepMediaSelectionError] = React.useState<string | null>(null);
   const [submitIntent, setSubmitIntent] = React.useState<RecipeStatus | null>(null);
+  const [submissionPhase, setSubmissionPhase] = React.useState<SubmissionPhase>(null);
   const nextPreparationStepId = React.useRef(2);
   const isSubmitting = submitIntent !== null;
 
   const clearSubmitFeedback = () => {
     setSubmissionError(null);
+    setMediaSelectionError(null);
+    setStepMediaSelectionError(null);
     setValidationErrors((current) => ({
       ...current,
       submit: undefined,
@@ -176,7 +239,10 @@ function RecipesCreateScreen({ onBack, onSubmitRecipe }: RecipesCreateScreenProp
     }));
   };
 
-  const handleChangePreparationStepFile = (stepId: string, nextFileName?: string) => {
+  const handleChangePreparationStepFile = (
+    stepId: string,
+    nextAttachment?: RecipeCreateStepAttachment,
+  ) => {
     clearSubmitFeedback();
     setFormValues((current) => ({
       ...current,
@@ -184,7 +250,7 @@ function RecipesCreateScreen({ onBack, onSubmitRecipe }: RecipesCreateScreenProp
         step.id === stepId
           ? {
               ...step,
-              fileName: nextFileName,
+              attachment: nextAttachment,
             }
           : step,
       ),
@@ -205,22 +271,120 @@ function RecipesCreateScreen({ onBack, onSubmitRecipe }: RecipesCreateScreenProp
     });
   };
 
-  const handleAddMedia = (type: 'image' | 'video') => {
+  const handleAddMedia = async () => {
     clearSubmitFeedback();
-    const timestamp = Date.now();
-    const nextMedia = {
-      id: `media-create-${timestamp}`,
-      type,
-      fileName:
-        type === 'image'
-          ? `receita-imagem-${formValues.media.length + 1}.jpg`
-          : `receita-video-${formValues.media.length + 1}.mp4`,
-    } as const;
 
-    setFormValues((current) => ({
-      ...current,
-      media: [...current.media, nextMedia],
-    }));
+    try {
+      const availableSlots = Math.max(0, MAX_MEDIA_SELECTION - formValues.media.length);
+
+      if (availableSlots === 0) {
+        setMediaSelectionError(`Voce pode adicionar ate ${MAX_MEDIA_SELECTION} midias por receita.`);
+        return;
+      }
+
+      const response = await launchImageLibrary({
+        assetRepresentationMode: 'current',
+        includeBase64: false,
+        mediaType: 'mixed',
+        quality: 1,
+        selectionLimit: availableSlots,
+      });
+
+      if (response.didCancel) {
+        return;
+      }
+
+      if (response.errorCode) {
+        setMediaSelectionError('Nao foi possivel selecionar as midias no dispositivo.');
+        return;
+      }
+
+      const selectedAssets = response.assets ?? [];
+
+      if (!selectedAssets.length) {
+        setMediaSelectionError('Selecione ao menos uma imagem ou video valido.');
+        return;
+      }
+
+      const normalizedAssets = selectedAssets
+        .map((asset, index) => normalizeSelectedAsset(asset, formValues.media.length + index))
+        .filter((item): item is RecipeCreateMedia => Boolean(item));
+
+      if (!normalizedAssets.length) {
+        setMediaSelectionError('So sao permitidos arquivos de imagem e video com uri valida.');
+        return;
+      }
+
+      if (normalizedAssets.length !== selectedAssets.length) {
+        setMediaSelectionError('Alguns arquivos foram ignorados porque nao sao imagens ou videos validos.');
+      }
+
+      setFormValues((current) => ({
+        ...current,
+        media: [...current.media, ...normalizedAssets],
+      }));
+    } catch (error) {
+      const message = getErrorMessage(
+        error,
+        'Nao foi possivel abrir o seletor de midias no dispositivo.',
+      );
+      const rebuildHint =
+        message.includes('launchImageLibrary') || message.includes('null')
+          ? ' Se voce acabou de instalar a biblioteca, gere um novo build do app.'
+          : '';
+
+      setMediaSelectionError(`${message}${rebuildHint}`);
+    }
+  };
+
+  const handleSelectPreparationStepMedia = async (stepId: string) => {
+    clearSubmitFeedback();
+
+    try {
+      const response = await launchImageLibrary({
+        assetRepresentationMode: 'current',
+        includeBase64: false,
+        mediaType: 'mixed',
+        quality: 1,
+        selectionLimit: 1,
+      });
+
+      if (response.didCancel) {
+        return;
+      }
+
+      if (response.errorCode) {
+        setStepMediaSelectionError('Nao foi possivel selecionar a midia deste passo.');
+        return;
+      }
+
+      const selectedAsset = response.assets?.[0];
+      const normalizedAsset = selectedAsset ? normalizeSelectedAsset(selectedAsset, 0) : null;
+
+      if (!normalizedAsset) {
+        setStepMediaSelectionError('Selecione uma imagem ou video valido para o passo.');
+        return;
+      }
+
+      handleChangePreparationStepFile(stepId, {
+        fileName: normalizedAsset.fileName,
+        fileSize: normalizedAsset.fileSize,
+        mimeType: normalizedAsset.mimeType,
+        type: normalizedAsset.type,
+        uri: normalizedAsset.uri,
+      });
+    } catch (error) {
+      const message = getErrorMessage(
+        error,
+        'Nao foi possivel abrir o seletor de midias do passo.',
+      );
+      const rebuildHint =
+        message.includes('launchImageLibrary') || message.includes('null')
+          ? ' Se voce acabou de instalar a biblioteca, gere um novo build do app.'
+          : '';
+
+      setStepMediaSelectionError(`${message}${rebuildHint}`);
+    }
   };
 
   const handleRemoveMedia = (mediaId: string) => {
@@ -255,11 +419,11 @@ function RecipesCreateScreen({ onBack, onSubmitRecipe }: RecipesCreateScreenProp
     }
 
     if (!formValues.preparationSteps.some((step) => step.description.trim())) {
-      errors.preparationSteps = 'Adicione pelo menos 1 passo com descrição.';
+      errors.preparationSteps = 'Adicione pelo menos 1 passo com descricao.';
     }
 
     if (Object.keys(errors).length) {
-      errors.submit = 'Preencha os campos obrigatórios para postar a receita.';
+      errors.submit = 'Preencha os campos obrigatorios para postar a receita.';
     }
 
     return errors;
@@ -292,15 +456,21 @@ function RecipesCreateScreen({ onBack, onSubmitRecipe }: RecipesCreateScreenProp
     setValidationErrors({});
     setSubmissionError(null);
     setSubmitIntent(status);
+    setSubmissionPhase('creating');
 
     try {
-      await onSubmitRecipe(formValues, status);
+      await onSubmitRecipe(formValues, status, {
+        onUploadStart: () => {
+          setSubmissionPhase('uploading');
+        },
+      });
     } catch (error) {
       setSubmissionError(
         getErrorMessage(error, 'Nao foi possivel salvar a receita no momento.'),
       );
     } finally {
       setSubmitIntent(null);
+      setSubmissionPhase(null);
     }
   };
 
@@ -391,7 +561,7 @@ function RecipesCreateScreen({ onBack, onSubmitRecipe }: RecipesCreateScreenProp
               size="md"
               style={{ fontWeight: theme.fontWeights.bold, marginLeft: theme.spacing.md }}
             >
-              porções
+              porcoes
             </AppText>
           </AppContainer>
         </AppContainer>
@@ -423,19 +593,38 @@ function RecipesCreateScreen({ onBack, onSubmitRecipe }: RecipesCreateScreenProp
       />
 
       <RecipePreparationSection
-        error={validationErrors.preparationSteps}
+        error={stepMediaSelectionError ?? validationErrors.preparationSteps}
         onAddStep={handleAddPreparationStep}
         onChangeStepDescription={handleChangePreparationStepDescription}
         onChangeStepFile={handleChangePreparationStepFile}
+        onSelectStepMedia={handleSelectPreparationStepMedia}
         onRemoveStep={handleRemovePreparationStep}
         steps={formValues.preparationSteps}
       />
 
       <RecipeMediaSection
+        error={mediaSelectionError}
+        isUploading={submissionPhase === 'uploading'}
         media={formValues.media}
         onAddMedia={handleAddMedia}
         onRemoveMedia={handleRemoveMedia}
       />
+
+      {submissionPhase ? (
+        <AppContainer
+          backgroundColor="surface"
+          borderRadius="3xl"
+          marginBottom="xl"
+          padding="md"
+          shadow="sm"
+        >
+          <AppText color="primary" size="md" style={{ fontWeight: theme.fontWeights.semibold }}>
+            {submissionPhase === 'creating'
+              ? 'Criando receita...'
+              : 'Receita criada. Enviando midias...'}
+          </AppText>
+        </AppContainer>
+      ) : null}
 
       {submissionError || validationErrors.submit ? (
         <AppContainer

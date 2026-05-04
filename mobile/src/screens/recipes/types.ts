@@ -1,6 +1,7 @@
 export type RecipeDifficulty = 'facil' | 'intermediario' | 'dificil';
 export type RecipesRoute = 'home' | 'create' | 'detail';
 export type RecipeStatus = 'published' | 'draft';
+export type RecipeCreateMediaType = 'image' | 'video';
 
 export type RecipeCreateFormValues = {
   title: string;
@@ -37,16 +38,27 @@ export type RecipeCreateNutrition = {
   fats: string;
 };
 
+export type RecipeCreateStepAttachment = {
+  fileName: string;
+  mimeType: string;
+  type: RecipeCreateMediaType;
+  uri: string;
+  fileSize?: number;
+};
+
 export type RecipeCreateStep = {
   id: string;
   description: string;
-  fileName?: string;
+  attachment?: RecipeCreateStepAttachment;
 };
 
 export type RecipeCreateMedia = {
   id: string;
-  type: 'image' | 'video';
+  type: RecipeCreateMediaType;
   fileName: string;
+  mimeType: string;
+  uri: string;
+  fileSize?: number;
 };
 
 export type RecipeListItem = {
@@ -90,6 +102,13 @@ export type RecipeStep = {
   accentColor: 'brandGreen' | 'brandYellow' | 'brandOrange';
 };
 
+export type RecipeDetailMedia = {
+  id: string;
+  type: RecipeCreateMediaType;
+  url: string;
+  fileName: string;
+};
+
 export type RecipeDetail = RecipeListItem & {
   reviewsCount: number;
   commentsCount: number;
@@ -97,6 +116,7 @@ export type RecipeDetail = RecipeListItem & {
   nutrition: RecipeNutrition;
   ingredients: RecipeIngredient[];
   steps: RecipeStep[];
+  media: RecipeDetailMedia[];
 };
 
 export type RecipesHomeCollections = {

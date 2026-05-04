@@ -28,6 +28,13 @@ export interface CreateRecipePayload {
   }>;
 }
 
+export interface UploadRecipeMediaPayload {
+  uri: string;
+  name: string;
+  type: string;
+  mediaType: 'image' | 'video';
+}
+
 export interface RecipeRecord {
   id: string;
   nome: string;
@@ -95,14 +102,14 @@ function readBoolean(value: unknown): boolean {
   return Boolean(value);
 }
 
-function extractDataPayload(payload: unknown): Record<string, unknown> {
+function extractDataPayload(payload: unknown): unknown {
   if (!isRecord(payload)) {
     throw new Error('Resposta invalida recebida ao cadastrar receita.');
   }
 
   const nestedData = payload.data;
 
-  if (isRecord(nestedData)) {
+  if (nestedData !== undefined) {
     return nestedData;
   }
 
@@ -195,7 +202,13 @@ function normalizeRecipePreparationStep(payload: unknown): RecipePreparationStep
 }
 
 function normalizeRecipeRecord(payload: unknown): RecipeRecord {
-  const recipePayload = extractDataPayload(payload);
+  const extractedPayload = extractDataPayload(payload);
+
+  if (!isRecord(extractedPayload)) {
+    throw new Error('Resposta invalida recebida ao cadastrar receita.');
+  }
+
+  const recipePayload = extractedPayload;
   const id = readString(recipePayload.id);
   const nome = readString(recipePayload.nome);
   const status = recipePayload.status;
@@ -260,6 +273,37 @@ class RecipeService {
   async createRecipe(payload: CreateRecipePayload): Promise<RecipeRecord> {
     const response = await api.post<unknown, CreateRecipePayload>('/receitas', payload, true);
     return normalizeRecipeRecord(response);
+  }
+
+  async uploadRecipeMedia(
+    recipeId: string,
+    media: UploadRecipeMediaPayload[],
+  ): Promise<RecipeMediaRecord[]> {
+    const formData = new FormData();
+
+    media.forEach((item) => {
+      formData.append('arquivos', {
+        uri: item.uri,
+        name: item.name,
+        type: item.type,
+      } as unknown as Blob);
+      formData.append('tipos[]', item.mediaType === 'image' ? 'IMAGEM' : 'VIDEO');
+    });
+
+    const response = await api.post<unknown, FormData>(
+      `/receitas/${recipeId}/midias`,
+      formData,
+      true,
+    );
+    const payload = extractDataPayload(response);
+
+    if (!Array.isArray(payload)) {
+      throw new Error('Resposta invalida recebida ao enviar as midias.');
+    }
+
+    return payload
+      .map(normalizeRecipeMedia)
+      .filter((item): item is RecipeMediaRecord => Boolean(item));
   }
 }
 

@@ -1,10 +1,13 @@
 import React from 'react';
 
 import { useAuth } from '../../hooks/useAuth';
+import { getErrorMessage } from '../../services/api';
 import {
   CreateRecipePayload,
   RecipeApiDifficulty,
+  RecipeApiMediaType,
   RecipeApiStatus,
+  RecipeMediaRecord,
   RecipeRecord,
   recipeService,
 } from '../../services/recipeService';
@@ -29,6 +32,10 @@ const STEP_ACCENTS: Array<'brandGreen' | 'brandYellow' | 'brandOrange'> = [
   'brandYellow',
   'brandOrange',
 ];
+
+type SubmitRecipeOptions = {
+  onUploadStart?: () => void;
+};
 
 function mapApiDifficultyToUi(
   difficulty: RecipeApiDifficulty | null,
@@ -62,6 +69,10 @@ function mapApiStatusToUi(status: RecipeApiStatus): RecipeStatus {
   return status === 'PUBLICADA' ? 'published' : 'draft';
 }
 
+function mapApiMediaTypeToUi(type: RecipeApiMediaType): 'image' | 'video' {
+  return type === 'VIDEO' ? 'video' : 'image';
+}
+
 function toOptionalPositiveNumber(value: string): number | undefined {
   const normalizedValue = value.trim();
 
@@ -78,7 +89,9 @@ function toOptionalPositiveNumber(value: string): number | undefined {
   return parsedValue;
 }
 
-function hasAnyNutritionValue(values: NonNullable<CreateRecipePayload['informacaoNutricional']>): boolean {
+function hasAnyNutritionValue(
+  values: NonNullable<CreateRecipePayload['informacaoNutricional']>,
+): boolean {
   return Object.values(values).some((value) => typeof value === 'number');
 }
 
@@ -115,11 +128,31 @@ function buildCreateRecipePayload(
   };
 }
 
+function getPrimaryImageUrl(recipe: RecipeRecord): string {
+  const primaryImage =
+    recipe.midias.find((media) => media.tipo === 'IMAGEM') ??
+    (recipe.midiaPrincipal?.tipo === 'IMAGEM' ? recipe.midiaPrincipal : null);
+
+  return primaryImage?.url ?? RECIPE_PLACEHOLDER_IMAGE;
+}
+
+function mergeUploadedMedia(recipe: RecipeRecord, uploadedMedia: RecipeMediaRecord[]): RecipeRecord {
+  const nextMedia = [...recipe.midias, ...uploadedMedia].sort(
+    (left, right) => left.ordem - right.ordem,
+  );
+
+  return {
+    ...recipe,
+    midiaPrincipal: nextMedia[0] ?? recipe.midiaPrincipal,
+    midias: nextMedia,
+  };
+}
+
 function buildRecipeListItem(recipe: RecipeRecord): RecipeListItem {
   return {
     id: recipe.id,
     title: recipe.nome,
-    imageUrl: recipe.midiaPrincipal?.url ?? RECIPE_PLACEHOLDER_IMAGE,
+    imageUrl: getPrimaryImageUrl(recipe),
     difficulty: mapApiDifficultyToUi(recipe.dificuldade),
     prepMinutes: recipe.tempoPreparoMinutos ?? 0,
     rating: recipe.avaliacaoMedia,
@@ -165,6 +198,12 @@ function buildRecipeDetail(recipe: RecipeRecord, authorName: string): RecipeDeta
       description: step.descricao,
       accentColor: STEP_ACCENTS[index % STEP_ACCENTS.length],
     })),
+    media: recipe.midias.map((media) => ({
+      id: media.id,
+      type: mapApiMediaTypeToUi(media.tipo),
+      url: media.url,
+      fileName: media.nomeArquivo ?? `${media.tipo.toLowerCase()}-${media.ordem}`,
+    })),
   };
 }
 
@@ -199,18 +238,48 @@ function RecipesFlow() {
   }, []);
 
   const handleSubmitRecipe = React.useCallback(
-    async (values: RecipeCreateFormValues, status: RecipeStatus) => {
+    async (
+      values: RecipeCreateFormValues,
+      status: RecipeStatus,
+      options?: SubmitRecipeOptions,
+    ) => {
       const createdRecipe = await recipeService.createRecipe(
         buildCreateRecipePayload(values, status),
       );
-      const nextListItem = buildRecipeListItem(createdRecipe);
-      const nextDetail = buildRecipeDetail(createdRecipe, user?.name ?? 'Você');
-      const nextStatus = mapApiStatusToUi(createdRecipe.status);
+      let nextRecipe = createdRecipe;
+      let uploadFeedbackMessage: string | null = null;
+
+      if (values.media.length) {
+        options?.onUploadStart?.();
+
+        try {
+          const uploadedMedia = await recipeService.uploadRecipeMedia(
+            createdRecipe.id,
+            values.media.map((item) => ({
+              uri: item.uri,
+              name: item.fileName,
+              type: item.mimeType,
+              mediaType: item.type,
+            })),
+          );
+
+          nextRecipe = mergeUploadedMedia(createdRecipe, uploadedMedia);
+        } catch (error) {
+          uploadFeedbackMessage = getErrorMessage(
+            error,
+            'A receita foi criada, mas nao foi possivel enviar as midias.',
+          );
+        }
+      }
+
+      const nextListItem = buildRecipeListItem(nextRecipe);
+      const nextDetail = buildRecipeDetail(nextRecipe, user?.name ?? 'Voce');
+      const nextStatus = mapApiStatusToUi(nextRecipe.status);
 
       setCollections((current) => ({
         ...current,
-        myPublications: current.myPublications.filter((recipe) => recipe.id !== createdRecipe.id),
-        draftRecipes: current.draftRecipes.filter((recipe) => recipe.id !== createdRecipe.id),
+        myPublications: current.myPublications.filter((recipe) => recipe.id !== nextRecipe.id),
+        draftRecipes: current.draftRecipes.filter((recipe) => recipe.id !== nextRecipe.id),
       }));
       setCollections((current) => ({
         ...current,
@@ -223,17 +292,17 @@ function RecipesFlow() {
       }));
       setRecipeDetails((current) => ({
         ...current,
-        [createdRecipe.id]: nextDetail,
+        [nextRecipe.id]: nextDetail,
       }));
 
       if (nextStatus === 'published') {
-        setFeedbackMessage('Receita publicada com sucesso.');
-        setSelectedRecipeId(createdRecipe.id);
+        setFeedbackMessage(uploadFeedbackMessage ?? 'Receita publicada com sucesso.');
+        setSelectedRecipeId(nextRecipe.id);
         setCurrentRoute('detail');
         return;
       }
 
-      setFeedbackMessage('Rascunho salvo com sucesso.');
+      setFeedbackMessage(uploadFeedbackMessage ?? 'Rascunho salvo com sucesso.');
       setCurrentRoute('home');
       setSelectedRecipeId(null);
     },

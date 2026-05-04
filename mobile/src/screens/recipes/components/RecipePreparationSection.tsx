@@ -1,6 +1,6 @@
 import React from 'react';
-import { Alert, Pressable } from 'react-native';
-import { CirclePlus, ImagePlus, Trash2 } from 'lucide-react-native';
+import { Pressable } from 'react-native';
+import { CirclePlus, ImagePlus, Play, Trash2 } from 'lucide-react-native';
 
 import { AppContainer, AppInput, AppText } from '../../../components/ui';
 import { useAppTheme } from '../../../contexts';
@@ -11,7 +11,8 @@ type RecipePreparationSectionProps = {
   steps: RecipeCreateStep[];
   onAddStep: () => void;
   onChangeStepDescription: (stepId: string, value: string) => void;
-  onChangeStepFile: (stepId: string, nextFileName?: string) => void;
+  onChangeStepFile: (stepId: string, nextAttachment?: RecipeCreateStep['attachment']) => void;
+  onSelectStepMedia: (stepId: string) => void | Promise<void>;
   onRemoveStep: (stepId: string) => void;
 };
 
@@ -21,27 +22,23 @@ function RecipePreparationSection({
   onAddStep,
   onChangeStepDescription,
   onChangeStepFile,
+  onSelectStepMedia,
   onRemoveStep,
 }: RecipePreparationSectionProps) {
   const { theme } = useAppTheme();
 
-  const handleFilePress = (step: RecipeCreateStep, index: number) => {
-    const nextFileName = `passo-${index + 1}-anexo.jpg`;
-    const replacementFileName = `passo-${index + 1}-anexo-atualizado.png`;
+  const handleSelectStepMedia = (stepId: string) => {
+    try {
+      const result = onSelectStepMedia(stepId);
 
-    if (!step.fileName) {
-      Alert.alert('Arquivo do passo', 'Deseja adicionar um arquivo mockado a este passo?', [
-        { text: 'Cancelar', style: 'cancel' },
-        { text: 'Adicionar', onPress: () => onChangeStepFile(step.id, nextFileName) },
-      ]);
-      return;
+      if (result && typeof result === 'object' && 'catch' in result && typeof result.catch === 'function') {
+        result.catch(() => {
+          // O feedback visivel fica concentrado na tela.
+        });
+      }
+    } catch {
+      // O feedback visivel fica concentrado na tela.
     }
-
-    Alert.alert('Arquivo do passo', step.fileName, [
-      { text: 'Cancelar', style: 'cancel' },
-      { text: 'Remover arquivo', style: 'destructive', onPress: () => onChangeStepFile(step.id) },
-      { text: 'Trocar arquivo', onPress: () => onChangeStepFile(step.id, replacementFileName) },
-    ]);
   };
 
   return (
@@ -98,9 +95,13 @@ function RecipePreparationSection({
             rightIcon={
               <Pressable
                 accessibilityLabel={`Editar arquivo do passo ${index + 1}`}
-                onPress={() => handleFilePress(step, index)}
+                onPress={() => handleSelectStepMedia(step.id)}
               >
-                <ImagePlus color={theme.colors.success} size={theme.spacing['2xl']} strokeWidth={2} />
+                {step.attachment?.type === 'video' ? (
+                  <Play color={theme.colors.success} size={theme.spacing['2xl']} strokeWidth={2} />
+                ) : (
+                  <ImagePlus color={theme.colors.success} size={theme.spacing['2xl']} strokeWidth={2} />
+                )}
               </Pressable>
             }
             size="md"
@@ -108,14 +109,22 @@ function RecipePreparationSection({
             value={step.description}
           />
 
-          {step.fileName ? (
-            <AppText
-              color="success"
-              size="md"
-              style={{ marginTop: theme.spacing.sm }}
-            >
-              {step.fileName}
-            </AppText>
+          {step.attachment ? (
+            <AppContainer align="center" direction="row" justify="space-between" marginTop="sm">
+              <AppText
+                color="success"
+                size="md"
+                style={{ flex: 1, marginRight: theme.spacing.md }}
+              >
+                {step.attachment.fileName}
+              </AppText>
+
+              <Pressable onPress={() => onChangeStepFile(step.id)}>
+                <AppText color="primary" size="md" style={{ fontWeight: theme.fontWeights.semibold }}>
+                  Remover arquivo
+                </AppText>
+              </Pressable>
+            </AppContainer>
           ) : null}
         </AppContainer>
       ))}
@@ -136,7 +145,7 @@ function RecipePreparationSection({
             size="md"
             style={{ marginLeft: theme.spacing.md }}
           >
-            Adicionar próximo passo
+            Adicionar proximo passo
           </AppText>
         </AppContainer>
       </Pressable>

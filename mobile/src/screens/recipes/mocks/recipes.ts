@@ -95,6 +95,14 @@ export function cloneRecipesCollections(): RecipesHomeCollections {
 export const recipeDetailsMock: Record<string, RecipeDetail> = {
   'recipe-1': {
     ...recipesMock.myPublications[0],
+    media: [
+      {
+        id: 'recipe-1-media-1',
+        type: 'image',
+        url: recipesMock.myPublications[0].imageUrl,
+        fileName: 'salada-de-frutas.jpg',
+      },
+    ],
     reviewsCount: 1250,
     commentsCount: 2548,
     author: {
@@ -157,6 +165,14 @@ export const recipeDetailsMock: Record<string, RecipeDetail> = {
   },
   'recipe-2': {
     ...recipesMock.myPublications[1],
+    media: [
+      {
+        id: 'recipe-2-media-1',
+        type: 'image',
+        url: recipesMock.myPublications[1].imageUrl,
+        fileName: 'panqueca-de-quinoa.jpg',
+      },
+    ],
     reviewsCount: 860,
     commentsCount: 418,
     author: {
@@ -212,6 +228,14 @@ export const recipeDetailsMock: Record<string, RecipeDetail> = {
   },
   'recipe-3': {
     ...recipesMock.myPublications[2],
+    media: [
+      {
+        id: 'recipe-3-media-1',
+        type: 'image',
+        url: recipesMock.myPublications[2].imageUrl,
+        fileName: 'drink-de-morango.jpg',
+      },
+    ],
     reviewsCount: 430,
     commentsCount: 96,
     author: {
@@ -254,6 +278,14 @@ export const recipeDetailsMock: Record<string, RecipeDetail> = {
   },
   'recipe-7': {
     ...recipesMock.draftRecipes[0],
+    media: [
+      {
+        id: 'recipe-7-media-1',
+        type: 'image',
+        url: recipesMock.draftRecipes[0].imageUrl,
+        fileName: 'bolo-de-banana.jpg',
+      },
+    ],
     reviewsCount: 0,
     commentsCount: 0,
     author: {
@@ -311,6 +343,7 @@ export function cloneRecipeDetails(): Record<string, RecipeDetail> {
         author: { ...recipe.author },
         nutrition: { ...recipe.nutrition },
         ingredients: recipe.ingredients.map((ingredient) => ({ ...ingredient })),
+        media: recipe.media.map((item) => ({ ...item })),
         steps: recipe.steps.map((step) => ({ ...step })),
       },
     ]),

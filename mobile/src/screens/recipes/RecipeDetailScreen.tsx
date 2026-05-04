@@ -4,6 +4,7 @@ import {
   CheckCircle2,
   Circle,
   Heart,
+  Play,
   Share2,
   Star,
   UserPlus2,
@@ -24,9 +25,9 @@ const difficultyMeta: Record<
   RecipeDifficulty,
   { color: 'brandGreen' | 'brandOrange' | 'brandRed'; label: string }
 > = {
-  facil: { color: 'brandGreen', label: 'Fácil' },
-  intermediario: { color: 'brandOrange', label: 'Intermediário' },
-  dificil: { color: 'brandRed', label: 'Difícil' },
+  facil: { color: 'brandGreen', label: 'Facil' },
+  intermediario: { color: 'brandOrange', label: 'Intermediario' },
+  dificil: { color: 'brandRed', label: 'Dificil' },
 };
 
 function SectionTitle({ title }: { title: string }) {
@@ -64,7 +65,7 @@ function PrimaryPill({
       borderRadius="full"
       paddingHorizontal="md"
       paddingVertical="sm"
-      style={{ marginRight: theme.spacing.sm, marginBottom: theme.spacing.sm }}
+      style={{ marginBottom: theme.spacing.sm, marginRight: theme.spacing.sm }}
     >
       <AppText color="textInverse" size="md" style={{ fontWeight: theme.fontWeights.bold }}>
         {label}
@@ -93,7 +94,7 @@ function SecondaryPill({
       paddingHorizontal="md"
       paddingVertical="sm"
       shadow="sm"
-      style={{ marginRight: theme.spacing.sm, marginBottom: theme.spacing.sm }}
+      style={{ marginBottom: theme.spacing.sm, marginRight: theme.spacing.sm }}
     >
       {icon ? <AppContainer style={{ marginRight: theme.spacing.xs }}>{icon}</AppContainer> : null}
       <AppText color={color} size="md" style={{ fontWeight: theme.fontWeights.semibold }}>
@@ -157,9 +158,9 @@ function IngredientRow({ ingredient }: { ingredient: RecipeDetail['ingredients']
       backgroundColor="surface"
       borderRadius="3xl"
       direction="row"
+      marginBottom="md"
       padding="md"
       shadow="sm"
-      marginBottom="md"
     >
       <Image
         resizeMode="cover"
@@ -214,7 +215,7 @@ function StepCard({ step }: { step: RecipeDetail['steps'][number] }) {
           <AppText color="text" size="md" style={{ fontWeight: theme.fontWeights.bold }}>
             {step.title}
           </AppText>
-          <AppText color="text" lineHeight="relaxed" size="md" marginTop="sm">
+          <AppText color="text" lineHeight="relaxed" marginTop="sm" size="md">
             {step.description}
           </AppText>
         </AppContainer>
@@ -257,6 +258,27 @@ function RecipeDetailScreen({ recipe, onBack }: RecipeDetailScreenProps) {
   const { theme } = useAppTheme();
   const difficulty = difficultyMeta[recipe.difficulty];
   const hasStatusMeta = recipe.status === 'draft' || recipe.isCollaborative;
+  const imageMedia = React.useMemo(
+    () => recipe.media.filter((item) => item.type === 'image'),
+    [recipe.media],
+  );
+  const heroMedia = imageMedia.length
+    ? imageMedia
+    : [
+        {
+          id: `${recipe.id}-placeholder`,
+          type: 'image' as const,
+          url: recipe.imageUrl,
+          fileName: recipe.title,
+        },
+      ];
+  const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
+
+  React.useEffect(() => {
+    setCurrentImageIndex(0);
+  }, [recipe.id]);
+
+  const currentHeroMedia = heroMedia[Math.min(currentImageIndex, heroMedia.length - 1)];
 
   return (
     <ScrollView
@@ -269,7 +291,7 @@ function RecipeDetailScreen({ recipe, onBack }: RecipeDetailScreenProps) {
       <AppContainer marginBottom="2xl" style={{ position: 'relative' }}>
         <Image
           resizeMode="cover"
-          source={{ uri: recipe.imageUrl }}
+          source={{ uri: currentHeroMedia.url }}
           style={{
             borderRadius: theme.borderRadius['3xl'],
             height: theme.spacing['7xl'] * 2.6,
@@ -277,30 +299,33 @@ function RecipeDetailScreen({ recipe, onBack }: RecipeDetailScreenProps) {
           }}
         />
 
-        <AppContainer
-          align="center"
-          direction="row"
-          justify="center"
-          style={{
-            bottom: theme.spacing.md,
-            left: 0,
-            position: 'absolute',
-            right: 0,
-          }}
-        >
-          {[0, 1, 2, 3].map((dotIndex) => (
-            <AppContainer
-              key={dotIndex}
-              backgroundColor={dotIndex === 0 ? 'primary' : 'surface'}
-              borderRadius="full"
-              style={{
-                height: theme.spacing.sm,
-                marginHorizontal: theme.spacing.xs,
-                width: theme.spacing.sm,
-              }}
-            />
-          ))}
-        </AppContainer>
+        {heroMedia.length > 1 ? (
+          <AppContainer
+            align="center"
+            direction="row"
+            justify="center"
+            style={{
+              bottom: theme.spacing.md,
+              left: 0,
+              position: 'absolute',
+              right: 0,
+            }}
+          >
+            {heroMedia.map((item, dotIndex) => (
+              <Pressable key={item.id} onPress={() => setCurrentImageIndex(dotIndex)}>
+                <AppContainer
+                  backgroundColor={dotIndex === currentImageIndex ? 'primary' : 'surface'}
+                  borderRadius="full"
+                  style={{
+                    height: theme.spacing.sm,
+                    marginHorizontal: theme.spacing.xs,
+                    width: theme.spacing.sm,
+                  }}
+                />
+              </Pressable>
+            ))}
+          </AppContainer>
+        ) : null}
       </AppContainer>
 
       <AppContainer align="center" direction="row" justify="space-between" marginBottom="sm">
@@ -326,13 +351,13 @@ function RecipeDetailScreen({ recipe, onBack }: RecipeDetailScreenProps) {
 
       <AppContainer align="center" direction="row" marginBottom="lg">
         <AppText color="text" size="md" style={{ fontWeight: theme.fontWeights.semibold }}>
-          {`${recipe.reviewsCount} avaliações`}
+          {`${recipe.reviewsCount} avaliacoes`}
         </AppText>
         <AppText color="primary" size="md" style={{ marginHorizontal: theme.spacing.md }}>
           •
         </AppText>
         <AppText color="text" size="md" style={{ fontWeight: theme.fontWeights.semibold }}>
-          {`${recipe.commentsCount} comentários`}
+          {`${recipe.commentsCount} comentarios`}
         </AppText>
       </AppContainer>
 
@@ -341,9 +366,9 @@ function RecipeDetailScreen({ recipe, onBack }: RecipeDetailScreenProps) {
         backgroundColor="surface"
         borderRadius="3xl"
         direction="row"
+        marginBottom="lg"
         padding="md"
         shadow="sm"
-        marginBottom="lg"
       >
         <Image
           resizeMode="cover"
@@ -354,44 +379,128 @@ function RecipeDetailScreen({ recipe, onBack }: RecipeDetailScreenProps) {
             marginRight: theme.spacing.md,
             width: theme.spacing['5xl'],
           }}
-      />
-      <AppContainer style={{ flex: 1 }}>
-        <AppText color="text" size="md" style={{ fontWeight: theme.fontWeights.semibold }}>
-          {`Por ${recipe.author.name}`}
-        </AppText>
-        <AppText color="textSecondary" size="md">
-          {`${recipe.author.followers} seguidores`}
-        </AppText>
+        />
+        <AppContainer style={{ flex: 1 }}>
+          <AppText color="text" size="md" style={{ fontWeight: theme.fontWeights.semibold }}>
+            {`Por ${recipe.author.name}`}
+          </AppText>
+          <AppText color="textSecondary" size="md">
+            {`${recipe.author.followers} seguidores`}
+          </AppText>
         </AppContainer>
         <UserPlus2 color={theme.colors.text} size={theme.spacing['3xl']} strokeWidth={2.2} />
       </AppContainer>
 
-      <AppContainer direction="row" style={{ flexWrap: 'wrap' }} marginBottom={hasStatusMeta ? 'xs' : 'md'}>
+      <AppContainer
+        direction="row"
+        marginBottom={hasStatusMeta ? 'xs' : 'md'}
+        style={{ flexWrap: 'wrap' }}
+      >
         <PrimaryPill color="brandGreen" label={`${recipe.prepMinutes} min`} />
-        <PrimaryPill color="brandYellow" label={`${recipe.servings} porções`} />
+        <PrimaryPill color="brandYellow" label={`${recipe.servings} porcoes`} />
         <PrimaryPill color={difficulty.color} label={difficulty.label} />
       </AppContainer>
 
       {hasStatusMeta ? (
-        <AppContainer direction="row" style={{ flexWrap: 'wrap' }} marginBottom="md">
+        <AppContainer direction="row" marginBottom="md" style={{ flexWrap: 'wrap' }}>
           {recipe.isCollaborative ? (
             <SecondaryPill
               color="success"
-              icon={<Users2 color={theme.colors.success} size={theme.spacing.md + theme.spacing.xs} strokeWidth={2} />}
+              icon={
+                <Users2
+                  color={theme.colors.success}
+                  size={theme.spacing.md + theme.spacing.xs}
+                  strokeWidth={2}
+                />
+              }
               label="Receita colaborativa"
             />
           ) : null}
-          {recipe.status === 'draft' ? (
-            <SecondaryPill color="primary" label="Rascunho" />
-          ) : null}
+          {recipe.status === 'draft' ? <SecondaryPill color="primary" label="Rascunho" /> : null}
         </AppContainer>
       ) : null}
 
-      <SectionTitle title="Informação nutricional" />
+      {recipe.media.length ? (
+        <>
+          <SectionTitle title="Midias da receita" />
+
+          {recipe.media.map((mediaItem) =>
+            mediaItem.type === 'image' ? (
+              <AppContainer
+                key={mediaItem.id}
+                backgroundColor="surface"
+                borderRadius="3xl"
+                marginBottom="md"
+                padding="sm"
+                shadow="sm"
+              >
+                <Image
+                  resizeMode="cover"
+                  source={{ uri: mediaItem.url }}
+                  style={{
+                    borderRadius: theme.borderRadius['2xl'],
+                    height: theme.spacing['7xl'] * 2,
+                    width: '100%',
+                  }}
+                />
+                <AppText
+                  color="text"
+                  size="md"
+                  style={{ fontWeight: theme.fontWeights.semibold, marginTop: theme.spacing.md }}
+                >
+                  {mediaItem.fileName}
+                </AppText>
+              </AppContainer>
+            ) : (
+              <AppContainer
+                key={mediaItem.id}
+                backgroundColor="surface"
+                borderRadius="3xl"
+                direction="row"
+                marginBottom="md"
+                padding="lg"
+                shadow="sm"
+              >
+                <AppContainer
+                  align="center"
+                  backgroundColor="primary"
+                  borderRadius="xl"
+                  justify="center"
+                  style={{
+                    height: theme.spacing['6xl'],
+                    marginRight: theme.spacing.md,
+                    width: theme.spacing['6xl'],
+                  }}
+                >
+                  <Play
+                    color={theme.colors.textInverse}
+                    fill={theme.colors.textInverse}
+                    size={theme.spacing['2xl']}
+                    strokeWidth={1.8}
+                  />
+                </AppContainer>
+                <AppContainer style={{ flex: 1 }}>
+                  <AppText color="text" size="md" style={{ fontWeight: theme.fontWeights.semibold }}>
+                    Video enviado
+                  </AppText>
+                  <AppText color="textSecondary" marginTop="xs" size="md">
+                    {mediaItem.fileName}
+                  </AppText>
+                  <AppText color="textSecondary" marginTop="xs" size="sm">
+                    URL pronta pelo backend para reproducao.
+                  </AppText>
+                </AppContainer>
+              </AppContainer>
+            ),
+          )}
+        </>
+      ) : null}
+
+      <SectionTitle title="Informacao nutricional" />
 
       <AppContainer direction="row" justify="space-between" style={{ flexWrap: 'wrap' }}>
         <NutritionCard accentColor="brandRed" title="Calorias" value={recipe.nutrition.calories} />
-        <NutritionCard accentColor="brandGreen" title="Proteínas" value={recipe.nutrition.proteins} />
+        <NutritionCard accentColor="brandGreen" title="Proteinas" value={recipe.nutrition.proteins} />
         <NutritionCard
           accentColor="brandYellow"
           title="Carboidratos"
@@ -420,9 +529,9 @@ function RecipeDetailScreen({ recipe, onBack }: RecipeDetailScreenProps) {
           fullWidth
           label="Iniciar temporizador"
           size="lg"
-          variant="outline"
           style={{ flex: 1 }}
           textStyle={{ fontSize: theme.fontSizes.md }}
+          variant="outline"
         />
       </AppContainer>
 
@@ -447,10 +556,10 @@ function RecipeDetailScreen({ recipe, onBack }: RecipeDetailScreenProps) {
           style={{
             height: theme.spacing['7xl'] * 1.3,
             left: -theme.spacing['4xl'],
+            opacity: 0.92,
             position: 'absolute',
             top: -theme.spacing['4xl'],
             width: theme.spacing['7xl'] * 1.3,
-            opacity: 0.92,
           }}
         />
         <AppContainer
@@ -458,11 +567,11 @@ function RecipeDetailScreen({ recipe, onBack }: RecipeDetailScreenProps) {
           borderRadius="full"
           style={{
             height: theme.spacing['7xl'] * 1.4,
+            opacity: 0.92,
             position: 'absolute',
             right: -theme.spacing['4xl'],
             top: -theme.spacing['4xl'],
             width: theme.spacing['7xl'] * 1.4,
-            opacity: 0.92,
           }}
         />
         <AppContainer
@@ -472,9 +581,9 @@ function RecipeDetailScreen({ recipe, onBack }: RecipeDetailScreenProps) {
             bottom: -theme.spacing['4xl'],
             height: theme.spacing['7xl'] * 1.5,
             left: -theme.spacing.lg,
+            opacity: 0.92,
             position: 'absolute',
             width: theme.spacing['7xl'] * 1.6,
-            opacity: 0.92,
           }}
         />
 

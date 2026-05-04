@@ -107,12 +107,13 @@ async function request<TResponse, TBody = undefined>(
   options: ApiRequestOptions<TBody> = {},
 ): Promise<TResponse> {
   const { method = 'GET', body, headers, authenticated = false } = options;
+  const isMultipartBody = typeof FormData !== 'undefined' && body instanceof FormData;
   const requestHeaders: Record<string, string> = {
     Accept: 'application/json',
     ...headers,
   };
 
-  if (body !== undefined) {
+  if (body !== undefined && !isMultipartBody) {
     requestHeaders['Content-Type'] = 'application/json';
   }
 
@@ -126,7 +127,12 @@ async function request<TResponse, TBody = undefined>(
     response = await fetch(buildUrl(path), {
       method,
       headers: requestHeaders,
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      body:
+        body === undefined
+          ? undefined
+          : isMultipartBody
+            ? body
+            : JSON.stringify(body),
     });
   } catch {
     const attemptedUrl = buildUrl(path);
