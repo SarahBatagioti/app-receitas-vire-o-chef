@@ -26,8 +26,20 @@ recipeRoutes.get('/publicadas', (request, response, next) =>
   recipeController.listPublished(request, response).catch(next),
 );
 
+recipeRoutes.get('/favoritas/ids', (request, response, next) =>
+  recipeController.listFavoriteIds(request, response).catch(next),
+);
+
 recipeRoutes.get('/:id', validateRecipeIdParam, (request, response, next) =>
   recipeController.getById(request, response).catch(next),
+);
+
+recipeRoutes.post('/:id/favorito', validateRecipeIdParam, (request, response, next) =>
+  recipeController.favorite(request, response).catch(next),
+);
+
+recipeRoutes.delete('/:id/favorito', validateRecipeIdParam, (request, response, next) =>
+  recipeController.unfavorite(request, response).catch(next),
 );
 
 recipeRoutes.post(

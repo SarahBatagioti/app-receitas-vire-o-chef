@@ -44,7 +44,7 @@ function RecipeCard({ recipe, onPress, onToggleFavorite, isLast = false }: Recip
   const cardWidth = Math.min(width * 0.41, theme.spacing['7xl'] * 2.85);
   const imageHeight = theme.spacing['6xl'] * 2;
   const infoMeta = difficultyMeta[recipe.difficulty];
-  const heartColor = recipe.isFavorite ? theme.colors.primary : theme.colors.surface;
+  const heartColor = recipe.isFavorite ? theme.colors.primary : theme.colors.textInverse;
   const heartFill = recipe.isFavorite ? theme.colors.primary : 'transparent';
 
   return (
@@ -59,7 +59,6 @@ function RecipeCard({ recipe, onPress, onToggleFavorite, isLast = false }: Recip
         style={{
           borderColor: theme.colors[infoMeta.borderColor],
           borderWidth: 1.5,
-          backgroundColor: '#FFFFFF',
           overflow: 'visible',
           width: cardWidth,
         }}
@@ -69,7 +68,6 @@ function RecipeCard({ recipe, onPress, onToggleFavorite, isLast = false }: Recip
           style={{
             borderTopLeftRadius: theme.borderRadius['3xl'],
             borderTopRightRadius: theme.borderRadius['3xl'],
-            backgroundColor: '#FFFFFF',
             overflow: 'hidden',
             position: 'relative',
           }}
@@ -155,7 +153,6 @@ function RecipeCard({ recipe, onPress, onToggleFavorite, isLast = false }: Recip
           style={{
             borderBottomLeftRadius: theme.borderRadius['3xl'],
             borderBottomRightRadius: theme.borderRadius['3xl'],
-            backgroundColor: '#FFFFFF',
             paddingTop: theme.spacing.lg + theme.spacing.sm,
           }}
         >
@@ -178,13 +175,12 @@ function RecipeCard({ recipe, onPress, onToggleFavorite, isLast = false }: Recip
             direction="row"
             justify="space-between"
             marginTop="sm"
-            style={{ backgroundColor: '#FFFFFF' }}
           >
             <AppContainer
               backgroundColor="surface"
               align="center"
               direction="row"
-              style={{ backgroundColor: '#FFFFFF', gap: theme.spacing.xs }}
+              style={{ gap: theme.spacing.xs }}
             >
               <Clock3 color={theme.colors.text} size={theme.spacing.md + theme.spacing.xs} />
               <AppText size="sm">{`${recipe.prepMinutes} min`}</AppText>
@@ -194,7 +190,7 @@ function RecipeCard({ recipe, onPress, onToggleFavorite, isLast = false }: Recip
               backgroundColor="surface"
               align="center"
               direction="row"
-              style={{ backgroundColor: '#FFFFFF', gap: theme.spacing.xs }}
+              style={{ gap: theme.spacing.xs }}
             >
               <Star
                 color={theme.colors.brandYellow}
@@ -208,7 +204,7 @@ function RecipeCard({ recipe, onPress, onToggleFavorite, isLast = false }: Recip
               backgroundColor="surface"
               align="center"
               direction="row"
-              style={{ backgroundColor: '#FFFFFF', gap: theme.spacing.xs }}
+              style={{ gap: theme.spacing.xs }}
             >
               <UsersRound color={theme.colors.text} size={theme.spacing.md + theme.spacing.xs} />
               <AppText size="sm">{recipe.servings}</AppText>

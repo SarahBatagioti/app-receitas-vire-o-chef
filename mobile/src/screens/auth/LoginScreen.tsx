@@ -1,5 +1,4 @@
 import React from 'react';
-import { Pressable } from 'react-native';
 
 import { AuthButton, AuthContainer, AuthInput } from '../../components/auth';
 import { AppText } from '../../components/ui';
@@ -8,11 +7,10 @@ import { useAuth } from '../../hooks/useAuth';
 
 type LoginScreenProps = {
   onBack: () => void;
-  onForgotPassword: () => void;
   onRegister: () => void;
 };
 
-function LoginScreen({ onBack, onForgotPassword, onRegister }: LoginScreenProps) {
+function LoginScreen({ onBack, onRegister }: LoginScreenProps) {
   const { theme } = useAppTheme();
   const { authError, clearAuthError, login } = useAuth();
   const [email, setEmail] = React.useState('');
@@ -72,6 +70,7 @@ function LoginScreen({ onBack, onForgotPassword, onRegister }: LoginScreenProps)
         value={password}
       />
 
+      {/* Botao de recuperacao de senha ocultado temporariamente.
       <Pressable accessibilityRole="button" onPress={onForgotPassword}>
         <AppText
           color="textSecondary"
@@ -85,6 +84,7 @@ function LoginScreen({ onBack, onForgotPassword, onRegister }: LoginScreenProps)
           Esqueci minha senha
         </AppText>
       </Pressable>
+      */}
 
       <AuthButton label="Entrar com o e-mail" loading={loading} onPress={handleLogin} />
 

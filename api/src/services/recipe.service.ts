@@ -107,6 +107,13 @@ export class RecipeService {
     return recipes.map(mapRecipeSummary);
   }
 
+  async listarIdsReceitasFavoritas(usuarioId: string): Promise<string[]> {
+    await this.ensureInfrastructure();
+    await this.ensureUserExists(usuarioId);
+
+    return recipeRepository.listFavoriteRecipeIdsByUserId(usuarioId);
+  }
+
   async buscarReceitaPorId(
     id: string,
     usuarioId: string,
@@ -198,6 +205,27 @@ export class RecipeService {
     } finally {
       connection.release();
     }
+  }
+
+  async favoritarReceita(
+    receitaId: string,
+    usuarioId: string,
+  ): Promise<void> {
+    await this.ensureInfrastructure();
+    await this.ensureUserExists(usuarioId);
+    await this.getAccessibleRecipe(receitaId, usuarioId);
+
+    await recipeRepository.createFavoriteRecipe(usuarioId, receitaId);
+  }
+
+  async desfavoritarReceita(
+    receitaId: string,
+    usuarioId: string,
+  ): Promise<void> {
+    await this.ensureInfrastructure();
+    await this.ensureUserExists(usuarioId);
+
+    await recipeRepository.deleteFavoriteRecipe(usuarioId, receitaId);
   }
 
   async removerReceita(id: string, usuarioId: string): Promise<void> {
@@ -317,6 +345,21 @@ export class RecipeService {
     usuarioId: string,
   ): Promise<RecipeAggregate> {
     const recipe = await recipeRepository.findRecipeByIdAndAuthorId(receitaId, usuarioId);
+
+    if (!recipe) {
+      throw new AppError('Receita nao encontrada.', 404);
+    }
+
+    return recipe;
+  }
+
+  private async getAccessibleRecipe(
+    receitaId: string,
+    usuarioId: string,
+  ): Promise<RecipeAggregate> {
+    const recipe =
+      (await recipeRepository.findRecipeByIdAndAuthorId(receitaId, usuarioId)) ??
+      (await recipeRepository.findPublishedRecipeById(receitaId));
 
     if (!recipe) {
       throw new AppError('Receita nao encontrada.', 404);

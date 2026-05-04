@@ -24,6 +24,7 @@ export class RecipeRepository {
     await this.ensureRecipeNutritionTable();
     await this.ensureRecipePreparationStepsTable();
     await this.ensureRecipeMediaTable();
+    await this.ensureFavoriteRecipesTable();
     await this.ensureRelationships();
   }
 
@@ -292,6 +293,66 @@ export class RecipeRepository {
     return result.affectedRows > 0;
   }
 
+  async listFavoriteRecipeIdsByUserId(userId: string): Promise<string[]> {
+    await this.ensureTables();
+
+    const [rows] = await database.execute<
+      (RowDataPacket & FavoriteRecipeDatabaseRow)[]
+    >(
+      `
+        SELECT recipe_id
+        FROM favorite_recipes
+        WHERE user_id = ?
+        ORDER BY created_at DESC
+      `,
+      [userId],
+    );
+
+    return rows.map((row) => row.recipe_id);
+  }
+
+  async createFavoriteRecipe(
+    userId: string,
+    recipeId: string,
+    executor?: QueryExecutor,
+  ): Promise<void> {
+    if (!executor) {
+      await this.ensureTables();
+    }
+
+    await getExecutor(executor).execute<ResultSetHeader>(
+      `
+        INSERT IGNORE INTO favorite_recipes (
+          user_id,
+          recipe_id
+        )
+        VALUES (?, ?)
+      `,
+      [userId, recipeId],
+    );
+  }
+
+  async deleteFavoriteRecipe(
+    userId: string,
+    recipeId: string,
+    executor?: QueryExecutor,
+  ): Promise<boolean> {
+    if (!executor) {
+      await this.ensureTables();
+    }
+
+    const [result] = await getExecutor(executor).execute<ResultSetHeader>(
+      `
+        DELETE FROM favorite_recipes
+        WHERE user_id = ?
+          AND recipe_id = ?
+      `,
+      [userId, recipeId],
+    );
+
+    return result.affectedRows > 0;
+  }
+
   async listRecipesByAuthorId(authorId: string): Promise<RecipeAggregate[]> {
     await this.ensureTables();
 
@@ -467,6 +528,18 @@ export class RecipeRepository {
     `);
   }
 
+  private async ensureFavoriteRecipesTable(): Promise<void> {
+    await database.execute(`
+      CREATE TABLE IF NOT EXISTS favorite_recipes (
+        user_id CHAR(36) NOT NULL,
+        recipe_id CHAR(36) NOT NULL,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (user_id, recipe_id),
+        INDEX idx_favorite_recipes_recipe_id (recipe_id)
+      )
+    `);
+  }
+
   private async ensureRelationships(): Promise<void> {
     await ensureForeignKey(
       'recipes',
@@ -503,6 +576,22 @@ export class RecipeRepository {
     await ensureForeignKey(
       'recipe_media',
       'fk_recipe_media_recipe_id',
+      'recipe_id',
+      'recipes',
+      'id',
+    );
+
+    await ensureForeignKey(
+      'favorite_recipes',
+      'fk_favorite_recipes_user_id',
+      'user_id',
+      'users',
+      'id',
+    );
+
+    await ensureForeignKey(
+      'favorite_recipes',
+      'fk_favorite_recipes_recipe_id',
       'recipe_id',
       'recipes',
       'id',
@@ -646,6 +735,10 @@ async function ensureForeignKey(
 
 interface ForeignKeyConstraintRow {
   CONSTRAINT_NAME: string;
+}
+
+interface FavoriteRecipeDatabaseRow {
+  recipe_id: string;
 }
 
 type QueryExecutor = Pool | PoolConnection;

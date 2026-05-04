@@ -1,9 +1,11 @@
 import React from 'react';
 
-import { AppButton, AppContainer, AppInput, AppText } from '../../components/ui';
+import { useAppTheme } from '../../contexts';
 import { useAuth } from '../../hooks/useAuth';
+import { AppButton, AppContainer, AppInput, AppText } from '../../components/ui';
 
 function AuthWelcomeScreen() {
+  const { theme, themeMode, toggleTheme } = useAppTheme();
   const { status, isAuthenticated, user, logout } = useAuth();
 
   return (
@@ -18,7 +20,7 @@ function AuthWelcomeScreen() {
       </AppText>
 
       <AppText color="textSecondary" size="md" lineHeight="relaxed" marginTop="sm">
-        Consulte rapidamente qual conta está ativa no aplicativo.
+        Consulte rapidamente qual conta esta ativa no aplicativo.
       </AppText>
 
       <AppContainer
@@ -35,7 +37,7 @@ function AuthWelcomeScreen() {
           size="sm"
           style={{ marginTop: 4 }}
         >
-          {isAuthenticated ? 'Sessão autenticada.' : 'Nenhuma conta conectada.'}
+          {isAuthenticated ? 'Sessao autenticada.' : 'Nenhuma conta conectada.'}
         </AppText>
       </AppContainer>
 
@@ -52,9 +54,37 @@ function AuthWelcomeScreen() {
         <AppInput
           editable={false}
           fullWidth
-          label="Nome de usuário"
+          label="Nome de usuario"
           value={user?.name ?? 'chef.demo'}
         />
+      </AppContainer>
+
+      <AppContainer
+        backgroundColor="surfaceSecondary"
+        borderRadius="xl"
+        marginTop="lg"
+        padding="md"
+      >
+        <AppText color="text" size="sm" weight="semibold">
+          Aparencia do aplicativo
+        </AppText>
+        <AppText color="textSecondary" size="sm" style={{ marginTop: 4 }}>
+          Tema atual: {themeMode === 'light' ? 'claro' : 'escuro'}.
+        </AppText>
+
+        <AppContainer marginTop="md">
+          <AppButton
+            fullWidth
+            label={
+              themeMode === 'light'
+                ? 'Mudar para tema escuro'
+                : 'Mudar para tema claro'
+            }
+            onPress={toggleTheme}
+            style={{ minHeight: theme.spacing['6xl'] }}
+            variant="secondary"
+          />
+        </AppContainer>
       </AppContainer>
 
       <AppContainer marginTop="lg">

@@ -32,6 +32,15 @@ export class RecipeController {
     return response.status(200).json(buildSuccessResponse(recipes));
   }
 
+  async listFavoriteIds(request: Request, response: Response) {
+    const authUser = getAuthenticatedUser(request);
+    const favoriteRecipeIds = await recipeService.listarIdsReceitasFavoritas(
+      authUser.id,
+    );
+
+    return response.status(200).json(buildSuccessResponse(favoriteRecipeIds));
+  }
+
   async getById(request: Request, response: Response) {
     const authUser = getAuthenticatedUser(request);
     const recipeId = getRecipeId(request);
@@ -63,6 +72,34 @@ export class RecipeController {
     return response.status(200).json(
       buildSuccessResponse({
         message: 'Receita removida com sucesso.',
+      }),
+    );
+  }
+
+  async favorite(request: Request, response: Response) {
+    const authUser = getAuthenticatedUser(request);
+    const recipeId = getRecipeId(request);
+
+    await recipeService.favoritarReceita(recipeId, authUser.id);
+
+    return response.status(200).json(
+      buildSuccessResponse({
+        recipeId,
+        isFavorite: true,
+      }),
+    );
+  }
+
+  async unfavorite(request: Request, response: Response) {
+    const authUser = getAuthenticatedUser(request);
+    const recipeId = getRecipeId(request);
+
+    await recipeService.desfavoritarReceita(recipeId, authUser.id);
+
+    return response.status(200).json(
+      buildSuccessResponse({
+        recipeId,
+        isFavorite: false,
       }),
     );
   }

@@ -346,6 +346,34 @@ class RecipeService {
       .map(normalizeRecipeMedia)
       .filter((item): item is RecipeMediaRecord => Boolean(item));
   }
+
+  async listFavoriteRecipeIds(): Promise<string[]> {
+    const response = await api.get<unknown>('/receitas/favoritas/ids', true);
+    const payload = extractDataPayload(
+      response,
+      'Resposta invalida recebida ao listar favoritos.',
+    );
+
+    if (!Array.isArray(payload)) {
+      throw new Error('Resposta invalida recebida ao listar favoritos.');
+    }
+
+    return payload.filter(
+      (item): item is string => typeof item === 'string' && item.trim().length > 0,
+    );
+  }
+
+  async favoriteRecipe(recipeId: string): Promise<void> {
+    await api.post<unknown, Record<string, never>>(
+      `/receitas/${recipeId}/favorito`,
+      {},
+      true,
+    );
+  }
+
+  async unfavoriteRecipe(recipeId: string): Promise<void> {
+    await api.delete<unknown>(`/receitas/${recipeId}/favorito`, true);
+  }
 }
 
 export const recipeService = new RecipeService();

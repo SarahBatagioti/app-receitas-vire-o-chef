@@ -323,7 +323,6 @@ function RecipesFlow() {
   const [collectionsError, setCollectionsError] = React.useState<string | null>(null);
   const [isRecipeLoading, setIsRecipeLoading] = React.useState(false);
   const [recipeError, setRecipeError] = React.useState<string | null>(null);
-  const [, setFavoriteRecipeIds] = React.useState<string[]>([]);
   const latestRequestedRecipeIdRef = React.useRef<string | null>(null);
   const favoriteRecipeIdsRef = React.useRef<string[]>([]);
 
@@ -332,20 +331,23 @@ function RecipesFlow() {
     setIsCollectionsLoading(true);
 
     try {
-      const [myRecipes, publicRecipes] = await Promise.all([
+      const [myRecipes, publicRecipes, favoriteRecipeIds] = await Promise.all([
         recipeService.listMyRecipes(),
         recipeService.listPublicRecipes(),
+        recipeService.listFavoriteRecipeIds(),
       ]);
       const publicRecipesFromOthers = publicRecipes.filter((recipe) => recipe.autorId !== user?.id);
+      favoriteRecipeIdsRef.current = favoriteRecipeIds;
 
       setCollections(
         buildRecipesCollections(
           [...myRecipes, ...publicRecipesFromOthers],
           user?.id ?? '',
-          favoriteRecipeIdsRef.current,
+          favoriteRecipeIds,
         ),
       );
     } catch (error) {
+      favoriteRecipeIdsRef.current = [];
       setCollections(createEmptyCollections());
       setCollectionsError(
         getErrorMessage(error, 'Nao foi possivel carregar suas receitas no momento.'),
@@ -353,7 +355,7 @@ function RecipesFlow() {
     } finally {
       setIsCollectionsLoading(false);
     }
-  }, []);
+  }, [user?.id]);
 
   const loadRecipeDetail = React.useCallback(
     async (recipeId: string) => {
@@ -424,28 +426,57 @@ function RecipesFlow() {
     loadRecipeDetail(selectedRecipeId).catch(() => undefined);
   }, [loadRecipeDetail, selectedRecipeId]);
 
-  const handleToggleFavorite = React.useCallback((recipeId: string) => {
-    setFavoriteRecipeIds((currentFavoriteRecipeIds) => {
-      const nextFavoriteRecipeIds = currentFavoriteRecipeIds.includes(recipeId)
-        ? currentFavoriteRecipeIds.filter((currentRecipeId) => currentRecipeId !== recipeId)
-        : [recipeId, ...currentFavoriteRecipeIds];
+  const persistFavoriteToggle = React.useCallback(async (recipeId: string) => {
+    const currentFavoriteRecipeIds = favoriteRecipeIdsRef.current;
+    const isCurrentlyFavorite = currentFavoriteRecipeIds.includes(recipeId);
+    const nextFavoriteRecipeIds = isCurrentlyFavorite
+      ? currentFavoriteRecipeIds.filter((currentRecipeId) => currentRecipeId !== recipeId)
+      : [recipeId, ...currentFavoriteRecipeIds];
 
-      favoriteRecipeIdsRef.current = nextFavoriteRecipeIds;
+    favoriteRecipeIdsRef.current = nextFavoriteRecipeIds;
+    setCollections((currentCollections) =>
+      syncCollectionsWithFavorites(currentCollections, nextFavoriteRecipeIds),
+    );
+    setSelectedRecipeDetail((currentRecipeDetail) =>
+      currentRecipeDetail && currentRecipeDetail.id === recipeId
+        ? {
+            ...currentRecipeDetail,
+            isFavorite: nextFavoriteRecipeIds.includes(recipeId),
+          }
+        : currentRecipeDetail,
+    );
+
+    try {
+      if (isCurrentlyFavorite) {
+        await recipeService.unfavoriteRecipe(recipeId);
+      } else {
+        await recipeService.favoriteRecipe(recipeId);
+      }
+    } catch (error) {
+      favoriteRecipeIdsRef.current = currentFavoriteRecipeIds;
       setCollections((currentCollections) =>
-        syncCollectionsWithFavorites(currentCollections, nextFavoriteRecipeIds),
+        syncCollectionsWithFavorites(currentCollections, currentFavoriteRecipeIds),
       );
       setSelectedRecipeDetail((currentRecipeDetail) =>
         currentRecipeDetail && currentRecipeDetail.id === recipeId
           ? {
               ...currentRecipeDetail,
-              isFavorite: nextFavoriteRecipeIds.includes(recipeId),
+              isFavorite: currentFavoriteRecipeIds.includes(recipeId),
             }
           : currentRecipeDetail,
       );
-
-      return nextFavoriteRecipeIds;
-    });
+      setFeedbackMessage(
+        getErrorMessage(error, 'Nao foi possivel atualizar seus favoritos.'),
+      );
+    }
   }, []);
+
+  const handleToggleFavorite = React.useCallback(
+    (recipeId: string) => {
+      persistFavoriteToggle(recipeId).catch(() => undefined);
+    },
+    [persistFavoriteToggle],
+  );
 
   const handleToggleFavoriteFromList = React.useCallback(
     (recipe: RecipeListItem) => {
