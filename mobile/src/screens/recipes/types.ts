@@ -1,5 +1,6 @@
 export type RecipeDifficulty = 'facil' | 'intermediario' | 'dificil';
 export type RecipesRoute = 'home' | 'create' | 'detail';
+export type RecipeStatus = 'published' | 'draft';
 
 export type RecipeCreateFormValues = {
   title: string;
@@ -12,6 +13,15 @@ export type RecipeCreateFormValues = {
   preparationSteps: RecipeCreateStep[];
   media: RecipeCreateMedia[];
 };
+
+export type RecipeCreateValidationErrors = Partial<{
+  title: string;
+  prepMinutes: string;
+  servings: string;
+  selectedIngredients: string;
+  preparationSteps: string;
+  submit: string;
+}>;
 
 export type RecipeCreateIngredient = {
   id: string;
@@ -48,6 +58,8 @@ export type RecipeListItem = {
   rating: number;
   servings: number;
   isFavorite?: boolean;
+  isCollaborative?: boolean;
+  status?: RecipeStatus;
 };
 
 export type RecipeAuthor = {

@@ -7,6 +7,7 @@ import {
   Share2,
   Star,
   UserPlus2,
+  Users2,
 } from 'lucide-react-native';
 
 import { AppButton, AppContainer, AppText } from '../../components/ui';
@@ -19,7 +20,10 @@ type RecipeDetailScreenProps = {
   onBack: () => void;
 };
 
-const difficultyMeta: Record<RecipeDifficulty, { color: 'brandGreen' | 'brandOrange' | 'brandRed'; label: string }> = {
+const difficultyMeta: Record<
+  RecipeDifficulty,
+  { color: 'brandGreen' | 'brandOrange' | 'brandRed'; label: string }
+> = {
   facil: { color: 'brandGreen', label: 'Fácil' },
   intermediario: { color: 'brandOrange', label: 'Intermediário' },
   dificil: { color: 'brandRed', label: 'Difícil' },
@@ -34,7 +38,7 @@ function SectionTitle({ title }: { title: string }) {
         backgroundColor="text"
         style={{ flex: 1, height: 1, marginRight: theme.spacing.md, opacity: 0.7 }}
       />
-      <AppText color="text" size="xl" style={{ fontWeight: theme.fontWeights.bold }}>
+      <AppText color="text" size="md" style={{ fontWeight: theme.fontWeights.bold }}>
         {title}
       </AppText>
       <AppContainer
@@ -45,7 +49,7 @@ function SectionTitle({ title }: { title: string }) {
   );
 }
 
-function DetailPill({
+function PrimaryPill({
   label,
   color,
 }: {
@@ -60,9 +64,39 @@ function DetailPill({
       borderRadius="full"
       paddingHorizontal="md"
       paddingVertical="sm"
-      style={{ marginRight: theme.spacing.sm }}
+      style={{ marginRight: theme.spacing.sm, marginBottom: theme.spacing.sm }}
     >
-      <AppText color="textInverse" size="lg" style={{ fontWeight: theme.fontWeights.bold }}>
+      <AppText color="textInverse" size="md" style={{ fontWeight: theme.fontWeights.bold }}>
+        {label}
+      </AppText>
+    </AppContainer>
+  );
+}
+
+function SecondaryPill({
+  label,
+  color,
+  icon,
+}: {
+  label: string;
+  color: 'primary' | 'success';
+  icon?: React.ReactNode;
+}) {
+  const { theme } = useAppTheme();
+
+  return (
+    <AppContainer
+      align="center"
+      backgroundColor="surface"
+      borderRadius="full"
+      direction="row"
+      paddingHorizontal="md"
+      paddingVertical="sm"
+      shadow="sm"
+      style={{ marginRight: theme.spacing.sm, marginBottom: theme.spacing.sm }}
+    >
+      {icon ? <AppContainer style={{ marginRight: theme.spacing.xs }}>{icon}</AppContainer> : null}
+      <AppText color={color} size="md" style={{ fontWeight: theme.fontWeights.semibold }}>
         {label}
       </AppText>
     </AppContainer>
@@ -102,10 +136,10 @@ function NutritionCard({
           }}
         />
         <AppContainer padding="lg" style={{ flex: 1 }}>
-          <AppText color="text" size="xl" style={{ fontWeight: theme.fontWeights.bold }}>
+          <AppText color="text" size="md" style={{ fontWeight: theme.fontWeights.bold }}>
             {title}
           </AppText>
-          <AppText color="text" size="lg" marginTop="xs">
+          <AppText color="text" size="md" marginTop="xs">
             {value}
           </AppText>
         </AppContainer>
@@ -114,7 +148,7 @@ function NutritionCard({
   );
 }
 
-function IngredientRow({ recipeIngredient }: { recipeIngredient: RecipeDetail['ingredients'][number] }) {
+function IngredientRow({ ingredient }: { ingredient: RecipeDetail['ingredients'][number] }) {
   const { theme } = useAppTheme();
 
   return (
@@ -129,7 +163,7 @@ function IngredientRow({ recipeIngredient }: { recipeIngredient: RecipeDetail['i
     >
       <Image
         resizeMode="cover"
-        source={{ uri: recipeIngredient.imageUrl }}
+        source={{ uri: ingredient.imageUrl }}
         style={{
           borderRadius: theme.borderRadius.full,
           height: theme.spacing['5xl'],
@@ -138,14 +172,14 @@ function IngredientRow({ recipeIngredient }: { recipeIngredient: RecipeDetail['i
         }}
       />
       <AppContainer style={{ flex: 1 }}>
-        <AppText color="text" size="xl" style={{ fontWeight: theme.fontWeights.semibold }}>
-          {recipeIngredient.name}
+        <AppText color="text" size="md" style={{ fontWeight: theme.fontWeights.semibold }}>
+          {ingredient.name}
         </AppText>
-        <AppText color="textSecondary" size="lg">
-          {recipeIngredient.quantity}
+        <AppText color="textSecondary" size="md">
+          {ingredient.quantity}
         </AppText>
       </AppContainer>
-      {recipeIngredient.checked ? (
+      {ingredient.checked ? (
         <CheckCircle2 color={theme.colors.success} size={theme.spacing['3xl']} strokeWidth={2.2} />
       ) : (
         <Circle color={theme.colors.text} size={theme.spacing['3xl']} strokeWidth={2} />
@@ -177,10 +211,10 @@ function StepCard({ step }: { step: RecipeDetail['steps'][number] }) {
           }}
         />
         <AppContainer padding="lg" style={{ flex: 1 }}>
-          <AppText color="text" size="xl" style={{ fontWeight: theme.fontWeights.bold }}>
+          <AppText color="text" size="md" style={{ fontWeight: theme.fontWeights.bold }}>
             {step.title}
           </AppText>
-          <AppText color="text" lineHeight="relaxed" size="xl" marginTop="sm">
+          <AppText color="text" lineHeight="relaxed" size="md" marginTop="sm">
             {step.description}
           </AppText>
         </AppContainer>
@@ -189,9 +223,40 @@ function StepCard({ step }: { step: RecipeDetail['steps'][number] }) {
   );
 }
 
+function RatingStars({ rating }: { rating: number }) {
+  const { theme } = useAppTheme();
+  const filledStars = Math.max(0, Math.min(5, Math.floor(rating)));
+
+  return (
+    <AppContainer align="center" direction="row" marginBottom="sm">
+      {[0, 1, 2, 3, 4].map((starIndex) => {
+        const isFilled = starIndex < filledStars;
+
+        return (
+          <Star
+            key={starIndex}
+            color={theme.colors.brandYellow}
+            fill={isFilled ? theme.colors.brandYellow : 'transparent'}
+            size={theme.spacing.xl}
+            strokeWidth={2}
+          />
+        );
+      })}
+      <AppText color="text" size="md" style={{ marginLeft: theme.spacing.sm }}>
+        {recipeRatingLabel(rating)}
+      </AppText>
+    </AppContainer>
+  );
+}
+
+function recipeRatingLabel(rating: number) {
+  return rating.toFixed(1).replace('.', ',');
+}
+
 function RecipeDetailScreen({ recipe, onBack }: RecipeDetailScreenProps) {
   const { theme } = useAppTheme();
   const difficulty = difficultyMeta[recipe.difficulty];
+  const hasStatusMeta = recipe.status === 'draft' || recipe.isCollaborative;
 
   return (
     <ScrollView
@@ -199,7 +264,7 @@ function RecipeDetailScreen({ recipe, onBack }: RecipeDetailScreenProps) {
       contentContainerStyle={{ paddingBottom: theme.spacing['7xl'] + theme.spacing['4xl'] }}
       showsVerticalScrollIndicator={false}
     >
-      <RecipesTopBar onBack={onBack} title={recipe.title} />
+      <RecipesTopBar onBack={onBack} title={recipe.title} titleSize="2xl" />
 
       <AppContainer marginBottom="2xl" style={{ position: 'relative' }}>
         <Image
@@ -239,14 +304,11 @@ function RecipeDetailScreen({ recipe, onBack }: RecipeDetailScreenProps) {
       </AppContainer>
 
       <AppContainer align="center" direction="row" justify="space-between" marginBottom="sm">
-        <AppText color="text" size="4xl" style={{ flex: 1, fontWeight: theme.fontWeights.bold }}>
+        <AppText color="text" size="2xl" style={{ flex: 1, fontWeight: theme.fontWeights.bold }}>
           {recipe.title}
         </AppText>
         <AppContainer align="center" direction="row">
-          <Pressable
-            accessibilityLabel="Favoritar receita"
-            style={{ marginRight: theme.spacing.lg }}
-          >
+          <Pressable accessibilityLabel="Favoritar receita" style={{ marginRight: theme.spacing.lg }}>
             <Heart
               color={theme.colors.primary}
               fill={theme.colors.primary}
@@ -260,30 +322,16 @@ function RecipeDetailScreen({ recipe, onBack }: RecipeDetailScreenProps) {
         </AppContainer>
       </AppContainer>
 
-      <AppContainer align="center" direction="row" marginBottom="sm">
-        {[0, 1, 2, 3].map((starIndex) => (
-          <Star
-            key={starIndex}
-            color={theme.colors.brandYellow}
-            fill={theme.colors.brandYellow}
-            size={theme.spacing.xl}
-            strokeWidth={2}
-          />
-        ))}
-        <Star color={theme.colors.brandYellow} size={theme.spacing.xl} strokeWidth={2} />
-        <AppText color="text" size="xl" style={{ marginLeft: theme.spacing.sm }}>
-          {recipe.rating.toFixed(1).replace('.', ',')}
-        </AppText>
-      </AppContainer>
+      <RatingStars rating={recipe.rating} />
 
       <AppContainer align="center" direction="row" marginBottom="lg">
-        <AppText color="text" size="xl" style={{ fontWeight: theme.fontWeights.semibold }}>
+        <AppText color="text" size="md" style={{ fontWeight: theme.fontWeights.semibold }}>
           {`${recipe.reviewsCount} avaliações`}
         </AppText>
-        <AppText color="primary" size="xl" style={{ marginHorizontal: theme.spacing.md }}>
+        <AppText color="primary" size="md" style={{ marginHorizontal: theme.spacing.md }}>
           •
         </AppText>
-        <AppText color="text" size="xl" style={{ fontWeight: theme.fontWeights.semibold }}>
+        <AppText color="text" size="md" style={{ fontWeight: theme.fontWeights.semibold }}>
           {`${recipe.commentsCount} comentários`}
         </AppText>
       </AppContainer>
@@ -306,31 +354,42 @@ function RecipeDetailScreen({ recipe, onBack }: RecipeDetailScreenProps) {
             marginRight: theme.spacing.md,
             width: theme.spacing['5xl'],
           }}
-        />
-        <AppContainer style={{ flex: 1 }}>
-          <AppText color="text" size="xl" style={{ fontWeight: theme.fontWeights.semibold }}>
-            {`Por ${recipe.author.name}`}
-          </AppText>
-          <AppText color="textSecondary" size="lg">
-            {`${recipe.author.followers} seguidores`}
-          </AppText>
+      />
+      <AppContainer style={{ flex: 1 }}>
+        <AppText color="text" size="md" style={{ fontWeight: theme.fontWeights.semibold }}>
+          {`Por ${recipe.author.name}`}
+        </AppText>
+        <AppText color="textSecondary" size="md">
+          {`${recipe.author.followers} seguidores`}
+        </AppText>
         </AppContainer>
         <UserPlus2 color={theme.colors.text} size={theme.spacing['3xl']} strokeWidth={2.2} />
       </AppContainer>
 
-      <AppContainer direction="row" marginBottom="md">
-        <DetailPill color="brandGreen" label={`${recipe.prepMinutes} min`} />
-        <DetailPill color="brandYellow" label={`${recipe.servings} porções`} />
-        <DetailPill color={difficulty.color} label={difficulty.label} />
+      <AppContainer direction="row" style={{ flexWrap: 'wrap' }} marginBottom={hasStatusMeta ? 'xs' : 'md'}>
+        <PrimaryPill color="brandGreen" label={`${recipe.prepMinutes} min`} />
+        <PrimaryPill color="brandYellow" label={`${recipe.servings} porções`} />
+        <PrimaryPill color={difficulty.color} label={difficulty.label} />
       </AppContainer>
+
+      {hasStatusMeta ? (
+        <AppContainer direction="row" style={{ flexWrap: 'wrap' }} marginBottom="md">
+          {recipe.isCollaborative ? (
+            <SecondaryPill
+              color="success"
+              icon={<Users2 color={theme.colors.success} size={theme.spacing.md + theme.spacing.xs} strokeWidth={2} />}
+              label="Receita colaborativa"
+            />
+          ) : null}
+          {recipe.status === 'draft' ? (
+            <SecondaryPill color="primary" label="Rascunho" />
+          ) : null}
+        </AppContainer>
+      ) : null}
 
       <SectionTitle title="Informação nutricional" />
 
-      <AppContainer
-        direction="row"
-        justify="space-between"
-        style={{ flexWrap: 'wrap' }}
-      >
+      <AppContainer direction="row" justify="space-between" style={{ flexWrap: 'wrap' }}>
         <NutritionCard accentColor="brandRed" title="Calorias" value={recipe.nutrition.calories} />
         <NutritionCard accentColor="brandGreen" title="Proteínas" value={recipe.nutrition.proteins} />
         <NutritionCard
@@ -344,7 +403,7 @@ function RecipeDetailScreen({ recipe, onBack }: RecipeDetailScreenProps) {
       <SectionTitle title="Ingredientes" />
 
       {recipe.ingredients.map((ingredient) => (
-        <IngredientRow key={ingredient.id} recipeIngredient={ingredient} />
+        <IngredientRow key={ingredient.id} ingredient={ingredient} />
       ))}
 
       <SectionTitle title="Modo de preparo" />
@@ -355,6 +414,7 @@ function RecipeDetailScreen({ recipe, onBack }: RecipeDetailScreenProps) {
           label="Iniciar modo chef"
           size="lg"
           style={{ flex: 1, marginRight: theme.spacing.md }}
+          textStyle={{ fontSize: theme.fontSizes.md }}
         />
         <AppButton
           fullWidth
@@ -362,6 +422,7 @@ function RecipeDetailScreen({ recipe, onBack }: RecipeDetailScreenProps) {
           size="lg"
           variant="outline"
           style={{ flex: 1 }}
+          textStyle={{ fontSize: theme.fontSizes.md }}
         />
       </AppContainer>
 
@@ -425,7 +486,7 @@ function RecipeDetailScreen({ recipe, onBack }: RecipeDetailScreenProps) {
           paddingVertical="3xl"
           style={{ zIndex: 2 }}
         >
-          <AppText color="text" size="2xl" style={{ fontWeight: theme.fontWeights.bold }}>
+          <AppText color="text" size="md" style={{ fontWeight: theme.fontWeights.bold }}>
             Avalie esta receita
           </AppText>
           <AppContainer align="center" direction="row" justify="center" marginTop="md">

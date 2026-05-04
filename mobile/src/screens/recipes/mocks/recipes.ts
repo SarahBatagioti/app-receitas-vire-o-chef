@@ -78,9 +78,19 @@ export const recipesMock: RecipesHomeCollections = {
       prepMinutes: 45,
       rating: 0,
       servings: 8,
+      status: 'draft',
+      isCollaborative: true,
     },
   ],
 };
+
+export function cloneRecipesCollections(): RecipesHomeCollections {
+  return {
+    myPublications: recipesMock.myPublications.map((recipe) => ({ ...recipe })),
+    favoriteRecipes: recipesMock.favoriteRecipes.map((recipe) => ({ ...recipe })),
+    draftRecipes: recipesMock.draftRecipes.map((recipe) => ({ ...recipe })),
+  };
+}
 
 export const recipeDetailsMock: Record<string, RecipeDetail> = {
   'recipe-1': {
@@ -242,6 +252,40 @@ export const recipeDetailsMock: Record<string, RecipeDetail> = {
       },
     ],
   },
+  'recipe-7': {
+    ...recipesMock.draftRecipes[0],
+    reviewsCount: 0,
+    commentsCount: 0,
+    author: {
+      name: 'Sarah Batagioti',
+      followers: 1258,
+      avatarUrl:
+        'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80',
+    },
+    nutrition: {
+      calories: '0 kcal',
+      proteins: '0 g',
+      carbohydrates: '0 g',
+      fats: '0 g',
+    },
+    ingredients: [
+      {
+        id: 'ingredient-9',
+        name: 'Banana',
+        quantity: '4 unidades',
+        imageUrl:
+          'https://images.unsplash.com/photo-1574226516831-e1dff420e37f?auto=format&fit=crop&w=300&q=80',
+      },
+    ],
+    steps: [
+      {
+        id: 'step-7',
+        title: 'Passo 1',
+        description: 'Rascunho em construção.',
+        accentColor: 'brandGreen',
+      },
+    ],
+  },
 };
 
 const allRecipes = [
@@ -256,4 +300,19 @@ export function getRecipeById(recipeId: string): RecipeListItem | undefined {
 
 export function getRecipeDetailById(recipeId: string): RecipeDetail | undefined {
   return recipeDetailsMock[recipeId];
+}
+
+export function cloneRecipeDetails(): Record<string, RecipeDetail> {
+  return Object.fromEntries(
+    Object.entries(recipeDetailsMock).map(([recipeId, recipe]) => [
+      recipeId,
+      {
+        ...recipe,
+        author: { ...recipe.author },
+        nutrition: { ...recipe.nutrition },
+        ingredients: recipe.ingredients.map((ingredient) => ({ ...ingredient })),
+        steps: recipe.steps.map((step) => ({ ...step })),
+      },
+    ]),
+  );
 }

@@ -13,10 +13,15 @@ import {
   RecipesTopBar,
 } from './components';
 import { recipeIngredientsCatalogMock } from './mocks/ingredients';
-import { RecipeCreateFormValues } from './types';
+import {
+  RecipeCreateFormValues,
+  RecipeCreateValidationErrors,
+  RecipeStatus,
+} from './types';
 
 type RecipesCreateScreenProps = {
   onBack: () => void;
+  onSubmitRecipe: (values: RecipeCreateFormValues, status: RecipeStatus) => void;
 };
 
 const initialFormValues: RecipeCreateFormValues = {
@@ -47,15 +52,24 @@ const initialFormValues: RecipeCreateFormValues = {
   media: [],
 };
 
-function RecipesCreateScreen({ onBack }: RecipesCreateScreenProps) {
+function RecipesCreateScreen({ onBack, onSubmitRecipe }: RecipesCreateScreenProps) {
   const { theme } = useAppTheme();
   const [formValues, setFormValues] = React.useState<RecipeCreateFormValues>(initialFormValues);
+  const [validationErrors, setValidationErrors] = React.useState<RecipeCreateValidationErrors>({});
   const nextPreparationStepId = React.useRef(2);
 
   const updateField = <Key extends keyof RecipeCreateFormValues>(
     field: Key,
     value: RecipeCreateFormValues[Key],
   ) => {
+    if (field === 'title' || field === 'prepMinutes' || field === 'servings') {
+      setValidationErrors((current) => ({
+        ...current,
+        [field]: undefined,
+        submit: undefined,
+      }));
+    }
+
     setFormValues((current) => ({
       ...current,
       [field]: value,
@@ -81,12 +95,19 @@ function RecipesCreateScreen({ onBack }: RecipesCreateScreenProps) {
         selectedIngredients: [...current.selectedIngredients, ingredientToAdd],
       };
     });
+    setValidationErrors((current) => ({
+      ...current,
+      selectedIngredients: undefined,
+      submit: undefined,
+    }));
   };
 
   const handleRemoveIngredient = (ingredientId: string) => {
     setFormValues((current) => ({
       ...current,
-      selectedIngredients: current.selectedIngredients.filter((ingredient) => ingredient.id !== ingredientId),
+      selectedIngredients: current.selectedIngredients.filter(
+        (ingredient) => ingredient.id !== ingredientId,
+      ),
     }));
   };
 
@@ -130,6 +151,11 @@ function RecipesCreateScreen({ onBack }: RecipesCreateScreenProps) {
             }
           : step,
       ),
+    }));
+    setValidationErrors((current) => ({
+      ...current,
+      preparationSteps: undefined,
+      submit: undefined,
     }));
   };
 
@@ -184,6 +210,53 @@ function RecipesCreateScreen({ onBack }: RecipesCreateScreenProps) {
     }));
   };
 
+  const validateForPublish = (): RecipeCreateValidationErrors => {
+    const errors: RecipeCreateValidationErrors = {};
+
+    if (!formValues.title.trim()) {
+      errors.title = 'Informe o nome da receita.';
+    }
+
+    if (!formValues.prepMinutes.trim()) {
+      errors.prepMinutes = 'Informe o tempo de preparo.';
+    }
+
+    if (!formValues.servings.trim()) {
+      errors.servings = 'Informe o rendimento.';
+    }
+
+    if (!formValues.selectedIngredients.length) {
+      errors.selectedIngredients = 'Selecione pelo menos 1 ingrediente.';
+    }
+
+    if (!formValues.preparationSteps.some((step) => step.description.trim())) {
+      errors.preparationSteps = 'Adicione pelo menos 1 passo com descrição.';
+    }
+
+    if (Object.keys(errors).length) {
+      errors.submit = 'Preencha os campos obrigatórios para postar a receita.';
+    }
+
+    return errors;
+  };
+
+  const handlePublishRecipe = () => {
+    const errors = validateForPublish();
+
+    if (Object.keys(errors).length) {
+      setValidationErrors(errors);
+      return;
+    }
+
+    setValidationErrors({});
+    onSubmitRecipe(formValues, 'published');
+  };
+
+  const handleSaveDraft = () => {
+    setValidationErrors({});
+    onSubmitRecipe(formValues, 'draft');
+  };
+
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: theme.colors.background }}
@@ -202,6 +275,7 @@ function RecipesCreateScreen({ onBack }: RecipesCreateScreenProps) {
         </AppText>
         <AppInput
           borderColor="surface"
+          error={validationErrors.title}
           fullWidth
           inputStyle={{ fontSize: theme.fontSizes.md }}
           onChangeText={(value) => updateField('title', value)}
@@ -224,6 +298,7 @@ function RecipesCreateScreen({ onBack }: RecipesCreateScreenProps) {
           <AppContainer align="center" direction="row">
             <AppInput
               borderColor="surface"
+              error={validationErrors.prepMinutes}
               fullWidth
               inputStyle={{ fontSize: theme.fontSizes.md }}
               inputType="number"
@@ -254,6 +329,7 @@ function RecipesCreateScreen({ onBack }: RecipesCreateScreenProps) {
           <AppContainer align="center" direction="row">
             <AppInput
               borderColor="surface"
+              error={validationErrors.servings}
               fullWidth
               inputStyle={{ fontSize: theme.fontSizes.md }}
               inputType="number"
@@ -288,6 +364,7 @@ function RecipesCreateScreen({ onBack }: RecipesCreateScreenProps) {
 
       <RecipeIngredientsSection
         availableIngredients={recipeIngredientsCatalogMock}
+        error={validationErrors.selectedIngredients}
         onRemoveIngredient={handleRemoveIngredient}
         onSelectIngredient={(ingredient) => handleSelectIngredient(ingredient.id)}
         selectedIngredients={formValues.selectedIngredients}
@@ -299,6 +376,7 @@ function RecipesCreateScreen({ onBack }: RecipesCreateScreenProps) {
       />
 
       <RecipePreparationSection
+        error={validationErrors.preparationSteps}
         onAddStep={handleAddPreparationStep}
         onChangeStepDescription={handleChangePreparationStepDescription}
         onChangeStepFile={handleChangePreparationStepFile}
@@ -312,6 +390,19 @@ function RecipesCreateScreen({ onBack }: RecipesCreateScreenProps) {
         onRemoveMedia={handleRemoveMedia}
       />
 
+      {validationErrors.submit ? (
+        <AppContainer
+          backgroundColor="error"
+          borderRadius="3xl"
+          padding="md"
+          marginBottom="xl"
+        >
+          <AppText color="textInverse" size="md" style={{ fontWeight: theme.fontWeights.semibold }}>
+            {validationErrors.submit}
+          </AppText>
+        </AppContainer>
+      ) : null}
+
       {formValues.isCollaborative ? (
         <AppButton
           fullWidth
@@ -322,7 +413,7 @@ function RecipesCreateScreen({ onBack }: RecipesCreateScreenProps) {
             minHeight: theme.spacing['7xl'],
           }}
           textStyle={{ fontSize: theme.fontSizes.md }}
-          onPress={() => undefined}
+          onPress={handleSaveDraft}
         />
       ) : null}
 
@@ -335,7 +426,7 @@ function RecipesCreateScreen({ onBack }: RecipesCreateScreenProps) {
           minHeight: theme.spacing['7xl'],
         }}
         textStyle={{ fontSize: theme.fontSizes.md }}
-        onPress={() => undefined}
+        onPress={handlePublishRecipe}
       />
     </ScrollView>
   );

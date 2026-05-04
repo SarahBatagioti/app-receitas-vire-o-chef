@@ -8,6 +8,7 @@ import { RecipeCreateIngredient } from '../types';
 
 type RecipeIngredientsSectionProps = {
   availableIngredients: RecipeCreateIngredient[];
+  error?: string;
   selectedIngredients: RecipeCreateIngredient[];
   onSelectIngredient: (ingredient: RecipeCreateIngredient) => void;
   onRemoveIngredient: (ingredientId: string) => void;
@@ -15,6 +16,7 @@ type RecipeIngredientsSectionProps = {
 
 function RecipeIngredientsSection({
   availableIngredients,
+  error,
   selectedIngredients,
   onSelectIngredient,
   onRemoveIngredient,
@@ -128,6 +130,12 @@ function RecipeIngredientsSection({
             </Pressable>
           ))}
         </AppContainer>
+      ) : null}
+
+      {error ? (
+        <AppText color="error" size="md" style={{ marginTop: theme.spacing.sm }}>
+          {error}
+        </AppText>
       ) : null}
     </AppContainer>
   );

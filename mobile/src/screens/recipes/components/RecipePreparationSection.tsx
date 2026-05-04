@@ -7,6 +7,7 @@ import { useAppTheme } from '../../../contexts';
 import { RecipeCreateStep } from '../types';
 
 type RecipePreparationSectionProps = {
+  error?: string;
   steps: RecipeCreateStep[];
   onAddStep: () => void;
   onChangeStepDescription: (stepId: string, value: string) => void;
@@ -15,6 +16,7 @@ type RecipePreparationSectionProps = {
 };
 
 function RecipePreparationSection({
+  error,
   steps,
   onAddStep,
   onChangeStepDescription,
@@ -138,6 +140,12 @@ function RecipePreparationSection({
           </AppText>
         </AppContainer>
       </Pressable>
+
+      {error ? (
+        <AppText color="error" size="md" style={{ marginTop: theme.spacing.sm }}>
+          {error}
+        </AppText>
+      ) : null}
     </AppContainer>
   );
 }

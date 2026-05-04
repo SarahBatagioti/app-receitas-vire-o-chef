@@ -4,13 +4,15 @@ import { ChevronLeft } from 'lucide-react-native';
 
 import { AppContainer, AppText } from '../../../components/ui';
 import { useAppTheme } from '../../../contexts';
+import { FontSizeKey } from '../../../styles/fontSizes';
 
 type RecipesTopBarProps = {
   title: string;
   onBack?: () => void;
+  titleSize?: FontSizeKey;
 };
 
-function RecipesTopBar({ title, onBack }: RecipesTopBarProps) {
+function RecipesTopBar({ title, onBack, titleSize = '2xl' }: RecipesTopBarProps) {
   const { theme } = useAppTheme();
 
   return (
@@ -38,7 +40,7 @@ function RecipesTopBar({ title, onBack }: RecipesTopBarProps) {
 
       <AppText
         color="text"
-        size="2xl"
+        size={titleSize}
         style={{
           fontWeight: theme.fontWeights.bold,
         }}
