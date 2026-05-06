@@ -1,4 +1,4 @@
-export type AuthProvider = 'local' | 'google' | 'facebook';
+export type AuthProvider = 'local' | 'google';
 
 export interface UserModel {
   id: string;

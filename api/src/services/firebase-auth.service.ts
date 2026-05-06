@@ -4,7 +4,6 @@ import { getFirebaseAuth } from '../config/firebase';
 
 const PROVIDER_MAP = {
   'google.com': 'google',
-  'facebook.com': 'facebook',
 } as const;
 
 export class FirebaseAuthService {
@@ -26,7 +25,7 @@ export class FirebaseAuthService {
 
   async verifySocialToken(
     token: string,
-    provider: 'google' | 'facebook',
+    provider: 'google',
   ): Promise<FirebaseTokenPayload> {
     const identity = await this.verifyToken(token);
 
@@ -42,7 +41,7 @@ export class FirebaseAuthService {
   }
 }
 
-function normalizeProvider(provider: string | null): 'google' | 'facebook' | null {
+function normalizeProvider(provider: string | null): 'google' | null {
   if (!provider) {
     return null;
   }

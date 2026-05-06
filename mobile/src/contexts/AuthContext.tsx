@@ -76,15 +76,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, [clearSessionState]);
 
   useEffect(() => {
-    void restoreSession();
+    restoreSession().catch(() => undefined);
   }, [restoreSession]);
 
   const logout = React.useCallback(async () => {
     setAuthError(null);
-    await Promise.allSettled([
-      clearAuthToken(),
-      socialAuthService.clearProviderSessions(),
-    ]);
+    await Promise.allSettled([clearAuthToken(), socialAuthService.clearProviderSessions()]);
     clearSessionState();
   }, [clearSessionState]);
 
@@ -96,7 +93,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const session = await authService.login(payload);
         await persistAuthenticatedSession(session);
       } catch (error) {
-        const message = getErrorMessage(error, 'Não foi possível entrar com este e-mail.');
+        const message = getErrorMessage(error, 'Nao foi possivel entrar com este e-mail.');
         setAuthError(message);
         throw new Error(message);
       }
@@ -112,7 +109,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const session = await authService.register(payload);
         await persistAuthenticatedSession(session);
       } catch (error) {
-        const message = getErrorMessage(error, 'Não foi possível concluir o cadastro.');
+        const message = getErrorMessage(error, 'Nao foi possivel concluir o cadastro.');
         setAuthError(message);
         throw new Error(message);
       }
@@ -127,7 +124,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       try {
         return await authService.forgotPassword(payload);
       } catch (error) {
-        const message = getErrorMessage(error, 'Não foi possível enviar o e-mail de redefinição.');
+        const message = getErrorMessage(error, 'Nao foi possivel enviar o e-mail de redefinicao.');
         setAuthError(message);
         throw new Error(message);
       }
@@ -148,7 +145,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
 
       if (!response.token || !response.user) {
-        throw new Error('Não foi possível finalizar o login social.');
+        throw new Error('Nao foi possivel finalizar o login social.');
       }
 
       await persistAuthenticatedSession({
@@ -169,10 +166,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const socialResult = await socialAuthService.signInWithGoogle();
 
       if (socialResult.cancelled) {
-        return {
-          cancelled: true,
-          requiresSocialCompletion: false,
-        };
+        throw new Error(
+          'O login com Google foi interrompido antes de concluir. Se voce nao fechou a conta manualmente, revise a configuracao Android/Firebase do Google Sign-In.',
+        );
       }
 
       const response = await authService.socialLogin({
@@ -185,36 +181,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       return await handleSocialResponse(response);
     } catch (error) {
-      const message = getErrorMessage(error, 'Não foi possível autenticar com a conta Google.');
-      setAuthError(message);
-      throw new Error(message);
-    }
-  }, [handleSocialResponse]);
-
-  const loginWithFacebook = React.useCallback(async (): Promise<SocialLoginResponse> => {
-    setAuthError(null);
-
-    try {
-      const socialResult = await socialAuthService.signInWithFacebook();
-
-      if (socialResult.cancelled) {
-        return {
-          cancelled: true,
-          requiresSocialCompletion: false,
-        };
-      }
-
-      const response = await authService.socialLogin({
-        provider: 'facebook',
-        firebaseToken: socialResult.firebaseToken ?? '',
-        email: socialResult.email ?? '',
-        name: socialResult.name,
-        avatarUrl: socialResult.avatarUrl,
-      });
-
-      return await handleSocialResponse(response);
-    } catch (error) {
-      const message = getErrorMessage(error, 'Não foi possível autenticar com a conta Facebook.');
+      const message = getErrorMessage(error, 'Nao foi possivel autenticar com a conta Google.');
       setAuthError(message);
       throw new Error(message);
     }
@@ -225,8 +192,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setAuthError(null);
 
       if (!pendingSocialAuth) {
-        const message =
-          'Não encontramos um cadastro social pendente. Inicie novamente o login com Google ou Facebook.';
+        const message = 'Nao encontramos um cadastro social pendente. Inicie novamente o login com Google.';
         setAuthError(message);
         throw new Error(message);
       }
@@ -244,7 +210,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         await persistAuthenticatedSession(session);
       } catch (error) {
-        const message = getErrorMessage(error, 'Não foi possível concluir o cadastro social.');
+        const message = getErrorMessage(error, 'Nao foi possivel concluir o cadastro social.');
         setAuthError(message);
         throw new Error(message);
       }
@@ -267,7 +233,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       forgotPassword,
       completeSocialRegister,
       loginWithGoogle,
-      loginWithFacebook,
       clearAuthError: () => setAuthError(null),
     }),
     [
@@ -276,7 +241,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       forgotPassword,
       isInitializing,
       login,
-      loginWithFacebook,
       loginWithGoogle,
       logout,
       pendingSocialAuth,

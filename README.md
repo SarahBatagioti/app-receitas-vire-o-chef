@@ -42,7 +42,7 @@ Bem-vindo ao "Vire o Chef", o aplicativo que te ajuda a organizar suas receitas,
 ### Requisitos do PDF já iniciados, mas ainda não finalizados
 
 - [~] **Requisito 1. Cadastro e autenticação de usuário**
-  Já existe cadastro, login, sessão e backend preparado para fluxo social/Firebase, mas o login social com Google e Facebook ainda não está concluído no app.
+Ja existe cadastro, login, sessao e backend preparado para fluxo social/Firebase, com o app agora mantendo somente o login social com Google.
 - [~] **Requisito 12. Receitas colaborativas**
   Já existe o campo `isColaborativa`, mas ainda não há edição em tempo real entre múltiplos usuários.
 - [~] **Requisito 17. Galeria pública de fotos**

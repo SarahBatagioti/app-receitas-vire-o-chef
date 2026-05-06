@@ -226,7 +226,7 @@ interface CreateUserRepositoryInput {
 interface CompleteSocialRegistrationInput {
   passwordHash: string;
   username: string;
-  provider: 'google' | 'facebook';
+  provider: 'google';
   firebaseUid: string;
   isSocialAccount: boolean;
 }

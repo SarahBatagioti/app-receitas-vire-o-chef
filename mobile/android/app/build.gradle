@@ -1,6 +1,7 @@
 apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
+apply plugin: "com.google.gms.google-services"
 apply from: project(':react-native-config').projectDir.getPath() + "/dotenv.gradle"
 
 /**
@@ -86,9 +87,6 @@ android {
         versionCode 1
         versionName "1.0"
         resValue "string", "build_config_package", "com.mobile"
-        resValue "string", "facebook_app_id", project.env.get("FACEBOOK_APP_ID") ?: ""
-        resValue "string", "facebook_client_token", project.env.get("FACEBOOK_CLIENT_TOKEN") ?: ""
-        resValue "string", "facebook_login_protocol_scheme", "fb" + (project.env.get("FACEBOOK_APP_ID") ?: "")
     }
     signingConfigs {
         debug {

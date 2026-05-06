@@ -8,9 +8,7 @@ type RequiredEnvKey =
   | 'FIREBASE_STORAGE_BUCKET'
   | 'FIREBASE_MESSAGING_SENDER_ID'
   | 'FIREBASE_APP_ID'
-  | 'GOOGLE_WEB_CLIENT_ID'
-  | 'FACEBOOK_APP_ID'
-  | 'FACEBOOK_CLIENT_TOKEN';
+  | 'GOOGLE_WEB_CLIENT_ID';
 
 type OptionalEnvKey =
   | 'GOOGLE_ANDROID_CLIENT_ID'
@@ -35,7 +33,7 @@ function getRequiredEnv(key: RequiredEnvKey): string {
   const value = readRuntimeEnv()[key]?.trim();
 
   if (!value) {
-    throw new Error(`A variável ${key} não foi configurada no ambiente do aplicativo.`);
+    throw new Error(`A variavel ${key} nao foi configurada no ambiente do aplicativo.`);
   }
 
   return value;
@@ -76,11 +74,5 @@ export const env = {
   },
   get googleIosClientId() {
     return getOptionalEnv('GOOGLE_IOS_CLIENT_ID');
-  },
-  get facebookAppId() {
-    return getRequiredEnv('FACEBOOK_APP_ID');
-  },
-  get facebookClientToken() {
-    return getRequiredEnv('FACEBOOK_CLIENT_TOKEN');
   },
 };

@@ -3,7 +3,7 @@ export type AuthSessionStatus =
   | 'authenticated'
   | 'unauthenticated';
 
-export type SocialProvider = 'google' | 'facebook';
+export type SocialProvider = 'google';
 
 export interface AuthUser {
   id: string;
@@ -89,6 +89,5 @@ export interface AuthContextValue {
     payload: Pick<CompleteSocialRegisterPayload, 'name' | 'password'>,
   ) => Promise<void>;
   loginWithGoogle: () => Promise<SocialLoginResponse>;
-  loginWithFacebook: () => Promise<SocialLoginResponse>;
   clearAuthError: () => void;
 }

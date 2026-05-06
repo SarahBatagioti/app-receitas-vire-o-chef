@@ -1,8 +1,9 @@
 import React from 'react';
 
-import { AuthButton, AuthContainer } from '../../components/auth';
-import { AppButton, AppContainer } from '../../components/ui';
+import { AuthButton, AuthContainer, SocialButton } from '../../components/auth';
+import { AppButton, AppContainer, AppText } from '../../components/ui';
 import { useAppTheme } from '../../contexts';
+import { useAuth } from '../../hooks/useAuth';
 
 type AccessScreenProps = {
   onEmailPress: () => void;
@@ -11,6 +12,27 @@ type AccessScreenProps = {
 
 function AccessScreen({ onEmailPress, onRegisterPress }: AccessScreenProps) {
   const { theme } = useAppTheme();
+  const { authError, clearAuthError, loginWithGoogle } = useAuth();
+  const [socialLoading, setSocialLoading] = React.useState<'google' | null>(null);
+  const [error, setError] = React.useState<string | null>(null);
+
+  const handleGoogleAuth = React.useCallback(async () => {
+    clearAuthError();
+    setError(null);
+    setSocialLoading('google');
+
+    try {
+      await loginWithGoogle();
+    } catch (requestError) {
+      const message =
+        requestError instanceof Error ? requestError.message : 'Nao foi possivel entrar com o Google.';
+      setError(message);
+    } finally {
+      setSocialLoading(null);
+    }
+  }, [clearAuthError, loginWithGoogle]);
+
+  const resolvedError = error ?? authError;
 
   return (
     <AuthContainer title={'Vire\no Chef'} variant="access">
@@ -29,30 +51,35 @@ function AccessScreen({ onEmailPress, onRegisterPress }: AccessScreenProps) {
         variant="outline"
       />
 
-      {/* Fluxo social pausado por enquanto.
-      <SocialButton
-        provider="google"
-        label="Entrar com o Google"
-        onPress={onGooglePress}
-      />
-      */}
-
-      {/* Link de cadastro pausado nesta tela, já que o CTA principal acima
-      assume essa função por enquanto.
-      <AppText size="lg" color="text" style={{ textAlign: 'center' }}>
-        Ainda não tem uma conta?{' '}
-        <AppText
-          accessibilityRole="button"
-          color="primary"
-          onPress={onRegisterPress}
-          size="lg"
-          style={{ textDecorationLine: 'underline' }}
-          weight="bold"
-        >
-          Cadastre-se
+      <AppContainer
+        align="center"
+        backgroundColor="background"
+        direction="row"
+        justify="center"
+        style={{
+          backgroundColor: 'transparent',
+          marginVertical: theme.spacing['2xl'],
+          gap: theme.spacing.lg,
+        }}
+      >
+        <AppContainer flex backgroundColor="text" style={{ height: 1 }} />
+        <AppText color="text" size="xl" weight="bold">
+          Ou
         </AppText>
-      </AppText>
-      */}
+        <AppContainer flex backgroundColor="text" style={{ height: 1 }} />
+      </AppContainer>
+
+      <SocialButton
+        label="Entrar com o Google"
+        loading={socialLoading === 'google'}
+        onPress={handleGoogleAuth}
+      />
+
+      {resolvedError ? (
+        <AppText color="error" size="sm" style={{ marginTop: theme.spacing.lg, textAlign: 'center' }}>
+          {resolvedError}
+        </AppText>
+      ) : null}
     </AuthContainer>
   );
 }

@@ -2,7 +2,6 @@ import UIKit
 import React
 import React_RCTAppDelegate
 import ReactAppDependencyProvider
-import FBSDKCoreKit
 import GoogleSignIn
 
 @main
@@ -16,11 +15,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
   ) -> Bool {
-    ApplicationDelegate.shared.application(
-      application,
-      didFinishLaunchingWithOptions: launchOptions
-    )
-
     let delegate = ReactNativeDelegate()
     let factory = RCTReactNativeFactory(delegate: delegate)
     delegate.dependencyProvider = RCTAppDependencyProvider()
@@ -44,14 +38,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     open url: URL,
     options: [UIApplication.OpenURLOptionsKey : Any] = [:]
   ) -> Bool {
-    let handledByFacebook = ApplicationDelegate.shared.application(
-      app,
-      open: url,
-      options: options
-    )
-    let handledByGoogle = GIDSignIn.sharedInstance.handle(url)
-
-    return handledByFacebook || handledByGoogle
+    return GIDSignIn.sharedInstance.handle(url)
   }
 }
 

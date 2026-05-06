@@ -1,23 +1,26 @@
 import React from 'react';
+import { Pressable } from 'react-native';
 
-import { AuthButton, AuthContainer, AuthInput } from '../../components/auth';
-import { AppText } from '../../components/ui';
+import { AuthButton, AuthContainer, AuthInput, SocialButton } from '../../components/auth';
+import { AppContainer, AppText } from '../../components/ui';
 import { useAppTheme } from '../../contexts';
 import { useAuth } from '../../hooks/useAuth';
 
 type LoginScreenProps = {
   onBack: () => void;
+  onForgotPassword: () => void;
   onRegister: () => void;
 };
 
-function LoginScreen({ onBack, onRegister }: LoginScreenProps) {
+function LoginScreen({ onBack, onForgotPassword, onRegister }: LoginScreenProps) {
   const { theme } = useAppTheme();
-  const { authError, clearAuthError, login } = useAuth();
+  const { authError, clearAuthError, login, loginWithGoogle } = useAuth();
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [error, setError] = React.useState<string | null>(null);
   const [showEmailLoginValidation, setShowEmailLoginValidation] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
+  const [socialLoading, setSocialLoading] = React.useState<'google' | null>(null);
 
   const handleLogin = React.useCallback(async () => {
     clearAuthError();
@@ -39,12 +42,28 @@ function LoginScreen({ onBack, onRegister }: LoginScreenProps) {
       });
     } catch (requestError) {
       const message =
-        requestError instanceof Error ? requestError.message : 'Não foi possível entrar agora.';
+        requestError instanceof Error ? requestError.message : 'Nao foi possivel entrar agora.';
       setError(message);
     } finally {
       setLoading(false);
     }
   }, [clearAuthError, email, login, password]);
+
+  const handleGoogleAuth = React.useCallback(async () => {
+    clearAuthError();
+    setError(null);
+    setSocialLoading('google');
+
+    try {
+      await loginWithGoogle();
+    } catch (requestError) {
+      const message =
+        requestError instanceof Error ? requestError.message : 'Nao foi possivel entrar com o Google.';
+      setError(message);
+    } finally {
+      setSocialLoading(null);
+    }
+  }, [clearAuthError, loginWithGoogle]);
 
   const resolvedError = error ?? authError;
 
@@ -70,7 +89,6 @@ function LoginScreen({ onBack, onRegister }: LoginScreenProps) {
         value={password}
       />
 
-      {/* Botao de recuperacao de senha ocultado temporariamente.
       <Pressable accessibilityRole="button" onPress={onForgotPassword}>
         <AppText
           color="textSecondary"
@@ -84,7 +102,6 @@ function LoginScreen({ onBack, onRegister }: LoginScreenProps) {
           Esqueci minha senha
         </AppText>
       </Pressable>
-      */}
 
       <AuthButton label="Entrar com o e-mail" loading={loading} onPress={handleLogin} />
 
@@ -94,7 +111,6 @@ function LoginScreen({ onBack, onRegister }: LoginScreenProps) {
         </AppText>
       ) : null}
 
-      {/* Fluxo social pausado por enquanto.
       <AppContainer
         align="center"
         backgroundColor="background"
@@ -114,26 +130,15 @@ function LoginScreen({ onBack, onRegister }: LoginScreenProps) {
       </AppContainer>
 
       <SocialButton
-        provider="google"
         label="Entrar com o Google"
         loading={socialLoading === 'google'}
         onPress={handleGoogleAuth}
       />
 
-      <AppContainer style={{ height: theme.spacing.lg, backgroundColor: 'transparent' }} />
-
-      <SocialButton
-        provider="facebook"
-        label="Entrar com o Facebook"
-        loading={socialLoading === 'facebook'}
-        onPress={handleFacebookAuth}
-      />
-
       <AppContainer style={{ height: theme.spacing.xl, backgroundColor: 'transparent' }} />
-      */}
 
       <AppText color="textSecondary" size="lg" style={{ textAlign: 'center' }}>
-        Ainda não tem uma conta?{' '}
+        Ainda nao tem uma conta?{' '}
         <AppText
           accessibilityRole="button"
           color="primary"

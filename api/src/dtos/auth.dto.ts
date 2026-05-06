@@ -33,12 +33,12 @@ export interface ResetPasswordDto {
 
 export interface SocialLoginDto {
   firebaseToken: string;
-  provider: 'google' | 'facebook';
+  provider: 'google';
 }
 
 export interface CompleteSocialRegisterDto {
   firebaseToken: string;
-  provider: 'google' | 'facebook';
+  provider: 'google';
   password: string;
   username: string;
 }
@@ -73,7 +73,7 @@ export interface GenericMessageResponseDto {
 export interface SocialLoginPendingResponseDto {
   requiresCompletion: true;
   email: string;
-  provider: 'google' | 'facebook';
+  provider: 'google';
 }
 
 export interface SocialLoginSuccessResponseDto {

@@ -98,6 +98,7 @@ function AppContent() {
         {!isInitializing && activeScreen === 'login' ? (
           <LoginScreen
             onBack={goBackToAccess}
+            onForgotPassword={() => setActiveScreen('forgot-password')}
             onRegister={() => setActiveScreen('register')}
           />
         ) : null}

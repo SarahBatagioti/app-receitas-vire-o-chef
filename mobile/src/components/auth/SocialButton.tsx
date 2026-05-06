@@ -1,40 +1,20 @@
 import React from 'react';
 
 import { useAppTheme } from '../../contexts';
-import { AppButton, AppContainer, AppText } from '../ui';
-
-type SocialProvider = 'google' | 'facebook';
+import { AppButton, AppText } from '../ui';
 
 type SocialButtonProps = {
-  provider: SocialProvider;
   label: string;
   onPress: () => void;
   loading?: boolean;
 };
 
-function SocialButton({ provider, label, onPress, loading = false }: SocialButtonProps) {
+function SocialButton({ label, onPress, loading = false }: SocialButtonProps) {
   const { theme } = useAppTheme();
-  const isGoogle = provider === 'google';
-
-  const icon = isGoogle ? (
+  const icon = (
     <AppText size="2xl" weight="bold" style={{ color: theme.colors.brandOrange }}>
       G
     </AppText>
-  ) : (
-    <AppContainer
-      align="center"
-      backgroundColor="info"
-      borderRadius="full"
-      justify="center"
-      style={{
-        width: theme.spacing['4xl'],
-        height: theme.spacing['4xl'],
-      }}
-    >
-      <AppText size="xl" weight="bold" color="textInverse">
-        f
-      </AppText>
-    </AppContainer>
   );
 
   return (

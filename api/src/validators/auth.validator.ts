@@ -143,7 +143,7 @@ export function validateSocialLoginRequest(
   }
 
   if (!isAllowedSocialProvider(provider)) {
-    errors.push('Provider deve ser google ou facebook.');
+    errors.push('Provider deve ser google.');
   }
 
   if (errors.length > 0) {
@@ -178,7 +178,7 @@ export function validateCompleteSocialRegisterRequest(
   }
 
   if (!isAllowedSocialProvider(provider)) {
-    errors.push('Provider deve ser google ou facebook.');
+    errors.push('Provider deve ser google.');
   }
 
   validatePassword(password, errors);
@@ -262,8 +262,6 @@ function isValidUsername(username: string): boolean {
   return /^[a-zA-Z0-9._]{3,30}$/.test(username.trim());
 }
 
-function isAllowedSocialProvider(
-  provider: string | undefined,
-): provider is 'google' | 'facebook' {
-  return provider === 'google' || provider === 'facebook';
+function isAllowedSocialProvider(provider: string | undefined): provider is 'google' {
+  return provider === 'google';
 }

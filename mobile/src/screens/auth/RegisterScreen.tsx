@@ -1,7 +1,7 @@
 import React from 'react';
 
-import { AuthButton, AuthContainer, AuthInput } from '../../components/auth';
-import { AppText } from '../../components/ui';
+import { AuthButton, AuthContainer, AuthInput, SocialButton } from '../../components/auth';
+import { AppContainer, AppText } from '../../components/ui';
 import { useAppTheme } from '../../contexts';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -12,13 +12,14 @@ type RegisterScreenProps = {
 
 function RegisterScreen({ onBack, onLogin }: RegisterScreenProps) {
   const { theme } = useAppTheme();
-  const { authError, clearAuthError, register } = useAuth();
+  const { authError, clearAuthError, loginWithGoogle, register } = useAuth();
   const [email, setEmail] = React.useState('');
   const [username, setUsername] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [error, setError] = React.useState<string | null>(null);
   const [showEmailRegisterValidation, setShowEmailRegisterValidation] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
+  const [socialLoading, setSocialLoading] = React.useState<'google' | null>(null);
 
   const handleRegister = React.useCallback(async () => {
     clearAuthError();
@@ -42,12 +43,28 @@ function RegisterScreen({ onBack, onLogin }: RegisterScreenProps) {
       });
     } catch (requestError) {
       const message =
-        requestError instanceof Error ? requestError.message : 'Não foi possível concluir o cadastro.';
+        requestError instanceof Error ? requestError.message : 'Nao foi possivel concluir o cadastro.';
       setError(message);
     } finally {
       setLoading(false);
     }
   }, [clearAuthError, email, password, register, username]);
+
+  const handleGoogleAuth = React.useCallback(async () => {
+    clearAuthError();
+    setError(null);
+    setSocialLoading('google');
+
+    try {
+      await loginWithGoogle();
+    } catch (requestError) {
+      const message =
+        requestError instanceof Error ? requestError.message : 'Nao foi possivel continuar com o Google.';
+      setError(message);
+    } finally {
+      setSocialLoading(null);
+    }
+  }, [clearAuthError, loginWithGoogle]);
 
   const resolvedError = error ?? authError;
 
@@ -64,9 +81,9 @@ function RegisterScreen({ onBack, onLogin }: RegisterScreenProps) {
       />
 
       <AuthInput
-        accessibilityLabel="Campo de nome de usuário"
-        error={!username && showEmailRegisterValidation ? 'Informe seu nome de usuário.' : undefined}
-        label="Nome de usuário:"
+        accessibilityLabel="Campo de nome de usuario"
+        error={!username && showEmailRegisterValidation ? 'Informe seu nome de usuario.' : undefined}
+        label="Nome de usuario:"
         onChangeText={setUsername}
         placeholder="**********"
         value={username}
@@ -90,7 +107,6 @@ function RegisterScreen({ onBack, onLogin }: RegisterScreenProps) {
         </AppText>
       ) : null}
 
-      {/* Fluxo social pausado por enquanto.
       <AppContainer
         align="center"
         backgroundColor="background"
@@ -110,26 +126,15 @@ function RegisterScreen({ onBack, onLogin }: RegisterScreenProps) {
       </AppContainer>
 
       <SocialButton
-        provider="google"
         label="Cadastre-se com o Google"
         loading={socialLoading === 'google'}
         onPress={handleGoogleAuth}
       />
 
-      <AppContainer style={{ height: theme.spacing.lg, backgroundColor: 'transparent' }} />
-
-      <SocialButton
-        provider="facebook"
-        label="Cadastre-se com o Facebook"
-        loading={socialLoading === 'facebook'}
-        onPress={handleFacebookAuth}
-      />
-
       <AppContainer style={{ height: theme.spacing.xl, backgroundColor: 'transparent' }} />
-      */}
 
       <AppText color="textSecondary" size="lg" style={{ textAlign: 'center' }}>
-        Já tem uma conta?{' '}
+        Ja tem uma conta?{' '}
         <AppText
           accessibilityRole="button"
           color="primary"
