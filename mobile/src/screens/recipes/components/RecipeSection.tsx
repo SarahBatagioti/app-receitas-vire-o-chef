@@ -11,9 +11,20 @@ type RecipeSectionProps = {
   recipes: RecipeListItem[];
   onRecipePress?: (recipe: RecipeListItem) => void;
   onToggleFavorite?: (recipe: RecipeListItem) => void;
+  onEdit?: (recipe: RecipeListItem) => void;
+  onDelete?: (recipe: RecipeListItem) => void;
+  isOwnRecipes?: boolean;
 };
 
-function RecipeSection({ title, recipes, onRecipePress, onToggleFavorite }: RecipeSectionProps) {
+function RecipeSection({ 
+  title, 
+  recipes, 
+  onRecipePress, 
+  onToggleFavorite,
+  onEdit,
+  onDelete,
+  isOwnRecipes = false 
+}: RecipeSectionProps) {
   const { theme } = useAppTheme();
 
   return (
@@ -47,6 +58,9 @@ function RecipeSection({ title, recipes, onRecipePress, onToggleFavorite }: Reci
               isLast={index === recipes.length - 1}
               onPress={onRecipePress}
               onToggleFavorite={onToggleFavorite}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              isOwnRecipe={isOwnRecipes}
               recipe={recipe}
             />
           ))}

@@ -34,6 +34,8 @@ type RecipesCreateScreenProps = {
     status: RecipeStatus,
     options?: SubmitRecipeOptions,
   ) => Promise<void>;
+  editingRecipeId?: string | null;
+  initialValues?: RecipeCreateFormValues | null;
 };
 
 type SubmissionPhase = 'creating' | 'uploading' | null;
@@ -105,9 +107,11 @@ function normalizeSelectedAsset(asset: Asset, order: number): RecipeCreateMedia 
   };
 }
 
-function RecipesCreateScreen({ onBack, onSubmitRecipe }: RecipesCreateScreenProps) {
+function RecipesCreateScreen({ onBack, onSubmitRecipe, editingRecipeId, initialValues }: RecipesCreateScreenProps) {
   const { theme } = useAppTheme();
-  const [formValues, setFormValues] = React.useState<RecipeCreateFormValues>(initialFormValues);
+  const [formValues, setFormValues] = React.useState<RecipeCreateFormValues>(
+    initialValues ?? initialFormValues,
+  );
   const [validationErrors, setValidationErrors] = React.useState<RecipeCreateValidationErrors>({});
   const [submissionError, setSubmissionError] = React.useState<string | null>(null);
   const [mediaSelectionError, setMediaSelectionError] = React.useState<string | null>(null);
@@ -116,6 +120,7 @@ function RecipesCreateScreen({ onBack, onSubmitRecipe }: RecipesCreateScreenProp
   const [submissionPhase, setSubmissionPhase] = React.useState<SubmissionPhase>(null);
   const nextPreparationStepId = React.useRef(2);
   const isSubmitting = submitIntent !== null;
+  const isEditing = editingRecipeId !== null && editingRecipeId !== undefined;
 
   const clearSubmitFeedback = () => {
     setSubmissionError(null);
@@ -474,7 +479,7 @@ function RecipesCreateScreen({ onBack, onSubmitRecipe }: RecipesCreateScreenProp
       contentContainerStyle={{ paddingBottom: theme.spacing['7xl'] + theme.spacing['3xl'] }}
       showsVerticalScrollIndicator={false}
     >
-      <RecipesTopBar onBack={onBack} title="Cadastrar receita" />
+      <RecipesTopBar onBack={onBack} title={isEditing ? 'Editar receita' : 'Cadastrar receita'} />
 
       <AppContainer marginBottom="2xl">
         <AppText

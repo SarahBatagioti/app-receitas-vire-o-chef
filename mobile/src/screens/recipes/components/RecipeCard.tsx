@@ -1,6 +1,6 @@
 import React from 'react';
 import { Image, Pressable, useWindowDimensions } from 'react-native';
-import { Clock3, Heart, Star, UsersRound } from 'lucide-react-native';
+import { Clock3, Edit2, Heart, Star, Trash2, UsersRound } from 'lucide-react-native';
 
 import { AppContainer, AppText } from '../../../components/ui';
 import { useAppTheme } from '../../../contexts';
@@ -10,6 +10,9 @@ type RecipeCardProps = {
   recipe: RecipeListItem;
   onPress?: (recipe: RecipeListItem) => void;
   onToggleFavorite?: (recipe: RecipeListItem) => void;
+  onEdit?: (recipe: RecipeListItem) => void;
+  onDelete?: (recipe: RecipeListItem) => void;
+  isOwnRecipe?: boolean;
   isLast?: boolean;
 };
 
@@ -38,7 +41,15 @@ const difficultyMeta: Record<
   },
 };
 
-function RecipeCard({ recipe, onPress, onToggleFavorite, isLast = false }: RecipeCardProps) {
+function RecipeCard({ 
+  recipe, 
+  onPress, 
+  onToggleFavorite, 
+  onEdit,
+  onDelete,
+  isOwnRecipe = false,
+  isLast = false 
+}: RecipeCardProps) {
   const { theme } = useAppTheme();
   const { width } = useWindowDimensions();
   const cardWidth = Math.min(width * 0.41, theme.spacing['7xl'] * 2.85);
@@ -98,35 +109,93 @@ function RecipeCard({ recipe, onPress, onToggleFavorite, isLast = false }: Recip
           )}
         </AppContainer>
 
-        <Pressable
-          accessibilityLabel={
-            recipe.isFavorite
-              ? `Remover ${recipe.title} dos favoritos`
-              : `Adicionar ${recipe.title} aos favoritos`
-          }
-          onPress={(event) => {
-            event.stopPropagation();
-            onToggleFavorite?.(recipe);
-          }}
-          style={{
-            alignItems: 'center',
-            backgroundColor: 'transparent',
-            height: theme.spacing['4xl'],
-            justifyContent: 'center',
-            position: 'absolute',
-            right: theme.spacing.sm,
-            top: theme.spacing.sm,
-            width: theme.spacing['4xl'],
-            zIndex: 4,
-          }}
-        >
-          <Heart
-            color={heartColor}
-            fill={heartFill}
-            size={theme.spacing.xl}
-            strokeWidth={1.8}
-          />
-        </Pressable>
+        {isOwnRecipe ? (
+          <AppContainer
+            align="center"
+            direction="row"
+            style={{
+              gap: theme.spacing.xs,
+              position: 'absolute',
+              right: theme.spacing.sm,
+              top: theme.spacing.sm,
+              zIndex: 4,
+            }}
+          >
+            <Pressable
+              accessibilityLabel={`Editar ${recipe.title}`}
+              onPress={(event) => {
+                event.stopPropagation();
+                onEdit?.(recipe);
+              }}
+              style={{
+                alignItems: 'center',
+                backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                borderRadius: theme.borderRadius.full,
+                height: theme.spacing['4xl'],
+                justifyContent: 'center',
+                width: theme.spacing['4xl'],
+              }}
+            >
+              <Edit2
+                color={theme.colors.textInverse}
+                size={theme.spacing.lg}
+                strokeWidth={2}
+              />
+            </Pressable>
+
+            <Pressable
+              accessibilityLabel={`Deletar ${recipe.title}`}
+              onPress={(event) => {
+                event.stopPropagation();
+                onDelete?.(recipe);
+              }}
+              style={{
+                alignItems: 'center',
+                backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                borderRadius: theme.borderRadius.full,
+                height: theme.spacing['4xl'],
+                justifyContent: 'center',
+                width: theme.spacing['4xl'],
+              }}
+            >
+              <Trash2
+                color={theme.colors.error}
+                size={theme.spacing.lg}
+                strokeWidth={2}
+              />
+            </Pressable>
+          </AppContainer>
+        ) : (
+          <Pressable
+            accessibilityLabel={
+              recipe.isFavorite
+                ? `Remover ${recipe.title} dos favoritos`
+                : `Adicionar ${recipe.title} aos favoritos`
+            }
+            onPress={(event) => {
+              event.stopPropagation();
+              onToggleFavorite?.(recipe);
+            }}
+            style={{
+              alignItems: 'center',
+              backgroundColor: 'transparent',
+              height: theme.spacing['4xl'],
+              justifyContent: 'center',
+              position: 'absolute',
+              right: theme.spacing.sm,
+              top: theme.spacing.sm,
+              width: theme.spacing['4xl'],
+              zIndex: 4,
+            }}
+          >
+            <Heart
+              color={heartColor}
+              fill={heartFill}
+              size={theme.spacing.xl}
+              strokeWidth={1.8}
+            />
+          </Pressable>
+        )}
 
         <AppContainer
           backgroundColor={infoMeta.badgeColor}

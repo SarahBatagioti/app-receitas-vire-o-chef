@@ -1,5 +1,5 @@
 export type RecipeDifficulty = 'facil' | 'intermediario' | 'dificil';
-export type RecipesRoute = 'home' | 'create' | 'detail';
+export type RecipesRoute = 'home' | 'create' | 'edit' | 'detail';
 export type RecipeStatus = 'published' | 'draft';
 export type RecipeCreateMediaType = 'image' | 'video';
 
@@ -76,6 +76,7 @@ export type RecipeListItem = {
 };
 
 export type RecipeAuthor = {
+  id?: string;
   name: string;
   subtitle?: string;
   avatarUrl?: string | null;

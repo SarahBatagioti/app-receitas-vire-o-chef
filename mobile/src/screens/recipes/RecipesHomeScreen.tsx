@@ -14,6 +14,8 @@ type RecipesHomeScreenProps = {
   onAddRecipe: () => void;
   onOpenRecipe: (recipe: RecipeListItem) => void;
   onToggleFavorite: (recipe: RecipeListItem) => void;
+  onEditRecipe?: (recipe: RecipeListItem) => void;
+  onDeleteRecipe?: (recipe: RecipeListItem) => void;
   onRetryLoad?: () => void;
 };
 
@@ -25,6 +27,8 @@ function RecipesHomeScreen({
   onAddRecipe,
   onOpenRecipe,
   onToggleFavorite,
+  onEditRecipe,
+  onDeleteRecipe,
   onRetryLoad,
 }: RecipesHomeScreenProps) {
   const { theme } = useAppTheme();
@@ -122,6 +126,9 @@ function RecipesHomeScreen({
         <RecipeSection
           onRecipePress={onOpenRecipe}
           onToggleFavorite={onToggleFavorite}
+          onEdit={onEditRecipe}
+          onDelete={onDeleteRecipe}
+          isOwnRecipes={true}
           recipes={myPublications}
           title="Minhas publicações"
         />
@@ -130,6 +137,9 @@ function RecipesHomeScreen({
           <RecipeSection
             onRecipePress={onOpenRecipe}
             onToggleFavorite={onToggleFavorite}
+            onEdit={onEditRecipe}
+            onDelete={onDeleteRecipe}
+            isOwnRecipes={true}
             recipes={draftRecipes}
             title="Meus rascunhos"
           />

@@ -322,6 +322,15 @@ class RecipeService {
     return normalizeRecipeRecord(response, 'Resposta invalida recebida ao cadastrar receita.');
   }
 
+  async updateRecipe(recipeId: string, payload: CreateRecipePayload): Promise<RecipeRecord> {
+    const response = await api.put<unknown, CreateRecipePayload>(
+      `/receitas/${recipeId}`,
+      payload,
+      true,
+    );
+    return normalizeRecipeRecord(response, 'Resposta invalida recebida ao atualizar receita.');
+  }
+
   async uploadRecipeMedia(
     recipeId: string,
     media: UploadRecipeMediaPayload[],
@@ -382,6 +391,10 @@ class RecipeService {
 
   async unfavoriteRecipe(recipeId: string): Promise<void> {
     await api.delete<unknown>(`/receitas/${recipeId}/favorito`, true);
+  }
+
+  async deleteRecipe(recipeId: string): Promise<void> {
+    await api.delete<unknown>(`/receitas/${recipeId}`, true);
   }
 }
 

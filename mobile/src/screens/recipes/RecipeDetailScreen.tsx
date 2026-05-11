@@ -23,6 +23,7 @@ type RecipeDetailScreenProps = {
   errorMessage?: string | null;
   onRetry?: () => void;
   onToggleFavorite?: (recipeId: string) => void;
+  onEdit?: (recipeId: string) => void;
 };
 
 const difficultyMeta: Record<
@@ -520,6 +521,7 @@ function RecipeDetailScreen({
   errorMessage,
   onRetry,
   onToggleFavorite,
+  onEdit,
 }: RecipeDetailScreenProps) {
   const { theme } = useAppTheme();
 
