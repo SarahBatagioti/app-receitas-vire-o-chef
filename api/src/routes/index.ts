@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { authRoutes } from './auth.routes';
+import { mealDiaryRoutes } from './meal-diary.routes';
 import { publicationRoutes } from './publication.routes';
 import { recipeRoutes } from './recipe.routes';
 
@@ -14,6 +15,7 @@ router.get('/health', (_request, response) => {
 
 router.use('/auth', authRoutes);
 router.use('/receitas', recipeRoutes);
+router.use('/refeicoes', mealDiaryRoutes);
 router.use('/publicacoes', publicationRoutes);
 
 export { router };
