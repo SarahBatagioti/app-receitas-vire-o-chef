@@ -467,6 +467,8 @@ function MealRecipeSearchScreen({
   onChangeQuantity,
   onSave,
   isSaving,
+  recipesError,
+  onRetryRecipes,
 }: {
   config: MealUiConfig;
   searchValue: string;
@@ -478,6 +480,8 @@ function MealRecipeSearchScreen({
   onChangeQuantity: (recipeId: string, quantity: number) => void;
   onSave: () => void;
   isSaving: boolean;
+  recipesError: string | null;
+  onRetryRecipes: () => void;
 }) {
   const { theme } = useAppTheme();
   const draftTotal = calculateDraftMealTotal(draftItems);
@@ -535,6 +539,20 @@ function MealRecipeSearchScreen({
           Receitas disponíveis
         </AppText>
 
+        {recipesError ? (
+          <AppContainer backgroundColor="surface" borderRadius="2xl" marginBottom="lg" padding="md">
+            <AppText color="warning" size="md">
+              {recipesError}
+            </AppText>
+            <AppButton
+              label="Tentar novamente"
+              onPress={onRetryRecipes}
+              size="md"
+              style={{ alignSelf: 'flex-start', marginTop: theme.spacing.md }}
+            />
+          </AppContainer>
+        ) : null}
+
         {filteredRecipes.length ? (
           filteredRecipes.map((recipe) => {
             const selectedDraft = draftItems.find((item) => item.recipeId === recipe.id);
@@ -549,13 +567,13 @@ function MealRecipeSearchScreen({
               />
             );
           })
-        ) : (
+        ) : !recipesError ? (
           <AppContainer align="center" backgroundColor="background" padding="xl">
             <AppText color="textSecondary" size="md">
               Nenhuma receita encontrada.
             </AppText>
           </AppContainer>
-        )}
+        ) : null}
       </ScrollView>
 
       <View
@@ -652,8 +670,12 @@ function RefeicoesFlow() {
       setDraftItems(createDraftItemsFromMeal(getMealByType(dayDiary, mealType)));
       setSearchValue('');
       setRoute('search');
+
+      if (recipesError) {
+        loadRecipes().catch(() => undefined);
+      }
     },
-    [dayDiary],
+    [dayDiary, loadRecipes, recipesError],
   );
 
   const handleSaveMeal = React.useCallback(async () => {
@@ -693,6 +715,8 @@ function RefeicoesFlow() {
           setDraftItems((current) => updateDraftItemQuantity(current, recipeId, quantity))
         }
         onChangeSearchValue={setSearchValue}
+        onRetryRecipes={() => loadRecipes().catch(() => undefined)}
+        recipesError={recipesError}
         onSave={handleSaveMeal}
         searchValue={searchValue}
       />

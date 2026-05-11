@@ -13,8 +13,22 @@ const ORDERED_MEAL_TYPES: MealType[] = ['breakfast', 'lunch', 'afternoonSnack', 
 
 export class MealDiaryRepository {
   async ensureTables(): Promise<void> {
-    await this.ensureMealEntriesTable();
-    await this.ensureRelationships();
+    if (mealDiaryTablesReady) {
+      return;
+    }
+
+    if (!mealDiaryTablesSetupPromise) {
+      mealDiaryTablesSetupPromise = (async () => {
+        await this.ensureMealEntriesTable();
+        await this.ensureRelationships();
+        mealDiaryTablesReady = true;
+      })().catch((error) => {
+        mealDiaryTablesSetupPromise = null;
+        throw error;
+      });
+    }
+
+    await mealDiaryTablesSetupPromise;
   }
 
   async listEntriesByUserAndDate(userId: string, date: string): Promise<MealDiaryEntryAggregate[]> {
@@ -238,3 +252,6 @@ function toDateOnly(value: Date | string): string {
 }
 
 export { ORDERED_MEAL_TYPES };
+
+let mealDiaryTablesSetupPromise: Promise<void> | null = null;
+let mealDiaryTablesReady = false;

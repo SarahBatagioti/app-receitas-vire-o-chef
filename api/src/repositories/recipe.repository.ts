@@ -19,13 +19,27 @@ import { RecipeDifficulty, RecipeModel, RecipeStatus } from '../models/recipe.mo
 
 export class RecipeRepository {
   async ensureTables(): Promise<void> {
-    await this.ensureRecipesTable();
-    await this.ensureRecipeIngredientsTable();
-    await this.ensureRecipeNutritionTable();
-    await this.ensureRecipePreparationStepsTable();
-    await this.ensureRecipeMediaTable();
-    await this.ensureFavoriteRecipesTable();
-    await this.ensureRelationships();
+    if (recipeTablesReady) {
+      return;
+    }
+
+    if (!recipeTablesSetupPromise) {
+      recipeTablesSetupPromise = (async () => {
+        await this.ensureRecipesTable();
+        await this.ensureRecipeIngredientsTable();
+        await this.ensureRecipeNutritionTable();
+        await this.ensureRecipePreparationStepsTable();
+        await this.ensureRecipeMediaTable();
+        await this.ensureFavoriteRecipesTable();
+        await this.ensureRelationships();
+        recipeTablesReady = true;
+      })().catch((error) => {
+        recipeTablesSetupPromise = null;
+        throw error;
+      });
+    }
+
+    await recipeTablesSetupPromise;
   }
 
   async createRecipe(
@@ -702,6 +716,9 @@ const baseSelectQuery = `
   LEFT JOIN recipe_media rm
     ON rm.recipe_id = r.id
 `;
+
+let recipeTablesSetupPromise: Promise<void> | null = null;
+let recipeTablesReady = false;
 
 async function ensureForeignKey(
   tableName: string,

@@ -5,18 +5,34 @@ import { PasswordResetTokenModel } from '../models/password-reset-token.model';
 
 export class PasswordResetRepository {
   async ensureTable(): Promise<void> {
-    await database.execute(`
-      CREATE TABLE IF NOT EXISTS password_reset_tokens (
-        id CHAR(36) NOT NULL PRIMARY KEY,
-        user_id CHAR(36) NOT NULL,
-        token_hash VARCHAR(255) NOT NULL,
-        expires_at DATETIME NOT NULL,
-        used_at DATETIME NULL,
-        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        INDEX idx_password_reset_user_id (user_id),
-        INDEX idx_password_reset_token_hash (token_hash)
-      )
-    `);
+    if (passwordResetTableReady) {
+      return;
+    }
+
+    if (!passwordResetTableSetupPromise) {
+      passwordResetTableSetupPromise = database
+        .execute(`
+          CREATE TABLE IF NOT EXISTS password_reset_tokens (
+            id CHAR(36) NOT NULL PRIMARY KEY,
+            user_id CHAR(36) NOT NULL,
+            token_hash VARCHAR(255) NOT NULL,
+            expires_at DATETIME NOT NULL,
+            used_at DATETIME NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_password_reset_user_id (user_id),
+            INDEX idx_password_reset_token_hash (token_hash)
+          )
+        `)
+        .then(() => {
+          passwordResetTableReady = true;
+        })
+        .catch((error) => {
+          passwordResetTableSetupPromise = null;
+          throw error;
+        });
+    }
+
+    await passwordResetTableSetupPromise;
   }
 
   async create(input: CreatePasswordResetTokenInput): Promise<void> {
@@ -129,3 +145,6 @@ function mapPasswordResetToken(row: PasswordResetTokenRow): PasswordResetTokenMo
 function toIsoString(value: Date | string): string {
   return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
 }
+
+let passwordResetTableSetupPromise: Promise<void> | null = null;
+let passwordResetTableReady = false;

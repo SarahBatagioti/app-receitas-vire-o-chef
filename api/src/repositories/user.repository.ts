@@ -5,33 +5,48 @@ import { AuthProvider, UserModel } from '../models/user.model';
 
 export class UserRepository {
   async ensureUsersTable(): Promise<void> {
-    await database.execute(`
-      CREATE TABLE IF NOT EXISTS users (
-        id CHAR(36) NOT NULL PRIMARY KEY,
-        email VARCHAR(255) NOT NULL UNIQUE,
-        password_hash VARCHAR(255) NULL,
-        username VARCHAR(100) NULL UNIQUE,
-        provider VARCHAR(50) NOT NULL,
-        firebase_uid VARCHAR(128) NULL,
-        is_social_account BOOLEAN NOT NULL DEFAULT FALSE,
-        is_registration_completed BOOLEAN NOT NULL DEFAULT TRUE,
-        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-      )
-    `);
+    if (usersTableReady) {
+      return;
+    }
 
-    await database.execute(`
-      ALTER TABLE users
-      MODIFY COLUMN password_hash VARCHAR(255) NULL,
-      MODIFY COLUMN username VARCHAR(100) NULL
-    `);
+    if (!usersTableSetupPromise) {
+      usersTableSetupPromise = (async () => {
+        await database.execute(`
+          CREATE TABLE IF NOT EXISTS users (
+            id CHAR(36) NOT NULL PRIMARY KEY,
+            email VARCHAR(255) NOT NULL UNIQUE,
+            password_hash VARCHAR(255) NULL,
+            username VARCHAR(100) NULL UNIQUE,
+            provider VARCHAR(50) NOT NULL,
+            firebase_uid VARCHAR(128) NULL,
+            is_social_account BOOLEAN NOT NULL DEFAULT FALSE,
+            is_registration_completed BOOLEAN NOT NULL DEFAULT TRUE,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+          )
+        `);
 
-    await ensureColumn('users', 'firebase_uid', 'VARCHAR(128) NULL');
-    await ensureColumn(
-      'users',
-      'is_registration_completed',
-      'BOOLEAN NOT NULL DEFAULT TRUE',
-    );
+        await database.execute(`
+          ALTER TABLE users
+          MODIFY COLUMN password_hash VARCHAR(255) NULL,
+          MODIFY COLUMN username VARCHAR(100) NULL
+        `);
+
+        await ensureColumn('users', 'firebase_uid', 'VARCHAR(128) NULL');
+        await ensureColumn(
+          'users',
+          'is_registration_completed',
+          'BOOLEAN NOT NULL DEFAULT TRUE',
+        );
+
+        usersTableReady = true;
+      })().catch((error) => {
+        usersTableSetupPromise = null;
+        throw error;
+      });
+    }
+
+    await usersTableSetupPromise;
   }
 
   async findByEmail(email: string): Promise<UserModel | null> {
@@ -199,6 +214,9 @@ const baseSelectQuery = `
     updated_at
   FROM users
 `;
+
+let usersTableSetupPromise: Promise<void> | null = null;
+let usersTableReady = false;
 
 interface UserDatabaseRow {
   id: string;
