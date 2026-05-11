@@ -6,9 +6,14 @@ import { useAppTheme } from '../../../contexts';
 type FeedListFooterProps = {
   isLoadingMore: boolean;
   hasMore: boolean;
+  itemCount?: number;
 };
 
-function FeedListFooter({ isLoadingMore, hasMore }: FeedListFooterProps) {
+function FeedListFooter({
+  isLoadingMore,
+  hasMore,
+  itemCount = 0,
+}: FeedListFooterProps) {
   const { theme } = useAppTheme();
 
   if (isLoadingMore) {
@@ -19,7 +24,7 @@ function FeedListFooter({ isLoadingMore, hasMore }: FeedListFooterProps) {
     );
   }
 
-  if (!hasMore) {
+  if (!hasMore && itemCount > 0) {
     return (
       <AppContainer align="center" backgroundColor="background" padding="lg">
         <AppText color="textSecondary">Você chegou ao fim das publicações.</AppText>

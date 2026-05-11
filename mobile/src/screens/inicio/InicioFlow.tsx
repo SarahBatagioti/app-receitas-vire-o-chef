@@ -12,7 +12,7 @@ import { ChevronLeft, ImagePlus, Link2, Save, Trash2 } from 'lucide-react-native
 import { AppButton, AppContainer, AppHeader, AppInput, AppText } from '../../components/ui';
 import { useAppTheme } from '../../contexts';
 import { useAuth } from '../../hooks/useAuth';
-import { getErrorMessage } from '../../services/api';
+import { ApiError, getErrorMessage } from '../../services/api';
 import {
   RecipeApiDifficulty,
   RecipeApiMediaType,
@@ -132,7 +132,8 @@ function mapRecipeRecordToDetail(recipe: RecipeRecord): RecipeDetail {
       id: step.id,
       title: `Passo ${index + 1}`,
       description: step.descricao,
-      accentColor: index % 3 === 0 ? 'brandGreen' : index % 3 === 1 ? 'brandYellow' : 'brandOrange',
+      accentColor:
+        index % 3 === 0 ? 'brandGreen' : index % 3 === 1 ? 'brandYellow' : 'brandOrange',
     })),
     media: recipe.midias.map(mapRecipeDetailMedia),
   };
@@ -146,26 +147,57 @@ const initialComposerValues: PublicationComposerValues = {
   imageMimeType: null,
 };
 
+function shouldTreatRecipeLoadFailureAsEmptyState(error: unknown): boolean {
+  if (error instanceof ApiError && error.status >= 500) {
+    return true;
+  }
+
+  if (error instanceof Error) {
+    const normalizedMessage = error.message.trim().toLowerCase();
+
+    return (
+      normalizedMessage === 'erro interno do servidor' ||
+      normalizedMessage === 'internal server error'
+    );
+  }
+
+  return false;
+}
+
 function InicioFlow({ onOpenRecipesScreen }: InicioFlowProps) {
   const { theme } = useAppTheme();
   const { user } = useAuth();
   const [route, setRoute] = React.useState<InicioRoute>('feed');
   const [feedState, dispatchFeed] = React.useReducer(feedReducer, initialFeedState);
-  const [commentsState, dispatchComments] = React.useReducer(commentsReducer, initialCommentsState);
-  const [activeCommentsRoute, setActiveCommentsRoute] = React.useState<ActiveCommentsRoute | null>(null);
-  const [activeComposerRoute, setActiveComposerRoute] = React.useState<ActiveComposerRoute | null>(null);
+  const [commentsState, dispatchComments] = React.useReducer(
+    commentsReducer,
+    initialCommentsState,
+  );
+  const [activeCommentsRoute, setActiveCommentsRoute] =
+    React.useState<ActiveCommentsRoute | null>(null);
+  const [activeComposerRoute, setActiveComposerRoute] =
+    React.useState<ActiveComposerRoute | null>(null);
   const [commentValue, setCommentValue] = React.useState('');
-  const [composerValues, setComposerValues] = React.useState<PublicationComposerValues>(initialComposerValues);
+  const [composerValues, setComposerValues] =
+    React.useState<PublicationComposerValues>(initialComposerValues);
   const [composerError, setComposerError] = React.useState<string | null>(null);
   const [isSavingComposer, setIsSavingComposer] = React.useState(false);
   const [availableRecipes, setAvailableRecipes] = React.useState<PublicationRecipeOption[]>([]);
   const [isLoadingRecipes, setIsLoadingRecipes] = React.useState(false);
-  const [selectedRecipeDetail, setSelectedRecipeDetail] = React.useState<RecipeDetail | null>(null);
+  const [recipeLoadMessage, setRecipeLoadMessage] = React.useState<string | null>(null);
+  const [selectedRecipeDetail, setSelectedRecipeDetail] = React.useState<RecipeDetail | null>(
+    null,
+  );
   const [recipeDetailError, setRecipeDetailError] = React.useState<string | null>(null);
   const [isLoadingRecipeDetail, setIsLoadingRecipeDetail] = React.useState(false);
+  const lastLoadedUserIdRef = React.useRef<string | null>(null);
 
   const loadFeed = React.useCallback(
-    async (mode: 'initial' | 'refresh' | 'more' = 'initial', cursor?: string | null, query?: string) => {
+    async (
+      mode: 'initial' | 'refresh' | 'more' = 'initial',
+      cursor?: string | null,
+      query?: string,
+    ) => {
       try {
         if (mode === 'initial') {
           dispatchFeed({ type: 'LOAD_INITIAL_START' });
@@ -175,7 +207,10 @@ function InicioFlow({ onOpenRecipesScreen }: InicioFlowProps) {
           dispatchFeed({ type: 'LOAD_MORE_START' });
         }
 
-        const page = await publicationService.listFeed(cursor ?? null, query ?? feedState.searchQuery);
+        const page = await publicationService.listFeed(
+          cursor ?? null,
+          query ?? feedState.searchQuery,
+        );
 
         if (mode === 'initial') {
           dispatchFeed({ type: 'LOAD_INITIAL_SUCCESS', payload: page });
@@ -186,6 +221,7 @@ function InicioFlow({ onOpenRecipesScreen }: InicioFlowProps) {
         }
       } catch (error) {
         const message = getErrorMessage(error, 'Não foi possível carregar o feed.');
+
         if (mode === 'initial') {
           dispatchFeed({ type: 'LOAD_INITIAL_ERROR', payload: message });
         } else {
@@ -199,6 +235,20 @@ function InicioFlow({ onOpenRecipesScreen }: InicioFlowProps) {
   React.useEffect(() => {
     void loadFeed('initial', null, '');
   }, [loadFeed]);
+
+  React.useEffect(() => {
+    if (!user?.id) {
+      lastLoadedUserIdRef.current = null;
+      return;
+    }
+
+    if (lastLoadedUserIdRef.current === user.id) {
+      return;
+    }
+
+    lastLoadedUserIdRef.current = user.id;
+    dispatchFeed({ type: 'APPLY_SEARCH_QUERY', payload: '' });
+  }, [user?.id]);
 
   React.useEffect(() => {
     const timeout = setTimeout(() => {
@@ -226,35 +276,39 @@ function InicioFlow({ onOpenRecipesScreen }: InicioFlowProps) {
     }
 
     await loadFeed('more', feedState.nextCursor, feedState.searchQuery);
-  }, [feedState.hasMore, feedState.isLoadingMore, feedState.nextCursor, feedState.searchQuery, loadFeed]);
+  }, [
+    feedState.hasMore,
+    feedState.isLoadingMore,
+    feedState.nextCursor,
+    feedState.searchQuery,
+    loadFeed,
+  ]);
 
-  const loadComments = React.useCallback(
-    async (publicationId: string, cursor?: string | null) => {
-      try {
-        if (!cursor) {
-          dispatchComments({ type: 'LOAD_INITIAL_START' });
-        } else {
-          dispatchComments({ type: 'LOAD_MORE_START' });
-        }
-
-        const page = await publicationService.listComments(publicationId, cursor);
-
-        if (!cursor) {
-          dispatchComments({ type: 'LOAD_INITIAL_SUCCESS', payload: page });
-        } else {
-          dispatchComments({ type: 'LOAD_MORE_SUCCESS', payload: page });
-        }
-      } catch (error) {
-        const message = getErrorMessage(error, 'Não foi possível carregar os comentários.');
-        if (!cursor) {
-          dispatchComments({ type: 'LOAD_INITIAL_ERROR', payload: message });
-        } else {
-          dispatchComments({ type: 'LOAD_MORE_ERROR', payload: message });
-        }
+  const loadComments = React.useCallback(async (publicationId: string, cursor?: string | null) => {
+    try {
+      if (!cursor) {
+        dispatchComments({ type: 'LOAD_INITIAL_START' });
+      } else {
+        dispatchComments({ type: 'LOAD_MORE_START' });
       }
-    },
-    [],
-  );
+
+      const page = await publicationService.listComments(publicationId, cursor);
+
+      if (!cursor) {
+        dispatchComments({ type: 'LOAD_INITIAL_SUCCESS', payload: page });
+      } else {
+        dispatchComments({ type: 'LOAD_MORE_SUCCESS', payload: page });
+      }
+    } catch (error) {
+      const message = getErrorMessage(error, 'Não foi possível carregar os comentários.');
+
+      if (!cursor) {
+        dispatchComments({ type: 'LOAD_INITIAL_ERROR', payload: message });
+      } else {
+        dispatchComments({ type: 'LOAD_MORE_ERROR', payload: message });
+      }
+    }
+  }, []);
 
   const openComments = React.useCallback(
     async (publication: PublicationFeedItem) => {
@@ -266,20 +320,26 @@ function InicioFlow({ onOpenRecipesScreen }: InicioFlowProps) {
     [loadComments],
   );
 
-  const updatePublicationInFeed = React.useCallback((publication: PublicationFeedItem) => {
-    dispatchFeed({ type: 'SYNC_PUBLICATION', payload: publication });
+  const updatePublicationInFeed = React.useCallback(
+    (publication: PublicationFeedItem) => {
+      dispatchFeed({ type: 'SYNC_PUBLICATION', payload: publication });
 
-    if (activeCommentsRoute?.publication.id === publication.id) {
-      setActiveCommentsRoute({ publication });
-    }
-  }, [activeCommentsRoute]);
+      if (activeCommentsRoute?.publication.id === publication.id) {
+        setActiveCommentsRoute({ publication });
+      }
+    },
+    [activeCommentsRoute],
+  );
 
   const handleToggleLike = React.useCallback(
     async (publication: PublicationFeedItem) => {
       const optimisticPublication: PublicationFeedItem = {
         ...publication,
         isLikedByRequester: !publication.isLikedByRequester,
-        likeCount: Math.max(0, publication.likeCount + (publication.isLikedByRequester ? -1 : 1)),
+        likeCount: Math.max(
+          0,
+          publication.likeCount + (publication.isLikedByRequester ? -1 : 1),
+        ),
       };
 
       dispatchFeed({ type: 'SYNC_PUBLICATION', payload: optimisticPublication });
@@ -307,6 +367,7 @@ function InicioFlow({ onOpenRecipesScreen }: InicioFlowProps) {
         const message = recipeUrl
           ? `${publication.legenda}\n\nPublicação: ${publicationUrl}\nReceita: ${recipeUrl}`
           : `${publication.legenda}\n\nPublicação: ${publicationUrl}`;
+
         await Share.share({ message });
         const updatedPublication = await publicationService.registerShare(publication.id);
         updatePublicationInFeed(updatedPublication);
@@ -333,38 +394,53 @@ function InicioFlow({ onOpenRecipesScreen }: InicioFlowProps) {
     ]);
   }, []);
 
-  const handleOpenComposer = React.useCallback(async (publication?: PublicationFeedItem) => {
-    setRoute('composer');
-    setActiveComposerRoute(publication ? { publication } : {});
-    setComposerError(null);
-    setComposerValues(
-      publication
-        ? {
-            legenda: publication.legenda,
-            recipeId: publication.receita?.id ?? null,
-            imageUri: publication.mediaUrl,
-            imageFileName: null,
-            imageMimeType: null,
-          }
-        : initialComposerValues,
-    );
+  const handleOpenComposer = React.useCallback(
+    async (publication?: PublicationFeedItem) => {
+      setRoute('composer');
+      setActiveComposerRoute(publication ? { publication } : {});
+      setComposerError(null);
+      setRecipeLoadMessage(null);
+      setComposerValues(
+        publication
+          ? {
+              legenda: publication.legenda,
+              recipeId: publication.receita?.id ?? null,
+              imageUri: publication.mediaUrl,
+              imageFileName: null,
+              imageMimeType: null,
+            }
+          : initialComposerValues,
+      );
 
-    if (!availableRecipes.length) {
-      setIsLoadingRecipes(true);
-      try {
-        const recipes = await recipeService.listMyRecipes();
-        setAvailableRecipes(
-          recipes
+      if (!availableRecipes.length) {
+        setIsLoadingRecipes(true);
+
+        try {
+          const recipes = await recipeService.listMyRecipes();
+          const publishedRecipes = recipes
             .filter((recipe) => recipe.status === 'PUBLICADA')
-            .map((recipe) => ({ id: recipe.id, title: recipe.nome })),
-        );
-      } catch {
-        setAvailableRecipes([]);
-      } finally {
-        setIsLoadingRecipes(false);
+            .map((recipe) => ({ id: recipe.id, title: recipe.nome }));
+
+          setAvailableRecipes(publishedRecipes);
+          setRecipeLoadMessage(
+            publishedRecipes.length
+              ? null
+              : 'Você ainda não tem receitas publicadas para vincular a esta publicação.',
+          );
+        } catch (error) {
+          setAvailableRecipes([]);
+          setRecipeLoadMessage(
+            shouldTreatRecipeLoadFailureAsEmptyState(error)
+              ? 'Você ainda não tem receitas publicadas para vincular a esta publicação.'
+              : 'Não foi possível carregar suas receitas para vínculo.',
+          );
+        } finally {
+          setIsLoadingRecipes(false);
+        }
       }
-    }
-  }, [availableRecipes.length]);
+    },
+    [availableRecipes.length],
+  );
 
   const handlePickImage = React.useCallback(async () => {
     try {
@@ -404,7 +480,12 @@ function InicioFlow({ onOpenRecipesScreen }: InicioFlowProps) {
       return;
     }
 
-    if (!activeComposerRoute?.publication && (!composerValues.imageUri || !composerValues.imageFileName || !composerValues.imageMimeType)) {
+    if (
+      !activeComposerRoute?.publication &&
+      (!composerValues.imageUri ||
+        !composerValues.imageFileName ||
+        !composerValues.imageMimeType)
+    ) {
       setComposerError('Selecione uma imagem antes de publicar.');
       return;
     }
@@ -449,7 +530,10 @@ function InicioFlow({ onOpenRecipesScreen }: InicioFlowProps) {
     dispatchComments({ type: 'SUBMIT_START' });
 
     try {
-      const createdComment = await publicationService.createComment(publication.id, commentValue.trim());
+      const createdComment = await publicationService.createComment(
+        publication.id,
+        commentValue.trim(),
+      );
       dispatchComments({ type: 'SUBMIT_SUCCESS', payload: createdComment });
       setCommentValue('');
 
@@ -481,7 +565,9 @@ function InicioFlow({ onOpenRecipesScreen }: InicioFlowProps) {
       const recipe = await recipeService.getRecipeById(publication.receita.id);
       setSelectedRecipeDetail(mapRecipeRecordToDetail(recipe));
     } catch (error) {
-      setRecipeDetailError(getErrorMessage(error, 'Não foi possível abrir a receita vinculada.'));
+      setRecipeDetailError(
+        getErrorMessage(error, 'Não foi possível abrir a receita vinculada.'),
+      );
     } finally {
       setIsLoadingRecipeDetail(false);
     }
@@ -536,8 +622,19 @@ function InicioFlow({ onOpenRecipesScreen }: InicioFlowProps) {
               marginBottom="xl"
               style={{ minHeight: theme.spacing['5xl'] }}
             >
-              <ChevronLeft color={theme.colors.primary} size={theme.spacing['3xl']} onPress={() => setRoute('feed')} />
-              <AppText color="text" size="2xl" style={{ fontWeight: theme.fontWeights.bold, marginLeft: theme.spacing.md }}>
+              <ChevronLeft
+                color={theme.colors.primary}
+                size={theme.spacing['3xl']}
+                onPress={() => setRoute('feed')}
+              />
+              <AppText
+                color="text"
+                size="2xl"
+                style={{
+                  fontWeight: theme.fontWeights.bold,
+                  marginLeft: theme.spacing.md,
+                }}
+              >
                 {activeComposerRoute?.publication ? 'Editar publicação' : 'Nova publicação'}
               </AppText>
             </AppContainer>
@@ -550,10 +647,21 @@ function InicioFlow({ onOpenRecipesScreen }: InicioFlowProps) {
                 justify="center"
                 padding="lg"
                 shadow="sm"
-                style={{ aspectRatio: 1.02, marginBottom: theme.spacing.xl, overflow: 'hidden' }}
+                style={{
+                  aspectRatio: 1.02,
+                  marginBottom: theme.spacing.xl,
+                  overflow: 'hidden',
+                }}
               >
                 {composerValues.imageUri ? (
-                  <Image source={{ uri: composerValues.imageUri }} style={{ borderRadius: theme.borderRadius['3xl'], height: '100%', width: '100%' }} />
+                  <Image
+                    source={{ uri: composerValues.imageUri }}
+                    style={{
+                      borderRadius: theme.borderRadius['3xl'],
+                      height: '100%',
+                      width: '100%',
+                    }}
+                  />
                 ) : (
                   <AppContainer align="center" backgroundColor="surface" justify="center">
                     <ImagePlus color={theme.colors.primary} size={theme.spacing['5xl']} />
@@ -568,18 +676,28 @@ function InicioFlow({ onOpenRecipesScreen }: InicioFlowProps) {
             <AppInput
               borderRadius="3xl"
               multiline
-              onChangeText={(value) => setComposerValues((current) => ({ ...current, legenda: value }))}
+              onChangeText={(value) =>
+                setComposerValues((current) => ({ ...current, legenda: value }))
+              }
               placeholder="Escreva uma legenda para a receita..."
               style={{ marginBottom: theme.spacing.xl }}
               value={composerValues.legenda}
             />
 
             <AppContainer backgroundColor="background" marginBottom="lg">
-              <AppText color="text" size="lg" style={{ fontWeight: theme.fontWeights.bold }}>
+              <AppText
+                color="text"
+                size="lg"
+                style={{ fontWeight: theme.fontWeights.bold }}
+              >
                 Vincular a uma receita publicada
               </AppText>
-              <AppText color="textSecondary" size="md" style={{ marginTop: theme.spacing.xs }}>
-                Escolha uma receita sua já publicada para exibir a tag verde “Acessar receita”.
+              <AppText
+                color="textSecondary"
+                size="md"
+                style={{ marginTop: theme.spacing.xs }}
+              >
+                Escolha uma receita sua já publicada para exibir a tag verde "Acessar receita".
               </AppText>
             </AppContainer>
 
@@ -603,7 +721,8 @@ function InicioFlow({ onOpenRecipesScreen }: InicioFlowProps) {
                 <Link2 color={theme.colors.primary} size={theme.spacing['2xl']} />
                 <AppText color="text" style={{ marginLeft: theme.spacing.md }}>
                   {composerValues.recipeId
-                    ? availableRecipes.find((recipe) => recipe.id === composerValues.recipeId)?.title ?? 'Receita vinculada'
+                    ? availableRecipes.find((recipe) => recipe.id === composerValues.recipeId)
+                        ?.title ?? 'Receita vinculada'
                     : 'Selecionar primeira receita publicada disponível'}
                 </AppText>
               </AppContainer>
@@ -612,7 +731,9 @@ function InicioFlow({ onOpenRecipesScreen }: InicioFlowProps) {
             {composerValues.recipeId ? (
               <AppButton
                 label="Remover vínculo da receita"
-                onPress={() => setComposerValues((current) => ({ ...current, recipeId: null }))}
+                onPress={() =>
+                  setComposerValues((current) => ({ ...current, recipeId: null }))
+                }
                 variant="secondary"
               />
             ) : null}
@@ -621,6 +742,15 @@ function InicioFlow({ onOpenRecipesScreen }: InicioFlowProps) {
               <AppContainer align="center" backgroundColor="background" padding="lg">
                 <ActivityIndicator color={theme.colors.primary} />
               </AppContainer>
+            ) : null}
+
+            {!isLoadingRecipes && recipeLoadMessage ? (
+              <AppText
+                color={availableRecipes.length ? 'error' : 'textSecondary'}
+                marginTop="md"
+              >
+                {recipeLoadMessage}
+              </AppText>
             ) : null}
 
             {composerError ? (
@@ -660,10 +790,14 @@ function InicioFlow({ onOpenRecipesScreen }: InicioFlowProps) {
         renderItem={({ item }) => (
           <Pressable
             accessibilityRole="button"
-            onPress={() => setComposerValues((current) => ({ ...current, recipeId: item.id }))}
+            onPress={() =>
+              setComposerValues((current) => ({ ...current, recipeId: item.id }))
+            }
           >
             <AppContainer
-              backgroundColor={composerValues.recipeId === item.id ? 'surfaceSecondary' : 'surface'}
+              backgroundColor={
+                composerValues.recipeId === item.id ? 'surfaceSecondary' : 'surface'
+              }
               borderRadius="3xl"
               marginBottom="md"
               padding="lg"
@@ -693,22 +827,38 @@ function InicioFlow({ onOpenRecipesScreen }: InicioFlowProps) {
         ) : (
           <FeedEmptyState
             message={
-              feedState.errorMessage ??
-              (feedState.searchQuery ? 'Tente outro nome de usuário.' : 'Publique a primeira receita do feed.')
+              feedState.errorMessage
+                ? feedState.errorMessage
+                : feedState.searchQuery
+                  ? 'Tente outro nome de usuário.'
+                  : null
             }
           />
         )
       }
-      ListFooterComponent={<FeedListFooter hasMore={feedState.hasMore} isLoadingMore={feedState.isLoadingMore} />}
+      ListFooterComponent={
+        <FeedListFooter
+          hasMore={feedState.hasMore}
+          isLoadingMore={feedState.isLoadingMore}
+          itemCount={feedState.items.length}
+        />
+      }
       ListHeaderComponent={
         <AppContainer backgroundColor="background">
           <AppHeader />
-          <AppContainer style={{ height: theme.spacing.xl, backgroundColor: 'transparent' }} />
+          <AppContainer
+            style={{ height: theme.spacing.xl, backgroundColor: 'transparent' }}
+          />
           <FeedSearchBar
-            onChangeText={(value) => dispatchFeed({ type: 'SET_SEARCH_VALUE', payload: value })}
+            onChangeText={(value) =>
+              dispatchFeed({ type: 'SET_SEARCH_VALUE', payload: value })
+            }
             value={feedState.searchValue}
           />
-          <PublicationComposerCard avatarUrl={user?.avatarUrl} onPress={() => void handleOpenComposer()} />
+          <PublicationComposerCard
+            avatarUrl={user?.avatarUrl}
+            onPress={() => void handleOpenComposer()}
+          />
         </AppContainer>
       }
       onEndReached={() => {

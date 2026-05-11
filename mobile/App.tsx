@@ -31,7 +31,7 @@ const SCREENS: Record<ScreenKey, React.ComponentType> = {
 function AppContent() {
   const [activeScreen, setActiveScreen] = React.useState<AppScreenKey>('access');
   const { theme, themeMode } = useAppTheme();
-  const { isAuthenticated, isInitializing, pendingSocialAuth } = useAuth();
+  const { isAuthenticated, isInitializing, pendingSocialAuth, user } = useAuth();
   const isMainScreen = activeScreen in SCREENS;
   const ActiveScreen = isMainScreen ? SCREENS[activeScreen as ScreenKey] : null;
   const screenBackgroundColor =
@@ -126,7 +126,12 @@ function AppContent() {
         ) : null}
 
         {!isInitializing && ActiveScreen ? (
-          <AppContainer flex padding="lg" backgroundColor="background">
+          <AppContainer
+            key={`${activeScreen}-${user?.id ?? 'guest'}`}
+            flex
+            padding="lg"
+            backgroundColor="background"
+          >
             {shouldRenderGlobalHeader ? <AppHeader /> : null}
             {shouldRenderGlobalHeader ? (
               <AppContainer style={{ height: theme.spacing.lg, backgroundColor: 'transparent' }} />
