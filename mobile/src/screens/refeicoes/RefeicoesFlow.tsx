@@ -253,7 +253,7 @@ function MealSummaryCard({
           justify="center"
           style={{ flex: 1, marginLeft: theme.spacing.lg }}
         >
-          <AppText color="text" size="2xl" style={{ fontWeight: theme.fontWeights.bold }}>
+          <AppText color="text" size="xl" style={{ fontWeight: theme.fontWeights.bold }}>
             {config.label}
           </AppText>
           <AppText color="text" size="xl" style={{ marginTop: 4 }}>
@@ -518,7 +518,7 @@ function MealRecipeSearchScreen({
           </View>
 
           <View style={{ flex: 1, marginLeft: theme.spacing.lg }}>
-            <AppText color="text" size="2xl" style={{ fontWeight: theme.fontWeights.bold }}>
+            <AppText color="text" size="xl" style={{ fontWeight: theme.fontWeights.bold }}>
               {config.label}
             </AppText>
             <AppText color="text" size="xl">{`Total: ${formatCalories(draftTotal)} kcal`}</AppText>
@@ -529,10 +529,10 @@ function MealRecipeSearchScreen({
 
         <AppText
           color="text"
-          size="2xl"
+          size="xl"
           style={{ fontWeight: theme.fontWeights.bold, marginBottom: theme.spacing.lg }}
         >
-          Receitas do Diário de refeições
+          Receitas disponíveis
         </AppText>
 
         {filteredRecipes.length ? (
