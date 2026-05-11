@@ -38,10 +38,10 @@ function PublicationHeader({ author, canManage, onPressOptions }: PublicationHea
         backgroundColor="surface"
         borderRadius="full"
         direction="row"
-        paddingHorizontal="md"
-        paddingVertical="md"
+        paddingHorizontal="sm"
+        paddingVertical="sm"
         shadow="md"
-        style={{ width: '70%' }}
+        style={{ width: '62%' }}
       >
         <AppContainer
           align="center"
@@ -49,14 +49,14 @@ function PublicationHeader({ author, canManage, onPressOptions }: PublicationHea
           borderRadius="full"
           justify="center"
           style={{
-            height: theme.spacing['5xl'],
-            marginRight: theme.spacing.md,
-            width: theme.spacing['5xl'],
+            height: theme.spacing['4xl'],
+            marginRight: theme.spacing.sm,
+            width: theme.spacing['4xl'],
           }}
         >
           <AppText
             color="textInverse"
-            size="xl"
+            size="md"
             style={{ fontWeight: theme.fontWeights.bold }}
           >
             {authorInitial}
@@ -66,7 +66,7 @@ function PublicationHeader({ author, canManage, onPressOptions }: PublicationHea
           color="text"
           ellipsizeMode="tail"
           numberOfLines={1}
-          size="xl"
+          size="md"
           style={{ flex: 1, flexShrink: 1, fontWeight: theme.fontWeights.bold, minWidth: 0 }}
         >
           {author.nome}
@@ -81,14 +81,14 @@ function PublicationHeader({ author, canManage, onPressOptions }: PublicationHea
             alignItems: 'center',
             backgroundColor: theme.colors.surface,
             borderRadius: theme.borderRadius.full,
-            height: theme.spacing['5xl'],
+            height: theme.spacing['4xl'],
             justifyContent: 'center',
-            marginLeft: theme.spacing.md,
-            width: theme.spacing['5xl'],
+            marginLeft: theme.spacing.sm,
+            width: theme.spacing['4xl'],
             ...theme.shadows.sm,
           }}
         >
-          <EllipsisVertical color={theme.colors.text} size={theme.spacing['2xl']} />
+          <EllipsisVertical color={theme.colors.text} size={theme.spacing.xl} />
         </Pressable>
       ) : null}
     </AppContainer>

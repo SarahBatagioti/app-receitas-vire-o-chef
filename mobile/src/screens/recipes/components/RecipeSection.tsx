@@ -20,7 +20,7 @@ function RecipeSection({ title, recipes, onRecipePress, onToggleFavorite }: Reci
     <AppContainer marginBottom="4xl">
       <AppText
         color="text"
-        size="2xl"
+        size="xl"
         style={{
           fontWeight: theme.fontWeights.bold,
           marginBottom: theme.spacing.lg,

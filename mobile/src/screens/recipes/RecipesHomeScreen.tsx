@@ -146,7 +146,7 @@ function RecipesHomeScreen({
           <AppContainer marginBottom="xl">
             <AppText
               color="text"
-              size="2xl"
+              size="xl"
               style={{
                 fontWeight: theme.fontWeights.bold,
                 marginBottom: theme.spacing.lg,

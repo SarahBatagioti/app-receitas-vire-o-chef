@@ -749,7 +749,7 @@ function InicioFlow({ onOpenRecipesScreen }: InicioFlowProps) {
 
             <AppText
               color="text"
-              size="lg"
+              size="md"
               style={{ fontWeight: theme.fontWeights.bold, marginBottom: theme.spacing.sm }}
             >
               Adicionar mídia
@@ -795,7 +795,7 @@ function InicioFlow({ onOpenRecipesScreen }: InicioFlowProps) {
 
             <AppText
               color="text"
-              size="lg"
+              size="md"
               style={{ fontWeight: theme.fontWeights.bold, marginBottom: theme.spacing.sm }}
             >
               Vincular a uma receita
@@ -899,7 +899,7 @@ function InicioFlow({ onOpenRecipesScreen }: InicioFlowProps) {
                       >
                         <AppText
                           color="text"
-                          size="lg"
+                          size="md"
                           style={{ fontWeight: theme.fontWeights.bold, marginBottom: theme.spacing.md }}
                         >
                           Vincular a uma receita
@@ -997,7 +997,7 @@ function InicioFlow({ onOpenRecipesScreen }: InicioFlowProps) {
 
             <AppText
               color="text"
-              size="lg"
+              size="md"
               style={{ fontWeight: theme.fontWeights.bold, marginBottom: theme.spacing.sm }}
             >
               Legenda da publicação

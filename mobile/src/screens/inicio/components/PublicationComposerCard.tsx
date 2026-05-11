@@ -20,7 +20,7 @@ function PublicationComposerCard({ avatarUrl, onPress }: PublicationComposerCard
         borderRadius="3xl"
         direction="row"
         marginBottom="xl"
-        padding="lg"
+        padding="md"
         shadow="sm"
       >
         {avatarUrl ? (
@@ -28,9 +28,9 @@ function PublicationComposerCard({ avatarUrl, onPress }: PublicationComposerCard
             source={{ uri: avatarUrl }}
             style={{
               borderRadius: theme.borderRadius.full,
-              height: theme.spacing['5xl'],
-              marginRight: theme.spacing.md,
-              width: theme.spacing['5xl'],
+              height: theme.spacing['4xl'],
+              marginRight: theme.spacing.sm,
+              width: theme.spacing['4xl'],
             }}
           />
         ) : (
@@ -40,15 +40,15 @@ function PublicationComposerCard({ avatarUrl, onPress }: PublicationComposerCard
             borderRadius="full"
             justify="center"
             style={{
-              height: theme.spacing['5xl'],
-              marginRight: theme.spacing.md,
-              width: theme.spacing['5xl'],
+              height: theme.spacing['4xl'],
+              marginRight: theme.spacing.sm,
+              width: theme.spacing['4xl'],
             }}
           >
-            <UserRound color={theme.colors.icon} size={theme.spacing['2xl']} />
+            <UserRound color={theme.colors.icon} size={theme.spacing.xl} />
           </AppContainer>
         )}
-        <AppText color="textTertiary" size="xl">
+        <AppText color="textTertiary" size="md">
           Comece uma publicação
         </AppText>
       </AppContainer>

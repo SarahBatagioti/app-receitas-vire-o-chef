@@ -32,7 +32,7 @@ function ActionButton({
     <Pressable
       accessibilityRole="button"
       onPress={onPress}
-      style={{ alignItems: 'center', flexDirection: 'row', marginRight: theme.spacing.lg }}
+      style={{ alignItems: 'center', flexDirection: 'row', marginRight: theme.spacing.md }}
     >
       {icon}
       <AppText color="text" size="sm" style={{ fontWeight: theme.fontWeights.semibold, marginLeft: theme.spacing.xs }}>
@@ -78,19 +78,19 @@ function PublicationActionsRow({
             <Heart
               color={isLiked ? theme.colors.primary : theme.colors.text}
               fill={isLiked ? theme.colors.primary : 'transparent'}
-              size={theme.spacing['3xl']}
+              size={theme.spacing.xl}
             />
           }
           onPress={onPressLike}
           value={formatCompactCount(likeCount)}
         />
         <ActionButton
-          icon={<MessageCircle color={theme.colors.text} size={theme.spacing['3xl']} />}
+          icon={<MessageCircle color={theme.colors.text} size={theme.spacing.xl} />}
           onPress={onPressComments}
           value={formatCompactCount(commentCount)}
         />
         <ActionButton
-          icon={<Send color={theme.colors.text} size={theme.spacing['3xl']} />}
+          icon={<Send color={theme.colors.text} size={theme.spacing.xl} />}
           onPress={onPressShare}
           value={formatCompactCount(shareCount)}
         />
