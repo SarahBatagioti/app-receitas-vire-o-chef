@@ -163,8 +163,8 @@ export class PublicationRepository {
   async listFeed(input: ListFeedRepositoryInput): Promise<PublicationAggregate[]> {
     await this.ensureTables();
 
-    const conditions = ['1 = 1'];
-    const params: Array<string | number | Date> = [input.requesterId];
+    const conditions = ['p.author_id <> ?'];
+    const params: Array<string | number | Date> = [input.requesterId, input.requesterId];
 
     if (input.username) {
       conditions.push('LOWER(u.username) LIKE ?');
