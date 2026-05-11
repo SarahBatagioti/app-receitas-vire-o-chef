@@ -113,6 +113,7 @@ function RecipeCard({
           <AppContainer
             align="center"
             direction="row"
+            backgroundColor="transparent"
             style={{
               gap: theme.spacing.xs,
               position: 'absolute',
@@ -129,15 +130,19 @@ function RecipeCard({
               }}
               style={{
                 alignItems: 'center',
-                backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                backgroundColor: theme.colors.surface,
                 borderRadius: theme.borderRadius.full,
                 height: theme.spacing['4xl'],
                 justifyContent: 'center',
+                shadowColor: theme.colors.shadow,
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.16,
+                shadowRadius: 10,
                 width: theme.spacing['4xl'],
               }}
             >
               <Edit2
-                color={theme.colors.textInverse}
+                color={theme.colors.brandGreen}
                 size={theme.spacing.lg}
                 strokeWidth={2}
               />
@@ -151,10 +156,14 @@ function RecipeCard({
               }}
               style={{
                 alignItems: 'center',
-                backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                backgroundColor: theme.colors.surface,
                 borderRadius: theme.borderRadius.full,
                 height: theme.spacing['4xl'],
                 justifyContent: 'center',
+                shadowColor: theme.colors.shadow,
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.16,
+                shadowRadius: 10,
                 width: theme.spacing['4xl'],
               }}
             >

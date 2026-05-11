@@ -145,12 +145,14 @@ function RecipesHomeScreen({
           />
         ) : null}
 
-        <RecipeSection
-          onRecipePress={onOpenRecipe}
-          onToggleFavorite={onToggleFavorite}
-          recipes={favoriteRecipes}
-          title="Favoritos"
-        />
+        {favoriteRecipes.length ? (
+          <RecipeSection
+            onRecipePress={onOpenRecipe}
+            onToggleFavorite={onToggleFavorite}
+            recipes={favoriteRecipes}
+            title="Favoritos"
+          />
+        ) : null}
 
         {groupedPublicRecipes.length ? (
           <AppContainer marginBottom="xl">

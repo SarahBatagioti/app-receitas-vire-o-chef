@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { AuthButton, AuthContainer, SocialButton } from '../../components/auth';
+import { AuthButton, AuthContainer } from '../../components/auth';
 import { AppButton, AppContainer, AppText } from '../../components/ui';
 import { useAppTheme } from '../../contexts';
 import { useAuth } from '../../hooks/useAuth';
@@ -12,27 +12,27 @@ type AccessScreenProps = {
 
 function AccessScreen({ onEmailPress, onRegisterPress }: AccessScreenProps) {
   const { theme } = useAppTheme();
-  const { authError, clearAuthError, loginWithGoogle } = useAuth();
-  const [socialLoading, setSocialLoading] = React.useState<'google' | null>(null);
-  const [error, setError] = React.useState<string | null>(null);
-
-  const handleGoogleAuth = React.useCallback(async () => {
-    clearAuthError();
-    setError(null);
-    setSocialLoading('google');
-
-    try {
-      await loginWithGoogle();
-    } catch (requestError) {
-      const message =
-        requestError instanceof Error ? requestError.message : 'Nao foi possivel entrar com o Google.';
-      setError(message);
-    } finally {
-      setSocialLoading(null);
-    }
-  }, [clearAuthError, loginWithGoogle]);
-
-  const resolvedError = error ?? authError;
+  const { authError } = useAuth();
+  // const [error, setError] = React.useState<string | null>(null);
+  //
+  // const handleGoogleAuth = React.useCallback(async () => {
+  //   clearAuthError();
+  //   setError(null);
+  //   setSocialLoading('google');
+  //
+  //   try {
+  //     await loginWithGoogle();
+  //   } catch (requestError) {
+  //     const message =
+  //       requestError instanceof Error ? requestError.message : 'Nao foi possivel entrar com o Google.';
+  //     setError(message);
+  //   } finally {
+  //     setSocialLoading(null);
+  //   }
+  // }, [clearAuthError, loginWithGoogle]);
+  //
+  // const resolvedError = error ?? authError;
+  const resolvedError = authError;
 
   return (
     <AuthContainer title={'Vire\no Chef'} variant="access">
@@ -51,7 +51,7 @@ function AccessScreen({ onEmailPress, onRegisterPress }: AccessScreenProps) {
         variant="outline"
       />
 
-      <AppContainer
+      {/* <AppContainer
         align="center"
         backgroundColor="background"
         direction="row"
@@ -73,7 +73,7 @@ function AccessScreen({ onEmailPress, onRegisterPress }: AccessScreenProps) {
         label="Entrar com o Google"
         loading={socialLoading === 'google'}
         onPress={handleGoogleAuth}
-      />
+      /> */}
 
       {resolvedError ? (
         <AppText color="error" size="sm" style={{ marginTop: theme.spacing.lg, textAlign: 'center' }}>

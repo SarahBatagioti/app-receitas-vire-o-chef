@@ -31,6 +31,11 @@ const STEP_ACCENTS: Array<'brandGreen' | 'brandYellow' | 'brandOrange'> = [
   'brandOrange',
 ];
 
+const AUTO_DISMISS_FEEDBACK_MESSAGES = new Set([
+  'Receita excluída com sucesso.',
+  'Receita atualizada com sucesso.',
+]);
+
 type RecipesFlowProps = {
   initialRecipeId?: string | null;
   onInitialRecipeHandled?: () => void;
@@ -384,6 +389,22 @@ function RecipesFlow({ initialRecipeId = null, onInitialRecipeHandled }: Recipes
   const [recipeError, setRecipeError] = React.useState<string | null>(null);
   const latestRequestedRecipeIdRef = React.useRef<string | null>(null);
   const favoriteRecipeIdsRef = React.useRef<string[]>([]);
+
+  React.useEffect(() => {
+    if (!feedbackMessage || !AUTO_DISMISS_FEEDBACK_MESSAGES.has(feedbackMessage)) {
+      return undefined;
+    }
+
+    const timeoutId = setTimeout(() => {
+      setFeedbackMessage((currentMessage) =>
+        currentMessage && AUTO_DISMISS_FEEDBACK_MESSAGES.has(currentMessage)
+          ? null
+          : currentMessage,
+      );
+    }, 4000);
+
+    return () => clearTimeout(timeoutId);
+  }, [feedbackMessage]);
 
   const loadRecipes = React.useCallback(async () => {
     setCollectionsError(null);
@@ -807,9 +828,13 @@ function RecipesFlow({ initialRecipeId = null, onInitialRecipeHandled }: Recipes
       
       try {
         await recipeService.deleteRecipe(recipe.id);
+        favoriteRecipeIdsRef.current = favoriteRecipeIdsRef.current.filter(
+          (favoriteRecipeId) => favoriteRecipeId !== recipe.id,
+        );
         
         setCollections((current) => ({
           ...current,
+          favoriteRecipes: current.favoriteRecipes.filter((r) => r.id !== recipe.id),
           myPublications: current.myPublications.filter((r) => r.id !== recipe.id),
           draftRecipes: current.draftRecipes.filter((r) => r.id !== recipe.id),
         }));

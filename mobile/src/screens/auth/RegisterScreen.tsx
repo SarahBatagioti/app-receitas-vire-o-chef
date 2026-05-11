@@ -1,7 +1,7 @@
 import React from 'react';
 
-import { AuthButton, AuthContainer, AuthInput, SocialButton } from '../../components/auth';
-import { AppContainer, AppText } from '../../components/ui';
+import { AuthButton, AuthContainer, AuthInput } from '../../components/auth';
+import { AppText } from '../../components/ui';
 import { useAppTheme } from '../../contexts';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -12,14 +12,13 @@ type RegisterScreenProps = {
 
 function RegisterScreen({ onBack, onLogin }: RegisterScreenProps) {
   const { theme } = useAppTheme();
-  const { authError, clearAuthError, loginWithGoogle, register } = useAuth();
+  const { authError, clearAuthError, register } = useAuth();
   const [email, setEmail] = React.useState('');
   const [username, setUsername] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [error, setError] = React.useState<string | null>(null);
   const [showEmailRegisterValidation, setShowEmailRegisterValidation] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
-  const [socialLoading, setSocialLoading] = React.useState<'google' | null>(null);
 
   const handleRegister = React.useCallback(async () => {
     clearAuthError();
@@ -50,21 +49,21 @@ function RegisterScreen({ onBack, onLogin }: RegisterScreenProps) {
     }
   }, [clearAuthError, email, password, register, username]);
 
-  const handleGoogleAuth = React.useCallback(async () => {
-    clearAuthError();
-    setError(null);
-    setSocialLoading('google');
-
-    try {
-      await loginWithGoogle();
-    } catch (requestError) {
-      const message =
-        requestError instanceof Error ? requestError.message : 'Nao foi possivel continuar com o Google.';
-      setError(message);
-    } finally {
-      setSocialLoading(null);
-    }
-  }, [clearAuthError, loginWithGoogle]);
+  // const handleGoogleAuth = React.useCallback(async () => {
+  //   clearAuthError();
+  //   setError(null);
+  //   setSocialLoading('google');
+  //
+  //   try {
+  //     await loginWithGoogle();
+  //   } catch (requestError) {
+  //     const message =
+  //       requestError instanceof Error ? requestError.message : 'Nao foi possivel continuar com o Google.';
+  //     setError(message);
+  //   } finally {
+  //     setSocialLoading(null);
+  //   }
+  // }, [clearAuthError, loginWithGoogle]);
 
   const resolvedError = error ?? authError;
 
@@ -107,7 +106,7 @@ function RegisterScreen({ onBack, onLogin }: RegisterScreenProps) {
         </AppText>
       ) : null}
 
-      <AppContainer
+      {/* <AppContainer
         align="center"
         backgroundColor="background"
         direction="row"
@@ -130,8 +129,8 @@ function RegisterScreen({ onBack, onLogin }: RegisterScreenProps) {
         loading={socialLoading === 'google'}
         onPress={handleGoogleAuth}
       />
-
-      <AppContainer style={{ height: theme.spacing.xl, backgroundColor: 'transparent' }} />
+      
+      <AppContainer style={{ height: theme.spacing.xl, backgroundColor: 'transparent' }} /> */}
 
       <AppText color="textSecondary" size="lg" style={{ textAlign: 'center' }}>
         Ja tem uma conta?{' '}
