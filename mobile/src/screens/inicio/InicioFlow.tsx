@@ -4,11 +4,23 @@ import {
   Alert,
   FlatList,
   Image,
+  Modal,
   Pressable,
   Share,
+  TextInput,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import { Asset, launchImageLibrary } from 'react-native-image-picker';
-import { ChevronLeft, ImagePlus, Link2, Save, Trash2 } from 'lucide-react-native';
+import {
+  ChevronDown,
+  ChevronLeft,
+  ImagePlus,
+  Link2,
+  Save,
+  Search,
+  Trash2,
+  X,
+} from 'lucide-react-native';
 import { AppButton, AppContainer, AppHeader, AppInput, AppText } from '../../components/ui';
 import { useAppTheme } from '../../contexts';
 import { useAuth } from '../../hooks/useAuth';
@@ -58,10 +70,23 @@ function inferImageFromAsset(asset: Asset | undefined | null) {
     return null;
   }
 
+  const normalizedMimeType = asset.type.toLowerCase();
+  const normalizedFileName = asset.fileName?.trim() || `publicacao-${Date.now()}.jpg`;
+  const normalizedExtension = normalizedFileName.split('.').pop()?.toLowerCase() ?? '';
+  const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/tiff'];
+  const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'tif', 'tiff'];
+
+  if (
+    !allowedMimeTypes.includes(normalizedMimeType) &&
+    !allowedExtensions.includes(normalizedExtension)
+  ) {
+    return null;
+  }
+
   return {
     uri: asset.uri,
-    fileName: asset.fileName?.trim() || `publicacao-${Date.now()}.jpg`,
-    mimeType: asset.type,
+    fileName: normalizedFileName,
+    mimeType: normalizedMimeType,
   };
 }
 
@@ -164,6 +189,39 @@ function shouldTreatRecipeLoadFailureAsEmptyState(error: unknown): boolean {
   return false;
 }
 
+async function loadVisibleFeedPage(
+  currentUserId: string | undefined,
+  query: string,
+  cursor?: string | null,
+) {
+  let nextCursor = cursor ?? null;
+  let hasMore = false;
+  const visibleItems: PublicationFeedItem[] = [];
+  let attempts = 0;
+
+  do {
+    const page = await publicationService.listFeed(nextCursor, query);
+    const filteredItems = currentUserId
+      ? page.items.filter((item) => item.autor.id !== currentUserId)
+      : page.items;
+
+    visibleItems.push(...filteredItems);
+    nextCursor = page.nextCursor;
+    hasMore = page.hasMore;
+    attempts += 1;
+
+    if (visibleItems.length > 0 || !hasMore || !nextCursor) {
+      break;
+    }
+  } while (attempts < 5);
+
+  return {
+    items: visibleItems,
+    nextCursor,
+    hasMore,
+  };
+}
+
 function InicioFlow({ onOpenRecipesScreen }: InicioFlowProps) {
   const { theme } = useAppTheme();
   const { user } = useAuth();
@@ -183,6 +241,8 @@ function InicioFlow({ onOpenRecipesScreen }: InicioFlowProps) {
   const [composerError, setComposerError] = React.useState<string | null>(null);
   const [isSavingComposer, setIsSavingComposer] = React.useState(false);
   const [availableRecipes, setAvailableRecipes] = React.useState<PublicationRecipeOption[]>([]);
+  const [isRecipeSelectOpen, setIsRecipeSelectOpen] = React.useState(false);
+  const [recipeSearchValue, setRecipeSearchValue] = React.useState('');
   const [isLoadingRecipes, setIsLoadingRecipes] = React.useState(false);
   const [recipeLoadMessage, setRecipeLoadMessage] = React.useState<string | null>(null);
   const [selectedRecipeDetail, setSelectedRecipeDetail] = React.useState<RecipeDetail | null>(
@@ -191,6 +251,32 @@ function InicioFlow({ onOpenRecipesScreen }: InicioFlowProps) {
   const [recipeDetailError, setRecipeDetailError] = React.useState<string | null>(null);
   const [isLoadingRecipeDetail, setIsLoadingRecipeDetail] = React.useState(false);
   const lastLoadedUserIdRef = React.useRef<string | null>(null);
+  const recipeSearchInputRef = React.useRef<TextInput | null>(null);
+  const filteredRecipes = React.useMemo(() => {
+    const normalizedQuery = recipeSearchValue.trim().toLowerCase();
+
+    if (!normalizedQuery) {
+      return availableRecipes;
+    }
+
+    return availableRecipes.filter((recipe) => recipe.title.toLowerCase().includes(normalizedQuery));
+  }, [availableRecipes, recipeSearchValue]);
+  const selectedRecipe = React.useMemo(
+    () => availableRecipes.find((recipe) => recipe.id === composerValues.recipeId) ?? null,
+    [availableRecipes, composerValues.recipeId],
+  );
+
+  React.useEffect(() => {
+    if (!isRecipeSelectOpen) {
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      recipeSearchInputRef.current?.focus();
+    }, 150);
+
+    return () => clearTimeout(timeout);
+  }, [isRecipeSelectOpen]);
 
   const loadFeed = React.useCallback(
     async (
@@ -207,9 +293,10 @@ function InicioFlow({ onOpenRecipesScreen }: InicioFlowProps) {
           dispatchFeed({ type: 'LOAD_MORE_START' });
         }
 
-        const page = await publicationService.listFeed(
-          cursor ?? null,
+        const page = await loadVisibleFeedPage(
+          user?.id,
           query ?? feedState.searchQuery,
+          cursor ?? null,
         );
 
         if (mode === 'initial') {
@@ -229,7 +316,7 @@ function InicioFlow({ onOpenRecipesScreen }: InicioFlowProps) {
         }
       }
     },
-    [feedState.searchQuery],
+    [feedState.searchQuery, user?.id],
   );
 
   React.useEffect(() => {
@@ -400,6 +487,8 @@ function InicioFlow({ onOpenRecipesScreen }: InicioFlowProps) {
       setActiveComposerRoute(publication ? { publication } : {});
       setComposerError(null);
       setRecipeLoadMessage(null);
+      setIsRecipeSelectOpen(false);
+      setRecipeSearchValue('');
       setComposerValues(
         publication
           ? {
@@ -416,10 +505,8 @@ function InicioFlow({ onOpenRecipesScreen }: InicioFlowProps) {
         setIsLoadingRecipes(true);
 
         try {
-          const recipes = await recipeService.listMyRecipes();
-          const publishedRecipes = recipes
-            .filter((recipe) => recipe.status === 'PUBLICADA')
-            .map((recipe) => ({ id: recipe.id, title: recipe.nome }));
+          const recipes = await recipeService.listPublicRecipes();
+          const publishedRecipes = recipes.map((recipe) => ({ id: recipe.id, title: recipe.nome }));
 
           setAvailableRecipes(publishedRecipes);
           setRecipeLoadMessage(
@@ -459,7 +546,7 @@ function InicioFlow({ onOpenRecipesScreen }: InicioFlowProps) {
       const normalized = inferImageFromAsset(response.assets?.[0]);
 
       if (!normalized) {
-        setComposerError('Selecione uma imagem válida para a publicação.');
+        setComposerError('Selecione uma imagem JPEG, PNG, WebP ou TIFF válida para a publicação.');
         return;
       }
 
@@ -473,6 +560,27 @@ function InicioFlow({ onOpenRecipesScreen }: InicioFlowProps) {
     } catch (error) {
       setComposerError(getErrorMessage(error, 'Não foi possível abrir a galeria.'));
     }
+  }, []);
+
+  const handleOpenRecipeSelect = React.useCallback(() => {
+    setRecipeSearchValue('');
+    setIsRecipeSelectOpen(true);
+  }, []);
+
+  const handleCloseRecipeSelect = React.useCallback(() => {
+    setIsRecipeSelectOpen(false);
+    setRecipeSearchValue('');
+  }, []);
+
+  const handleSelectRecipe = React.useCallback((recipeId: string) => {
+    setComposerValues((current) => ({ ...current, recipeId }));
+    setIsRecipeSelectOpen(false);
+    setRecipeSearchValue('');
+  }, []);
+
+  const handleClearRecipeSelection = React.useCallback(() => {
+    setComposerValues((current) => ({ ...current, recipeId: null }));
+    setRecipeSearchValue('');
   }, []);
 
   const handleSaveComposer = React.useCallback(async () => {
@@ -611,8 +719,8 @@ function InicioFlow({ onOpenRecipesScreen }: InicioFlowProps) {
     return (
       <FlatList
         contentContainerStyle={{ paddingBottom: theme.spacing['7xl'] }}
-        data={availableRecipes}
-        keyExtractor={(item) => item.id}
+        data={[]}
+        keyExtractor={(_, index) => `composer-${index}`}
         ListHeaderComponent={
           <AppContainer backgroundColor="background">
             <AppContainer
@@ -639,6 +747,14 @@ function InicioFlow({ onOpenRecipesScreen }: InicioFlowProps) {
               </AppText>
             </AppContainer>
 
+            <AppText
+              color="text"
+              size="lg"
+              style={{ fontWeight: theme.fontWeights.bold, marginBottom: theme.spacing.sm }}
+            >
+              Adicionar mídia
+            </AppText>
+
             <Pressable accessibilityRole="button" onPress={handlePickImage}>
               <AppContainer
                 align="center"
@@ -651,6 +767,7 @@ function InicioFlow({ onOpenRecipesScreen }: InicioFlowProps) {
                   aspectRatio: 1.02,
                   marginBottom: theme.spacing.xl,
                   overflow: 'hidden',
+                  width: '100%',
                 }}
               >
                 {composerValues.imageUri ? (
@@ -666,12 +783,225 @@ function InicioFlow({ onOpenRecipesScreen }: InicioFlowProps) {
                   <AppContainer align="center" backgroundColor="surface" justify="center">
                     <ImagePlus color={theme.colors.primary} size={theme.spacing['5xl']} />
                     <AppText color="textSecondary" marginTop="md">
-                      Toque para selecionar a foto da publicação
+                      Toque para selecionar a mídia da publicação
+                    </AppText>
+                    <AppText color="textSecondary" size="sm" marginTop="sm">
+                      Formatos aceitos: JPEG, PNG, WebP e TIFF
                     </AppText>
                   </AppContainer>
                 )}
               </AppContainer>
             </Pressable>
+
+            <AppText
+              color="text"
+              size="lg"
+              style={{ fontWeight: theme.fontWeights.bold, marginBottom: theme.spacing.sm }}
+            >
+              Vincular a uma receita
+            </AppText>
+
+            <Pressable
+              accessibilityHint="Abre a lista de receitas publicadas para vincular a publicacao."
+              accessibilityLabel="Selecionar receita publicada"
+              accessibilityRole="button"
+              onPress={handleOpenRecipeSelect}
+            >
+              <AppContainer
+                align="center"
+                backgroundColor="surface"
+                borderRadius="3xl"
+                direction="row"
+                justify="space-between"
+                marginBottom="md"
+                padding="lg"
+                shadow="sm"
+                style={{
+                  borderColor: theme.colors.border,
+                  borderWidth: 1,
+                  minHeight: 60,
+                }}
+              >
+                <AppContainer
+                  align="center"
+                  backgroundColor="transparent"
+                  direction="row"
+                  style={{ flex: 1, paddingRight: theme.spacing.md }}
+                >
+                  <Link2 color={theme.colors.primary} size={theme.spacing.xl} />
+                  <AppText
+                    color={selectedRecipe ? 'text' : 'textSecondary'}
+                    style={{ flex: 1, marginLeft: theme.spacing.md }}
+                  >
+                    {selectedRecipe?.title ?? 'Selecionar receita publicada'}
+                  </AppText>
+                </AppContainer>
+
+                <AppContainer
+                  align="center"
+                  backgroundColor="transparent"
+                  direction="row"
+                  style={{ columnGap: theme.spacing.sm }}
+                >
+                  {selectedRecipe ? (
+                    <Pressable
+                      accessibilityLabel="Limpar receita selecionada"
+                      hitSlop={10}
+                      onPress={(event) => {
+                        event.stopPropagation();
+                        handleClearRecipeSelection();
+                      }}
+                    >
+                      <X color={theme.colors.textSecondary} size={18} />
+                    </Pressable>
+                  ) : null}
+
+                  <ChevronDown color={theme.colors.icon} size={20} />
+                </AppContainer>
+              </AppContainer>
+            </Pressable>
+
+            <Modal
+              animationType="fade"
+              onRequestClose={handleCloseRecipeSelect}
+              transparent
+              visible={isRecipeSelectOpen}
+            >
+              <TouchableWithoutFeedback onPress={handleCloseRecipeSelect}>
+                <AppContainer
+                  backgroundColor="transparent"
+                  style={{
+                    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+                    flex: 1,
+                    justifyContent: 'center',
+                    padding: theme.spacing.lg,
+                    zIndex: 9999,
+                  }}
+                >
+                  <TouchableWithoutFeedback>
+                    <AppContainer
+                      backgroundColor="surface"
+                      borderRadius="3xl"
+                      shadow="xl"
+                      style={{
+                        maxHeight: '72%',
+                        overflow: 'hidden',
+                        zIndex: 10000,
+                      }}
+                    >
+                      <AppContainer
+                        backgroundColor="surface"
+                        padding="lg"
+                        style={{
+                          borderBottomColor: theme.colors.border,
+                          borderBottomWidth: 1,
+                        }}
+                      >
+                        <AppText
+                          color="text"
+                          size="lg"
+                          style={{ fontWeight: theme.fontWeights.bold, marginBottom: theme.spacing.md }}
+                        >
+                          Vincular a uma receita
+                        </AppText>
+
+                        <AppInput
+                          ref={recipeSearchInputRef}
+                          leftIcon={<Search color={theme.colors.icon} size={18} />}
+                          onChangeText={setRecipeSearchValue}
+                          placeholder="Buscar receita publicada..."
+                          rightIcon={
+                            recipeSearchValue ? (
+                              <Pressable
+                                accessibilityLabel="Limpar busca"
+                                hitSlop={8}
+                                onPress={() => setRecipeSearchValue('')}
+                              >
+                                <X color={theme.colors.textSecondary} size={16} />
+                              </Pressable>
+                            ) : undefined
+                          }
+                          value={recipeSearchValue}
+                        />
+                      </AppContainer>
+
+                      {isLoadingRecipes ? (
+                        <AppContainer align="center" backgroundColor="surface" padding="lg">
+                          <ActivityIndicator color={theme.colors.primary} />
+                        </AppContainer>
+                      ) : filteredRecipes.length ? (
+                        <FlatList
+                          data={filteredRecipes}
+                          keyExtractor={(item) => item.id}
+                          keyboardShouldPersistTaps="handled"
+                          nestedScrollEnabled
+                          renderItem={({ item }) => {
+                            const isSelected = composerValues.recipeId === item.id;
+
+                            return (
+                              <Pressable
+                                accessibilityRole="button"
+                                onPress={() => handleSelectRecipe(item.id)}
+                              >
+                                <AppContainer
+                                  align="center"
+                                  backgroundColor={isSelected ? 'surfaceSecondary' : 'surface'}
+                                  direction="row"
+                                  justify="space-between"
+                                  padding="lg"
+                                  style={{
+                                    borderBottomColor: theme.colors.border,
+                                    borderBottomWidth: 1,
+                                  }}
+                                >
+                                  <AppContainer
+                                    align="center"
+                                    backgroundColor="transparent"
+                                    direction="row"
+                                    style={{ flex: 1, paddingRight: theme.spacing.md }}
+                                  >
+                                    <Link2 color={theme.colors.primary} size={theme.spacing.xl} />
+                                    <AppText
+                                      color="text"
+                                      style={{ flex: 1, marginLeft: theme.spacing.md }}
+                                    >
+                                      {item.title}
+                                    </AppText>
+                                  </AppContainer>
+
+                                  {isSelected ? (
+                                    <AppText
+                                      color="primary"
+                                      size="sm"
+                                      style={{ fontWeight: theme.fontWeights.bold }}
+                                    >
+                                      Selecionada
+                                    </AppText>
+                                  ) : null}
+                                </AppContainer>
+                              </Pressable>
+                            );
+                          }}
+                          showsVerticalScrollIndicator={false}
+                        />
+                      ) : (
+                        <AppText color="textSecondary" style={{ margin: theme.spacing.lg }}>
+                          Nenhuma receita encontrada para essa busca.
+                        </AppText>
+                      )}
+                    </AppContainer>
+                  </TouchableWithoutFeedback>
+                </AppContainer>
+              </TouchableWithoutFeedback>
+            </Modal>
+
+            <AppText
+              color="text"
+              size="lg"
+              style={{ fontWeight: theme.fontWeights.bold, marginBottom: theme.spacing.sm }}
+            >
+              Legenda da publicação
+            </AppText>
 
             <AppInput
               borderRadius="3xl"
@@ -679,12 +1009,12 @@ function InicioFlow({ onOpenRecipesScreen }: InicioFlowProps) {
               onChangeText={(value) =>
                 setComposerValues((current) => ({ ...current, legenda: value }))
               }
-              placeholder="Escreva uma legenda para a receita..."
+              placeholder="Escreva uma legenda para a publicação..."
               style={{ marginBottom: theme.spacing.xl }}
               value={composerValues.legenda}
             />
 
-            <AppContainer backgroundColor="background" marginBottom="lg">
+            <AppContainer backgroundColor="background" marginBottom="lg" style={{ display: 'none' }}>
               <AppText
                 color="text"
                 size="lg"
@@ -702,6 +1032,7 @@ function InicioFlow({ onOpenRecipesScreen }: InicioFlowProps) {
             </AppContainer>
 
             <Pressable
+              style={{ display: 'none' }}
               onPress={() =>
                 setComposerValues((current) => ({
                   ...current,
@@ -728,18 +1059,8 @@ function InicioFlow({ onOpenRecipesScreen }: InicioFlowProps) {
               </AppContainer>
             </Pressable>
 
-            {composerValues.recipeId ? (
-              <AppButton
-                label="Remover vínculo da receita"
-                onPress={() =>
-                  setComposerValues((current) => ({ ...current, recipeId: null }))
-                }
-                variant="secondary"
-              />
-            ) : null}
-
             {isLoadingRecipes ? (
-              <AppContainer align="center" backgroundColor="background" padding="lg">
+              <AppContainer align="center" backgroundColor="background" padding="lg" style={{ display: 'none' }}>
                 <ActivityIndicator color={theme.colors.primary} />
               </AppContainer>
             ) : null}
@@ -787,27 +1108,7 @@ function InicioFlow({ onOpenRecipesScreen }: InicioFlowProps) {
             ) : null}
           </AppContainer>
         }
-        renderItem={({ item }) => (
-          <Pressable
-            accessibilityRole="button"
-            onPress={() =>
-              setComposerValues((current) => ({ ...current, recipeId: item.id }))
-            }
-          >
-            <AppContainer
-              backgroundColor={
-                composerValues.recipeId === item.id ? 'surfaceSecondary' : 'surface'
-              }
-              borderRadius="3xl"
-              marginBottom="md"
-              padding="lg"
-            >
-              <AppText color="text" style={{ fontWeight: theme.fontWeights.semibold }}>
-                {item.title}
-              </AppText>
-            </AppContainer>
-          </Pressable>
-        )}
+        renderItem={() => null}
         showsVerticalScrollIndicator={false}
       />
     );
