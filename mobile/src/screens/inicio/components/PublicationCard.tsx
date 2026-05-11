@@ -41,7 +41,7 @@ function PublicationCard({
         padding="lg"
         shadow="md"
       >
-        <AppContainer backgroundColor="surface" style={{ marginBottom: theme.spacing.lg }}>
+        <AppContainer style={{ backgroundColor: 'transparent', marginBottom: theme.spacing.lg }}>
           <PublicationMedia uri={publication.mediaUrl} />
           <PublicationHeader
             author={publication.autor}
