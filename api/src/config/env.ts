@@ -40,6 +40,13 @@ export const env = {
     maxFileSizeBytes: toNumber(process.env.UPLOAD_MAX_FILE_SIZE_BYTES, 25 * 1024 * 1024),
     maxFiles: toNumber(process.env.UPLOAD_MAX_FILES, 10),
   },
+  appLinks: {
+    host: process.env.APP_LINK_HOST ?? 'vireochef.app',
+    androidPackageName: process.env.ANDROID_APP_LINK_PACKAGE_NAME ?? 'com.mobile',
+    androidSha256CertFingerprints:
+      process.env.ANDROID_APP_LINK_SHA256_CERT_FINGERPRINTS ?? '',
+    iosAppIds: process.env.IOS_APP_LINK_APP_IDS ?? '',
+  },
 };
 
 export const isProduction = env.nodeEnv === 'production';

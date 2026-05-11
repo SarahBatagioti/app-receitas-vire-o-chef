@@ -33,6 +33,11 @@ import {
   recipeService,
 } from '../../services/recipeService';
 import { publicationService } from '../../services/publicationService';
+import {
+  buildPublicationWebUrl,
+  buildRecipeDeepLink,
+  buildRecipeWebUrl,
+} from '../../utils/deepLinks';
 import { RecipeDetailScreen, RecipeDetail, RecipeDetailMedia, RecipeListItem } from '../recipes';
 import {
   CommentsScreen,
@@ -447,13 +452,16 @@ function InicioFlow({ onOpenRecipesScreen }: InicioFlowProps) {
   const handleShare = React.useCallback(
     async (publication: PublicationFeedItem) => {
       try {
-        const publicationUrl = `https://vireochef.app/publicacoes/${publication.id}`;
-        const recipeUrl = publication.receita
-          ? `https://vireochef.app/receitas/${publication.receita.id}`
+        const publicationUrl = buildPublicationWebUrl(publication.id);
+        const recipeAppUrl = publication.receita
+          ? buildRecipeDeepLink(publication.receita.id)
           : null;
-        const message = recipeUrl
-          ? `${publication.legenda}\n\nPublicação: ${publicationUrl}\nReceita: ${recipeUrl}`
-          : `${publication.legenda}\n\nPublicação: ${publicationUrl}`;
+        const recipeWebUrl = publication.receita
+          ? buildRecipeWebUrl(publication.receita.id)
+          : null;
+        const message = recipeAppUrl
+          ? `${publication.legenda}\n\nAbrir no app: ${recipeAppUrl}\nReceita no navegador: ${recipeWebUrl}\nPublicacao: ${publicationUrl}`
+          : `${publication.legenda}\n\nPublicacao: ${publicationUrl}`;
 
         await Share.share({ message });
         const updatedPublication = await publicationService.registerShare(publication.id);

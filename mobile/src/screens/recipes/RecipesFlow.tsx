@@ -31,6 +31,11 @@ const STEP_ACCENTS: Array<'brandGreen' | 'brandYellow' | 'brandOrange'> = [
   'brandOrange',
 ];
 
+type RecipesFlowProps = {
+  initialRecipeId?: string | null;
+  onInitialRecipeHandled?: () => void;
+};
+
 type SubmitRecipeOptions = {
   onUploadStart?: () => void;
 };
@@ -310,7 +315,7 @@ function buildRecipeDetail(
   };
 }
 
-function RecipesFlow() {
+function RecipesFlow({ initialRecipeId = null, onInitialRecipeHandled }: RecipesFlowProps) {
   const { user } = useAuth();
   const [currentRoute, setCurrentRoute] = React.useState<RecipesRoute>('home');
   const [selectedRecipeId, setSelectedRecipeId] = React.useState<string | null>(null);
@@ -389,9 +394,29 @@ function RecipesFlow() {
     [user],
   );
 
+  const handleOpenRecipeById = React.useCallback(
+    (recipeId: string) => {
+      setFeedbackMessage(null);
+      setSelectedRecipeId(recipeId);
+      setSelectedRecipeDetail(null);
+      setCurrentRoute('detail');
+      loadRecipeDetail(recipeId).catch(() => undefined);
+    },
+    [loadRecipeDetail],
+  );
+
   React.useEffect(() => {
     loadRecipes().catch(() => undefined);
   }, [loadRecipes]);
+
+  React.useEffect(() => {
+    if (!initialRecipeId) {
+      return;
+    }
+
+    handleOpenRecipeById(initialRecipeId);
+    onInitialRecipeHandled?.();
+  }, [handleOpenRecipeById, initialRecipeId, onInitialRecipeHandled]);
 
   const handleGoHome = React.useCallback(() => {
     latestRequestedRecipeIdRef.current = null;

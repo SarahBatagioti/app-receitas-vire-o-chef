@@ -32,6 +32,14 @@
 				<string>$(GOOGLE_IOS_REVERSED_CLIENT_ID)</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.mobile.vireochef</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>vireochef</string>
+			</array>
+		</dict>
 	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>

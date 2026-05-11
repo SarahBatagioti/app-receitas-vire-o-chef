@@ -1,5 +1,5 @@
 import React from 'react';
-import { StatusBar } from 'react-native';
+import { Linking, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import BottomNav from './src/components/BottomNav';
@@ -19,6 +19,7 @@ import {
   RegisterScreen,
 } from './src/screens';
 import { AppScreenKey, ScreenKey } from './src/types/navigation';
+import { extractRecipeIdFromUrl } from './src/utils/deepLinks';
 
 const SCREENS: Record<ScreenKey, React.ComponentType> = {
   inicio: InicioScreen,
@@ -30,6 +31,7 @@ const SCREENS: Record<ScreenKey, React.ComponentType> = {
 
 function AppContent() {
   const [activeScreen, setActiveScreen] = React.useState<AppScreenKey>('access');
+  const [pendingSharedRecipeId, setPendingSharedRecipeId] = React.useState<string | null>(null);
   const { theme, themeMode } = useAppTheme();
   const { isAuthenticated, isInitializing, pendingSocialAuth, user } = useAuth();
   const isMainScreen = activeScreen in SCREENS;
@@ -41,6 +43,26 @@ function AppContent() {
   const goBackToAccess = React.useCallback(() => {
     setActiveScreen('access');
   }, []);
+
+  const handleIncomingUrl = React.useCallback(
+    (url: string | null) => {
+      if (!url) {
+        return;
+      }
+
+      const recipeId = extractRecipeIdFromUrl(url);
+
+      if (!recipeId) {
+        return;
+      }
+
+      setPendingSharedRecipeId(recipeId);
+      if (isAuthenticated) {
+        setActiveScreen('receitas');
+      }
+    },
+    [isAuthenticated],
+  );
 
   React.useEffect(() => {
     if (isInitializing) {
@@ -62,6 +84,28 @@ function AppContent() {
       setActiveScreen('complete-social-register');
     }
   }, [activeScreen, pendingSocialAuth]);
+
+  React.useEffect(() => {
+    Linking.getInitialURL()
+      .then((url) => {
+        handleIncomingUrl(url);
+      })
+      .catch(() => undefined);
+
+    const subscription = Linking.addEventListener('url', ({ url }) => {
+      handleIncomingUrl(url);
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [handleIncomingUrl]);
+
+  React.useEffect(() => {
+    if (isAuthenticated && pendingSharedRecipeId && activeScreen !== 'receitas') {
+      setActiveScreen('receitas');
+    }
+  }, [activeScreen, isAuthenticated, pendingSharedRecipeId]);
 
   return (
     <SafeAreaView
@@ -136,7 +180,14 @@ function AppContent() {
             {shouldRenderGlobalHeader ? (
               <AppContainer style={{ height: theme.spacing.lg, backgroundColor: 'transparent' }} />
             ) : null}
-            <ActiveScreen />
+            {activeScreen === 'receitas' ? (
+              <ReceitasScreen
+                initialRecipeId={pendingSharedRecipeId}
+                onInitialRecipeHandled={() => setPendingSharedRecipeId(null)}
+              />
+            ) : ActiveScreen ? (
+              <ActiveScreen />
+            ) : null}
           </AppContainer>
         ) : null}
       </AppContainer>
