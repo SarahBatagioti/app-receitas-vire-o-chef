@@ -145,10 +145,12 @@ function MealsWeekCalendar({
   selectedDate,
   onPreviousWeek,
   onNextWeek,
+  onSelectDate,
 }: {
   selectedDate: string;
   onPreviousWeek: () => void;
   onNextWeek: () => void;
+  onSelectDate: (date: string) => void;
 }) {
   const { theme } = useAppTheme();
   const weekDays = buildWeekCalendar(selectedDate);
@@ -173,11 +175,14 @@ function MealsWeekCalendar({
         style={{ backgroundColor: 'transparent', flex: 1, marginHorizontal: theme.spacing.md }}
       >
         {weekDays.map((day) => (
-          <View
+          <Pressable
             key={day.isoDate}
+            accessibilityLabel={`Selecionar dia ${day.dayNumber} ${day.weekdayLabel}`}
+            onPress={() => onSelectDate(day.isoDate)}
             style={{
               alignItems: 'center',
               flex: 1,
+              paddingVertical: theme.spacing.xs,
             }}
           >
             <AppText
@@ -203,7 +208,7 @@ function MealsWeekCalendar({
                 width: 6,
               }}
             />
-          </View>
+          </Pressable>
         ))}
       </AppContainer>
 
@@ -744,6 +749,7 @@ function RefeicoesFlow() {
         <MealsWeekCalendar
           onNextWeek={() => setSelectedDate((current) => addWeeksToIsoDate(current, 1))}
           onPreviousWeek={() => setSelectedDate((current) => addWeeksToIsoDate(current, -1))}
+          onSelectDate={setSelectedDate}
           selectedDate={selectedDate}
         />
 

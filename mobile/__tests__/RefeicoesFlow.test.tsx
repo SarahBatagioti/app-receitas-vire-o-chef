@@ -162,9 +162,9 @@ describe('RefeicoesFlow', () => {
       nextWeekButton.props.onPress();
     });
 
-    const openBreakfastButton = renderer.root.findByProps({
-      accessibilityLabel: 'Adicionar receita em Café da manhã',
-    });
+    const openBreakfastButton = renderer.root.findAll(
+      (node) => typeof node.props.accessibilityLabel === 'string' && node.props.accessibilityLabel.startsWith('Adicionar receita em '),
+    )[0];
 
     await ReactTestRenderer.act(async () => {
       openBreakfastButton.props.onPress();
@@ -176,7 +176,9 @@ describe('RefeicoesFlow', () => {
       addRecipeButton.props.onPress();
     });
 
-    const saveButton = renderer.root.findByProps({ label: 'Salvar refeição' });
+    const saveButton = renderer.root.findAll(
+      (node) => typeof node.props.label === 'string' && node.props.label.startsWith('Salvar refe'),
+    )[0];
 
     await ReactTestRenderer.act(async () => {
       saveButton.props.onPress();
@@ -184,6 +186,58 @@ describe('RefeicoesFlow', () => {
 
     expect(mealDiaryService.replaceMeal).toHaveBeenCalledWith(
       addWeeksToIsoDate(getTodayLocalIsoDate(), 1),
+      'breakfast',
+      [{ recipeId: 'recipe-1', quantity: 1 }],
+    );
+  });
+
+  test('allows selecting another visible day before saving a meal', async () => {
+    let renderer!: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <ThemeProvider initialTheme="light">
+          <RefeicoesFlow />
+        </ThemeProvider>,
+      );
+    });
+
+    const selectWednesdayButton = renderer.root.findByProps({
+      accessibilityLabel: 'Selecionar dia 13 Qua',
+    });
+
+    await ReactTestRenderer.act(async () => {
+      selectWednesdayButton.props.onPress();
+    });
+
+    await ReactTestRenderer.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    const openBreakfastButton = renderer.root.findAll(
+      (node) => typeof node.props.accessibilityLabel === 'string' && node.props.accessibilityLabel.startsWith('Adicionar receita em '),
+    )[0];
+
+    await ReactTestRenderer.act(async () => {
+      openBreakfastButton.props.onPress();
+    });
+
+    const addRecipeButton = renderer.root.findByProps({ accessibilityLabel: 'Adicionar Arroz branco' });
+
+    await ReactTestRenderer.act(async () => {
+      addRecipeButton.props.onPress();
+    });
+
+    const saveButton = renderer.root.findAll(
+      (node) => typeof node.props.label === 'string' && node.props.label.startsWith('Salvar refe'),
+    )[0];
+
+    await ReactTestRenderer.act(async () => {
+      saveButton.props.onPress();
+    });
+
+    expect(mealDiaryService.replaceMeal).toHaveBeenCalledWith(
+      '2026-05-13',
       'breakfast',
       [{ recipeId: 'recipe-1', quantity: 1 }],
     );
