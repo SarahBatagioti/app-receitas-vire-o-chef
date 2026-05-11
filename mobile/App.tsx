@@ -36,6 +36,7 @@ function AppContent() {
   const ActiveScreen = isMainScreen ? SCREENS[activeScreen as ScreenKey] : null;
   const screenBackgroundColor =
     !isInitializing && activeScreen === 'access' ? theme.colors.surface : theme.colors.background;
+  const shouldRenderGlobalHeader = activeScreen !== 'receitas' && activeScreen !== 'inicio';
 
   const goBackToAccess = React.useCallback(() => {
     setActiveScreen('access');
@@ -126,8 +127,8 @@ function AppContent() {
 
         {!isInitializing && ActiveScreen ? (
           <AppContainer flex padding="lg" backgroundColor="background">
-            {activeScreen !== 'receitas' ? <AppHeader /> : null}
-            {activeScreen !== 'receitas' ? (
+            {shouldRenderGlobalHeader ? <AppHeader /> : null}
+            {shouldRenderGlobalHeader ? (
               <AppContainer style={{ height: theme.spacing.lg, backgroundColor: 'transparent' }} />
             ) : null}
             <ActiveScreen />
