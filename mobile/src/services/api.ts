@@ -196,6 +196,8 @@ export const api = {
     request<TResponse>(path, { method: 'GET', authenticated }),
   post: <TResponse, TBody>(path: string, body: TBody, authenticated = false) =>
     request<TResponse, TBody>(path, { method: 'POST', body, authenticated }),
+  put: <TResponse, TBody>(path: string, body: TBody, authenticated = false) =>
+    request<TResponse, TBody>(path, { method: 'PUT', body, authenticated }),
   patch: <TResponse, TBody>(path: string, body: TBody, authenticated = false) =>
     request<TResponse, TBody>(path, { method: 'PATCH', body, authenticated }),
   delete: <TResponse>(path: string, authenticated = false) =>

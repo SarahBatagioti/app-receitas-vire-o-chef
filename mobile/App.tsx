@@ -38,7 +38,8 @@ function AppContent() {
   const ActiveScreen = isMainScreen ? SCREENS[activeScreen as ScreenKey] : null;
   const screenBackgroundColor =
     !isInitializing && activeScreen === 'access' ? theme.colors.surface : theme.colors.background;
-  const shouldRenderGlobalHeader = activeScreen !== 'receitas' && activeScreen !== 'inicio';
+  const shouldRenderGlobalHeader =
+    activeScreen !== 'receitas' && activeScreen !== 'inicio' && activeScreen !== 'refeicoes';
 
   const goBackToAccess = React.useCallback(() => {
     setActiveScreen('access');
