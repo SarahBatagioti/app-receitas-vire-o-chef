@@ -254,7 +254,7 @@ function StepCard({ step }: { step: RecipeDetail['steps'][number] }) {
   );
 }
 
-function RatingStars({ rating }: { rating: number }) {
+/* function RatingStars({ rating }: { rating: number }) {
   const { theme } = useAppTheme();
   const filledStars = Math.max(0, Math.min(5, Math.floor(rating)));
 
@@ -278,7 +278,7 @@ function RatingStars({ rating }: { rating: number }) {
       </AppText>
     </AppContainer>
   );
-}
+} */
 
 function recipeRatingLabel(rating: number) {
   return rating.toFixed(1).replace('.', ',');
@@ -601,7 +601,7 @@ function RecipeDetailScreen({
         </AppContainer>
       </AppContainer>
 
-      <RatingStars rating={recipe.rating} />
+      {/* <RatingStars rating={recipe.rating} /> */}
 
       {hasEngagementMeta ? (
         <AppContainer align="center" direction="row" marginBottom="lg">
@@ -647,7 +647,7 @@ function RecipeDetailScreen({
 
       <AppContainer direction="row" marginBottom="xs" style={{ flexWrap: 'wrap' }}>
         <PrimaryPill color="brandGreen" label={`${recipe.prepMinutes} min`} />
-        <PrimaryPill color="brandYellow" label={`${recipe.servings} porcoes`} />
+        <PrimaryPill color="brandYellow" label={`${recipe.servings} porções`} />
         <PrimaryPill color={difficulty.color} label={difficulty.label} />
       </AppContainer>
 
@@ -705,7 +705,7 @@ function RecipeDetailScreen({
 
       <SectionTitle title="Modo de preparo" />
 
-      <AppContainer direction="row" marginBottom="2xl">
+      {/* <AppContainer direction="row" marginBottom="2xl">
         <AppButton
           fullWidth
           label="Iniciar modo chef"
@@ -721,7 +721,7 @@ function RecipeDetailScreen({
           textStyle={{ fontSize: theme.fontSizes.md }}
           variant="outline"
         />
-      </AppContainer>
+      </AppContainer> */}
 
       {recipe.steps.length ? (
         recipe.steps.map((step) => <StepCard key={step.id} step={step} />)

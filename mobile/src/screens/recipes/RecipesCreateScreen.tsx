@@ -39,23 +39,17 @@ type RecipesCreateScreenProps = {
 type SubmissionPhase = 'creating' | 'uploading' | null;
 
 const initialFormValues: RecipeCreateFormValues = {
-  title: 'Pave de Morango da Thais',
-  prepMinutes: '120',
-  servings: '3',
+  title: '',
+  prepMinutes: '',
+  servings: '',
   difficulty: 'intermediario',
   isCollaborative: true,
-  selectedIngredients: [
-    { id: 'ingredient-create-1', name: 'Leite condensado', unit: 'lata' },
-    { id: 'ingredient-create-2', name: 'Creme de leite', unit: 'caixa' },
-    { id: 'ingredient-create-3', name: 'Leite', unit: 'ml' },
-    { id: 'ingredient-create-4', name: 'Gema de ovo', unit: 'unidade' },
-    { id: 'ingredient-create-5', name: 'Farinha de trigo', unit: 'g' },
-  ],
+  selectedIngredients: [],
   nutrition: {
-    calories: '120',
-    proteins: '3',
-    carbohydrates: '120',
-    fats: '3',
+    calories: '',
+    proteins: '',
+    carbohydrates: '',
+    fats: '',
   },
   preparationSteps: [
     {
@@ -561,7 +555,7 @@ function RecipesCreateScreen({ onBack, onSubmitRecipe }: RecipesCreateScreenProp
               size="md"
               style={{ fontWeight: theme.fontWeights.bold, marginLeft: theme.spacing.md }}
             >
-              porcoes
+              porções
             </AppText>
           </AppContainer>
         </AppContainer>
@@ -609,22 +603,6 @@ function RecipesCreateScreen({ onBack, onSubmitRecipe }: RecipesCreateScreenProp
         onAddMedia={handleAddMedia}
         onRemoveMedia={handleRemoveMedia}
       />
-
-      {submissionPhase ? (
-        <AppContainer
-          backgroundColor="surface"
-          borderRadius="3xl"
-          marginBottom="xl"
-          padding="md"
-          shadow="sm"
-        >
-          <AppText color="primary" size="md" style={{ fontWeight: theme.fontWeights.semibold }}>
-            {submissionPhase === 'creating'
-              ? 'Criando receita...'
-              : 'Receita criada. Enviando midias...'}
-          </AppText>
-        </AppContainer>
-      ) : null}
 
       {submissionError || validationErrors.submit ? (
         <AppContainer

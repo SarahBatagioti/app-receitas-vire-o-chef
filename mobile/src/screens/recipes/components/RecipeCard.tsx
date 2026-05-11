@@ -186,6 +186,7 @@ function RecipeCard({ recipe, onPress, onToggleFavorite, isLast = false }: Recip
               <AppText size="sm">{`${recipe.prepMinutes} min`}</AppText>
             </AppContainer>
 
+            {/* Rating Stars - Comentado
             <AppContainer
               backgroundColor="surface"
               align="center"
@@ -199,6 +200,7 @@ function RecipeCard({ recipe, onPress, onToggleFavorite, isLast = false }: Recip
               />
               <AppText size="sm">{recipe.rating.toFixed(1).replace('.', ',')}</AppText>
             </AppContainer>
+            */}
 
             <AppContainer
               backgroundColor="surface"
