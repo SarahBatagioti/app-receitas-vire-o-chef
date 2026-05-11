@@ -9,7 +9,7 @@ import CommentListItem from './CommentListItem';
 import FeedListFooter from './FeedListFooter';
 
 type CommentsScreenProps = {
-  avatarUrl?: string | null;
+  authorName?: string | null;
   comments: PublicationComment[];
   value: string;
   onChangeText: (value: string) => void;
@@ -24,7 +24,7 @@ type CommentsScreenProps = {
 };
 
 function CommentsScreen({
-  avatarUrl,
+  authorName,
   comments,
   value,
   onChangeText,
@@ -55,7 +55,7 @@ function CommentsScreen({
       </AppContainer>
 
       <CommentComposer
-        avatarUrl={avatarUrl}
+        authorName={authorName}
         disabled={isSubmitting}
         onChangeText={onChangeText}
         onSubmit={onSubmit}

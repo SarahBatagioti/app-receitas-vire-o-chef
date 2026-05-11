@@ -1,11 +1,11 @@
 import React from 'react';
-import { Image, Pressable } from 'react-native';
-import { UserRound } from 'lucide-react-native';
-import { AppContainer, AppInput } from '../../../components/ui';
+import { Pressable } from 'react-native';
+import { Send, UserRound } from 'lucide-react-native';
+import { AppContainer, AppInput, AppText } from '../../../components/ui';
 import { useAppTheme } from '../../../contexts';
 
 type CommentComposerProps = {
-  avatarUrl?: string | null;
+  authorName?: string | null;
   value: string;
   onChangeText: (value: string) => void;
   onSubmit: () => void;
@@ -13,13 +13,19 @@ type CommentComposerProps = {
 };
 
 function CommentComposer({
-  avatarUrl,
+  authorName,
   value,
   onChangeText,
   onSubmit,
   disabled,
 }: CommentComposerProps) {
   const { theme } = useAppTheme();
+  const hasValue = value.trim().length > 0;
+  const authorInitial = React.useMemo(() => {
+    const normalizedName = authorName?.trim() ?? '';
+
+    return normalizedName ? normalizedName.charAt(0).toUpperCase() : '?';
+  }, [authorName]);
 
   return (
     <AppContainer
@@ -31,41 +37,60 @@ function CommentComposer({
       padding="md"
       shadow="sm"
     >
-      {avatarUrl ? (
-        <Image
-          source={{ uri: avatarUrl }}
-          style={{
-            borderRadius: theme.borderRadius.full,
-            height: theme.spacing['5xl'],
-            marginRight: theme.spacing.md,
-            width: theme.spacing['5xl'],
-          }}
-        />
-      ) : (
-        <AppContainer
-          align="center"
-          backgroundColor="surfaceSecondary"
-          borderRadius="full"
-          justify="center"
-          style={{
-            height: theme.spacing['5xl'],
-            marginRight: theme.spacing.md,
-            width: theme.spacing['5xl'],
-          }}
-        >
-          <UserRound color={theme.colors.icon} size={theme.spacing['2xl']} />
-        </AppContainer>
-      )}
+      <AppContainer
+        align="center"
+        backgroundColor="primary"
+        borderRadius="full"
+        justify="center"
+        style={{
+          height: theme.spacing['5xl'],
+          marginRight: theme.spacing.md,
+          width: theme.spacing['5xl'],
+        }}
+      >
+        {authorInitial === '?' ? (
+          <UserRound color={theme.colors.textInverse} size={theme.spacing['2xl']} />
+        ) : (
+          <AppText color="textInverse" size="xl" style={{ fontWeight: theme.fontWeights.bold }}>
+            {authorInitial}
+          </AppText>
+        )}
+      </AppContainer>
 
       <AppInput
         borderColor="surface"
         fullWidth
         onChangeText={onChangeText}
+        onSubmitEditing={() => {
+          if (!disabled && hasValue) {
+            onSubmit();
+          }
+        }}
         placeholder="Adicione um comentário"
+        returnKeyType="send"
         style={{ flex: 1 }}
         value={value}
       />
-      <Pressable disabled={disabled || !value.trim()} onPress={onSubmit} style={{ marginLeft: theme.spacing.sm }} />
+
+      {hasValue ? (
+        <Pressable
+          accessibilityLabel="Enviar comentário"
+          disabled={disabled}
+          onPress={onSubmit}
+          style={{
+            alignItems: 'center',
+            backgroundColor: theme.colors.primary,
+            borderRadius: theme.borderRadius.full,
+            height: theme.spacing['5xl'],
+            justifyContent: 'center',
+            marginLeft: theme.spacing.sm,
+            opacity: disabled ? 0.6 : 1,
+            width: theme.spacing['5xl'],
+          }}
+        >
+          <Send color={theme.colors.textInverse} size={theme.spacing.xl} />
+        </Pressable>
+      ) : null}
     </AppContainer>
   );
 }

@@ -1,5 +1,4 @@
 import React from 'react';
-import { Image } from 'react-native';
 import { UserRound } from 'lucide-react-native';
 import { AppContainer, AppText } from '../../../components/ui';
 import { useAppTheme } from '../../../contexts';
@@ -11,6 +10,11 @@ type CommentListItemProps = {
 
 function CommentListItem({ comment }: CommentListItemProps) {
   const { theme } = useAppTheme();
+  const authorInitial = React.useMemo(() => {
+    const normalizedName = comment.autor.nome.trim();
+
+    return normalizedName ? normalizedName.charAt(0).toUpperCase() : '?';
+  }, [comment.autor.nome]);
 
   return (
     <AppContainer
@@ -22,31 +26,25 @@ function CommentListItem({ comment }: CommentListItemProps) {
       padding="md"
       shadow="sm"
     >
-      {comment.autor.avatarUrl ? (
-        <Image
-          source={{ uri: comment.autor.avatarUrl }}
-          style={{
-            borderRadius: theme.borderRadius.full,
-            height: theme.spacing['5xl'],
-            marginRight: theme.spacing.md,
-            width: theme.spacing['5xl'],
-          }}
-        />
-      ) : (
-        <AppContainer
-          align="center"
-          backgroundColor="surfaceSecondary"
-          borderRadius="full"
-          justify="center"
-          style={{
-            height: theme.spacing['5xl'],
-            marginRight: theme.spacing.md,
-            width: theme.spacing['5xl'],
-          }}
-        >
-          <UserRound color={theme.colors.icon} size={theme.spacing['2xl']} />
-        </AppContainer>
-      )}
+      <AppContainer
+        align="center"
+        backgroundColor="primary"
+        borderRadius="full"
+        justify="center"
+        style={{
+          height: theme.spacing['5xl'],
+          marginRight: theme.spacing.md,
+          width: theme.spacing['5xl'],
+        }}
+      >
+        {authorInitial === '?' ? (
+          <UserRound color={theme.colors.textInverse} size={theme.spacing['2xl']} />
+        ) : (
+          <AppText color="textInverse" size="xl" style={{ fontWeight: theme.fontWeights.bold }}>
+            {authorInitial}
+          </AppText>
+        )}
+      </AppContainer>
       <AppContainer backgroundColor="surface" style={{ flex: 1 }}>
         <AppText color="text" size="xl" style={{ fontWeight: theme.fontWeights.bold }}>
           {comment.autor.nome}

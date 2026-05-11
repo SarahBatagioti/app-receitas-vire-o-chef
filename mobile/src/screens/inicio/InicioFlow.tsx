@@ -576,7 +576,7 @@ function InicioFlow({ onOpenRecipesScreen }: InicioFlowProps) {
   if (route === 'comments' && activeCommentsRoute) {
     return (
       <CommentsScreen
-        avatarUrl={user?.avatarUrl}
+        authorName={user?.name}
         comments={commentsState.items}
         errorMessage={commentsState.errorMessage}
         hasMore={commentsState.hasMore}
