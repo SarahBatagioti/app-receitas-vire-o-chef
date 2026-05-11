@@ -1,4 +1,5 @@
 import { AuthenticatedUserDto } from '../dtos/auth.dto';
+import { PublicationMediaUploadDto } from '../dtos/publication.dto';
 import { RecipeMediaUploadDto } from '../dtos/recipe.dto';
 
 declare global {
@@ -6,6 +7,7 @@ declare global {
     interface Request {
       authUser?: AuthenticatedUserDto;
       recipeMediaUpload?: RecipeMediaUploadDto;
+      publicationMediaUpload?: PublicationMediaUploadDto;
     }
   }
 }

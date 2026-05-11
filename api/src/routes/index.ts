@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { authRoutes } from './auth.routes';
+import { publicationRoutes } from './publication.routes';
 import { recipeRoutes } from './recipe.routes';
 
 const router = Router();
@@ -13,5 +14,6 @@ router.get('/health', (_request, response) => {
 
 router.use('/auth', authRoutes);
 router.use('/receitas', recipeRoutes);
+router.use('/publicacoes', publicationRoutes);
 
 export { router };
