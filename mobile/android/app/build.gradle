@@ -121,3 +121,34 @@ dependencies {
         implementation jscFlavor
     }
 }
+
+// If you provide a single PNG at mobile/src/assets/images/icone-app.png,
+// copy it to all mipmap folders before the build so it becomes the launcher icon.
+// Path is calculated relative to this module (android/app): ../../src/assets/...
+def customLauncherIcon = file("${projectDir}/../../src/assets/images/icone-app.png")
+if (customLauncherIcon.exists()) {
+    task replaceLauncherIcons {
+        doLast {
+            def resDir = file("src/main/res")
+            resDir.listFiles().each { dir ->
+                if (dir.name.startsWith('mipmap')) {
+                    try {
+                        copy {
+                            from customLauncherIcon
+                            into dir
+                            rename { 'ic_launcher.png' }
+                        }
+                        copy {
+                            from customLauncherIcon
+                            into dir
+                            rename { 'ic_launcher_round.png' }
+                        }
+                    } catch(Exception e) {
+                        println "Failed to copy launcher icon to ${dir}: ${e.message}"
+                    }
+                }
+            }
+        }
+    }
+    preBuild.dependsOn replaceLauncherIcons
+}
