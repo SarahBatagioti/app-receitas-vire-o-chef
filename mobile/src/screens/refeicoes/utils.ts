@@ -195,6 +195,10 @@ export function formatQuantity(value: number): string {
   return `${value.toFixed(value * 10 === Math.trunc(value * 10) ? 1 : 2).replace('.', ',')}x`;
 }
 
+export function formatServingsLabel(value: number): string {
+  return `${value} ${value === 1 ? 'porção' : 'porções'}`;
+}
+
 function roundToTwo(value: number): number {
   return Math.round(value * 100) / 100;
 }

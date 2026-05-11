@@ -97,7 +97,16 @@ function readString(value: unknown): string | undefined {
 }
 
 function readNumber(value: unknown): number | null {
-  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === 'string' && value.trim()) {
+    const parsedValue = Number(value.replace(',', '.'));
+    return Number.isFinite(parsedValue) ? parsedValue : null;
+  }
+
+  return null;
 }
 
 function readBoolean(value: unknown): boolean {

@@ -51,6 +51,7 @@ import {
   createEmptyMealDiaryDay,
   formatCalories,
   formatQuantity,
+  formatServingsLabel,
   getMealByType,
   getTodayLocalIsoDate,
   mergeAndDeduplicateRecipes,
@@ -392,7 +393,7 @@ function MealRecipeListItemCard({
             {recipe.title}
           </AppText>
           <AppText color="textSecondary" size="md">
-            {`${formatCalories(recipe.calories)} kcal, ${recipe.servings} porção${recipe.servings > 1 ? 'es' : ''}`}
+            {`${formatCalories(recipe.calories)} kcal, ${formatServingsLabel(recipe.servings)}`}
           </AppText>
           <AppText color="brandYellow" size="md" style={{ fontWeight: theme.fontWeights.semibold }}>
             {`Por ${recipe.authorName}`}
@@ -637,7 +638,17 @@ function RefeicoesFlow() {
         recipeService.listPublicRecipes(),
       ]);
 
-      setAvailableRecipes(mergeAndDeduplicateRecipes(myRecipes, publicRecipes));
+      const detailedRecipes = await Promise.all(
+        [...myRecipes, ...publicRecipes].map(async (recipe) => {
+          try {
+            return await recipeService.getRecipeById(recipe.id);
+          } catch {
+            return recipe;
+          }
+        }),
+      );
+
+      setAvailableRecipes(mergeAndDeduplicateRecipes(detailedRecipes, []));
     } catch (error) {
       setAvailableRecipes([]);
       setRecipesError(getErrorMessage(error, 'Não foi possível carregar as receitas cadastradas.'));

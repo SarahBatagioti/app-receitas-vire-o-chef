@@ -106,6 +106,7 @@ export interface RecipeSummaryDto {
   autorId: string;
   autorNome: string;
   autorUsername: string | null;
+  informacaoNutricional: RecipeNutritionDto | null;
   createdAt: string;
   updatedAt: string;
 }

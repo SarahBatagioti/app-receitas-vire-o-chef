@@ -383,6 +383,15 @@ function mapRecipeSummary(recipe: RecipeAggregate): RecipeSummaryDto {
     autorId: recipe.authorId,
     autorNome: recipe.authorName,
     autorUsername: recipe.authorUsername,
+    informacaoNutricional: recipe.nutrition
+      ? {
+          id: recipe.nutrition.id,
+          calorias: recipe.nutrition.calories,
+          proteinas: recipe.nutrition.proteins,
+          carboidratos: recipe.nutrition.carbohydrates,
+          gorduras: recipe.nutrition.fats,
+        }
+      : null,
     createdAt: recipe.createdAt,
     updatedAt: recipe.updatedAt,
   };
@@ -397,15 +406,6 @@ function mapRecipeAggregate(recipe: RecipeAggregate): RecipeDetailsDto {
       quantidade: ingredient.quantity,
       unidade: ingredient.unit,
     })),
-    informacaoNutricional: recipe.nutrition
-      ? {
-          id: recipe.nutrition.id,
-          calorias: recipe.nutrition.calories,
-          proteinas: recipe.nutrition.proteins,
-          carboidratos: recipe.nutrition.carbohydrates,
-          gorduras: recipe.nutrition.fats,
-        }
-      : null,
     modoPreparo: recipe.preparationSteps.map((step) => ({
       id: step.id,
       ordem: step.order,

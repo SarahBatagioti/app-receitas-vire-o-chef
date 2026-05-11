@@ -67,6 +67,7 @@ jest.mock('../src/services/recipeService', () => ({
   recipeService: {
     listMyRecipes: jest.fn(),
     listPublicRecipes: jest.fn(),
+    getRecipeById: jest.fn(),
   },
 }));
 
@@ -81,6 +82,7 @@ const { recipeService } = jest.requireMock('../src/services/recipeService') as {
   recipeService: {
     listMyRecipes: jest.Mock;
     listPublicRecipes: jest.Mock;
+    getRecipeById: jest.Mock;
   };
 };
 
@@ -117,6 +119,26 @@ describe('RefeicoesFlow', () => {
       },
     ]);
     recipeService.listPublicRecipes.mockResolvedValue([]);
+    recipeService.getRecipeById.mockImplementation(async (recipeId: string) => ({
+      id: recipeId,
+      nome: 'Arroz branco',
+      tempoPreparoMinutos: 20,
+      rendimentoPorcoes: 1,
+      dificuldade: 'FACIL',
+      isColaborativa: false,
+      status: 'PUBLICADA',
+      avaliacaoMedia: 4,
+      autorId: 'user-1',
+      autorNome: 'Thais Andrade',
+      autorUsername: 'thais',
+      createdAt: '',
+      updatedAt: '',
+      midiaPrincipal: null,
+      ingredientes: [],
+      informacaoNutricional: { id: 'nutrition-1', calorias: 203, proteinas: null, carboidratos: null, gorduras: null },
+      modoPreparo: [],
+      midias: [],
+    }));
   });
 
   afterEach(() => {
