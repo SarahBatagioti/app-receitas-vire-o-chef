@@ -163,8 +163,9 @@ export class PublicationRepository {
   async listFeed(input: ListFeedRepositoryInput): Promise<PublicationAggregate[]> {
     await this.ensureTables();
 
-    const conditions = ['p.author_id <> ?'];
-    const params: Array<string | number | Date> = [input.requesterId, input.requesterId];
+    const conditions: string[] = [];
+    const params: Array<string | number | Date> = [input.requesterId];
+    const limit = input.limit + 1;
 
     if (input.username) {
       conditions.push('LOWER(u.username) LIKE ?');
@@ -176,14 +177,12 @@ export class PublicationRepository {
       params.push(input.cursorCreatedAt, input.cursorCreatedAt, input.cursorId);
     }
 
-    params.push(input.limit + 1);
-
     const [rows] = await database.execute<(RowDataPacket & PublicationDatabaseRow)[]>(
       `
         ${basePublicationSelectQuery}
-        WHERE ${conditions.join(' AND ')}
+        ${conditions.length ? `WHERE ${conditions.join(' AND ')}` : ''}
         ORDER BY p.created_at DESC, p.id DESC
-        LIMIT ?
+        LIMIT ${limit}
       `,
       params,
     );
@@ -321,20 +320,19 @@ export class PublicationRepository {
     await this.ensureTables();
     const params: Array<string | number | Date> = [input.publicationId];
     const conditions = ['pc.publication_id = ?'];
+    const limit = input.limit + 1;
 
     if (input.cursorCreatedAt && input.cursorId) {
       conditions.push('(pc.created_at < ? OR (pc.created_at = ? AND pc.id < ?))');
       params.push(input.cursorCreatedAt, input.cursorCreatedAt, input.cursorId);
     }
 
-    params.push(input.limit + 1);
-
     const [rows] = await database.execute<(RowDataPacket & PublicationCommentDatabaseRow)[]>(
       `
         ${baseCommentSelectQuery}
         WHERE ${conditions.join(' AND ')}
         ORDER BY pc.created_at DESC, pc.id DESC
-        LIMIT ?
+        LIMIT ${limit}
       `,
       params,
     );

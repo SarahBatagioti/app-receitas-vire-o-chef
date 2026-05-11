@@ -71,12 +71,14 @@ export function validateCursorPaginationQuery(
     ]));
   }
 
-  request.query = {
+  const normalizedQuery = {
     ...request.query,
     cursor: typeof cursor === 'string' && cursor.trim() ? cursor.trim() : '',
     limit: String(Math.trunc(normalizedLimit)),
     username: typeof username === 'string' && username.trim() ? username.trim() : '',
   };
+
+  Object.assign(request.query, normalizedQuery);
 
   return next();
 }
