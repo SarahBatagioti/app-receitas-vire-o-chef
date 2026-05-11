@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pressable } from 'react-native';
-import { Heart, MessageCircle, Send } from 'lucide-react-native';
+import { Heart, MessageCircle } from 'lucide-react-native';
 import { AppContainer, AppText } from '../../../components/ui';
 import { useAppTheme } from '../../../contexts';
 import RecipeLinkTag from './RecipeLinkTag';
@@ -89,11 +89,11 @@ function PublicationActionsRow({
           onPress={onPressComments}
           value={formatCompactCount(commentCount)}
         />
-        <ActionButton
+        {/* <ActionButton
           icon={<Send color={theme.colors.text} size={theme.spacing.xl} />}
           onPress={onPressShare}
           value={formatCompactCount(shareCount)}
-        />
+        /> */}
       </AppContainer>
       <RecipeLinkTag visible={hasRecipeLink} onPress={onPressRecipeLink} />
     </AppContainer>

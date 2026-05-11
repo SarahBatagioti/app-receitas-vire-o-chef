@@ -3,105 +3,174 @@
 # 📖 Sobre o aplicativo
 Bem-vindo ao "Vire o Chef", o aplicativo que te ajuda a organizar suas receitas, criar um diário alimentar e controlar sua despensa virtual. Prepare receitas com facilidade, siga desafios culinários e registre sua jornada na cozinha de forma divertida e prática.
 
+# Escopo de cada entrega
+
 ## Percentual estimado do trabalho
 
-- **Entrega 1 concluída: ~25% do escopo total**
-- **Entrega 2 restante: ~75% do escopo total**
+- **Entrega 1 concluída: ~32% do escopo total**
+- **Entrega 2 restante: ~68% do escopo total**
 
 > Critério usado: leitura dos **30 requisitos funcionais** e **10 não funcionais** do PDF, comparando com o estado atual do código.
 
-## Legenda do checklist
+<details>
+<summary><strong>1ª Entrega</strong></summary>
 
-- `[x]` concluído
-- `[~]` parcialmente adiantado
-- `[ ]` pendente
+###  Tela de Cadastro e Login
 
-## 1ª Entrega
+- [x] Permitir cadastro de usuário.
+- [x] Permitir login com e-mail e senha.
 
-### O que já foi feito no código
+### Tela Início
 
-- [x] Aplicativo mobile estruturado em **React Native CLI**
-- [x] Backend estruturado em **Node.js + Express**
-- [x] Fluxo de **cadastro de usuário com e-mail e senha**
-- [x] Fluxo de **login com e-mail e senha**
-- [x] **Persistência de sessão** do usuário autenticado
-- [x] **Logout**
-- [x] Fluxo de **esqueci minha senha** no app e no backend
-- [x] Estrutura de **receitas** com criação, listagem e detalhe
-- [x] Cadastro de receita com **ingredientes**
-- [x] Cadastro de receita com **informação nutricional**
-- [x] Cadastro de receita com **modo de preparo**
-- [x] Suporte a **rascunho** e **publicação** de receitas
-- [x] Upload de **imagens e vídeos** para receitas
-- [x] Listagem de **receitas públicas**
-- [x] Listagem de **minhas receitas**
-- [x] Sistema de **favoritos locais** com `AsyncStorage`
-- [x] Sistema de **avaliação de receitas**
-- [x] Base visual com **tema**, componentes reutilizáveis e organização de UI
+- [x] Exibir feed público de receitas publicadas por usuários.
+- [x] Exibir fotos das receitas feitas pelos usuários.
+- [x] Permitir curtir publicações de receitas.
+- [x] Permitir comentar em publicações de receitas.
 
-### Requisitos do PDF já iniciados, mas ainda não finalizados
+### Tela Receitas
 
-- [~] **Requisito 1. Cadastro e autenticação de usuário**
-Ja existe cadastro, login, sessao e backend preparado para fluxo social/Firebase, com o app agora mantendo somente o login social com Google.
-- [~] **Requisito 12. Receitas colaborativas**
-  Já existe o campo `isColaborativa`, mas ainda não há edição em tempo real entre múltiplos usuários.
-- [~] **Requisito 17. Galeria pública de fotos**
-  Já existe upload de mídia nas receitas e visualização pública, mas ainda faltam feed, curtidas e comentários.
-- [~] **Requisito 22. Modo offline avançado**
-  Já existe persistência local de favoritos, mas ainda não existe download/sincronização offline de receitas da comunidade.
-- [~] **Requisito 30. Temas personalizáveis com cores e fontes**
-  Já existe a base de tema e alternância visual, mas o usuário ainda não personaliza cores e tipografia como pede o escopo final.
-- [~] **Requisito não funcional 3. Back-end e persistência**
-  O backend em Node.js/Express já existe, mas a arquitetura final descrita no PDF ainda não está completa.
-- [~] **Requisito não funcional 4. Autenticação com Firebase Auth**
-  O backend já conversa com Firebase para validar tokens, mas a experiência social completa ainda não está fechada no app.
-- [~] **Requisito não funcional 9. Interface moderna e responsiva**
-  A base visual está bem encaminhada, mas ainda faltam várias telas finais do produto.
+- [x] Permitir cadastro manual de receitas.
+- [x] Permitir cadastro de receita com título.
+- [x] Permitir cadastro de ingredientes.
+- [x] Permitir cadastro do modo de preparo.
+- [x] Permitir cadastro de tempo de preparo.
+- [x] Permitir cadastro de rendimento da receita.
+- [x] Permitir cadastro de dificuldade da receita.
+- [x] Permitir adicionar mídias à receita.
+- [x] Permitir salvar receitas como favoritas.
 
-## 2ª Entrega
+### Tela Refeições
 
-### O que ainda falta para concluir o escopo do PDF
+- [x] Permitir planejamento de refeições.
+- [x] Permitir associar refeições planejadas a receitas.
 
-- [ ] **Requisito 2.** Perfil do usuário com preferências e restrições alimentares
-- [ ] **Requisito 3.** Cadastro de receitas por comando de voz
-- [ ] **Requisito 4.** Importação de receitas por URL com scraping no back-end
-- [ ] **Requisito 5.** Organização de receitas em pastas customizadas e aninhadas
-- [ ] **Requisito 6.** Planejamento de refeições com metas nutricionais
-- [ ] **Requisito 7.** Lista de compras inteligente
-- [ ] **Requisito 8.** Lembretes por localização com GPS/geofencing
-- [ ] **Requisito 9.** Modo chef avançado
-- [ ] **Requisito 10.** Timer simultâneo para múltiplas receitas
-- [ ] **Requisito 11.** Diário alimentar
-- [ ] **Requisito 13.** Histórico de versões de receitas
-- [ ] **Requisito 14.** Impressão de receitas em PDF
-- [ ] **Requisito 15.** Comandos de voz durante o preparo
-- [ ] **Requisito 16.** Desafios culinários semanais
-- [ ] **Requisito 18.** Notificações de receitas sazonais
-- [ ] **Requisito 19.** Cálculo de desperdício
-- [ ] **Requisito 20.** Compartilhamento de lista de compras com outros apps
-- [ ] **Requisito 21.** Despensa virtual
-- [ ] **Requisito 23.** Backup automático diário para nuvem
-- [ ] **Requisito 24.** Suporte a múltiplos idiomas
-- [ ] **Requisito 25.** Favoritar chefs
-- [ ] **Requisito 26.** Sistema de reputação
-- [ ] **Requisito 27.** Modo criança
-- [ ] **Requisito 28.** Integração com calendário
-- [ ] **Requisito 29.** Receitas por temporada
+### Tela Perfil
 
-### Requisitos não funcionais que ainda precisam ser fechados
+- [x] Permitir escolher tema claro/escuro
+- [x] Permitir visualizar dados do usuário.
 
-- [ ] **Requisito não funcional 2.** Persistência local com `Realm` ou `WatermelonDB`
-- [ ] **Requisito não funcional 5.** Reconhecimento de voz com `react-native-voice`
-- [ ] **Requisito não funcional 6.** Geofencing com `react-native-geofencing`
-- [ ] **Requisito não funcional 7.** Scraping de receitas implementado no back-end
-- [ ] **Requisito não funcional 8.** Colaboração em tempo real com WebSockets ou Firebase Realtime Database
-- [ ] **Requisito não funcional 10.** Testes automatizados cobrindo voz, geofencing e colaboração
+</details>
 
-## Resumo rápido
+<details>
+<summary><strong>2° Entrega</strong></summary>
 
-A **1ª entrega** já deixou pronta a fundação do projeto: autenticação básica, backend, fluxo principal de receitas, mídia, favoritos, avaliações e a base visual do app.
+###  Tela de Cadastro e Login
 
-A **2ª entrega** concentra a maior parte do escopo diferencial do PDF: voz, geolocalização, planejamento, listas inteligentes, colaboração em tempo real, offline de verdade, integrações externas e recursos sociais mais avançados.
+- [ ] Permitir login social com Google.
+- [ ] Permitir recuperação de senha.
+- [ ] Permitir autenticação com Firebase Auth.
+- [ ] Permitir definição inicial de preferências alimentares.
+- [ ] Permitir definição inicial de restrições alimentares.
+- [ ] Permitir escolha inicial de idioma do aplicativo.
+- [ ] Permitir definição inicial de metas nutricionais.
+- [ ] Permitir sincronização dos dados do usuário com a nuvem.
+- [ ] Permitir backup automático dos dados do usuário.
+
+### Tela Início
+
+- [ ] Permitir compartilhar receitas no feed.
+- [ ] Exibir receitas de chefs que o usuário segue.
+- [ ] Permitir seguir outros usuários/cozinheiros.
+- [ ] Exibir selo de “Chef Verificado” em usuários com boa reputação.
+- [ ] Exibir desafios culinários semanais.
+- [ ] Permitir postar fotos dos resultados dos desafios.
+- [ ] Exibir receitas sazonais com base em datas comemorativas ou época do ano.
+- [ ] Exibir sugestões personalizadas de receitas.
+- [ ] Exibir receitas por temporada, usando ingredientes da estação.
+- [ ] Permitir acesso a receitas da comunidade.
+- [ ] Permitir visualização de atividades recentes dos usuários seguidos.
+
+### Tela Produtos
+
+- [ ] Gerar lista de compras inteligente a partir do planejamento de refeições.
+- [ ] Gerar lista de compras com base nas receitas salvas como “Receitas a fazer”.
+- [ ] Sugerir itens adicionais com base nos hábitos de compra do usuário.
+- [ ] Permitir exportar lista de compras para outros aplicativos.
+- [ ] Permitir exportação da lista para Google Keep.
+- [ ] Permitir exportação da lista para AnyList.
+- [ ] Permitir compartilhamento da lista de compras por texto.
+- [ ] Registrar ingredientes comprados pelo usuário.
+- [ ] Comparar ingredientes comprados com ingredientes efetivamente utilizados.
+- [ ] Calcular desperdício alimentar.
+- [ ] Gerar relatórios de aproveitamento e desperdício.
+- [ ] Permitir cadastro de ingredientes na despensa virtual.
+- [ ] Permitir informar quantidade dos ingredientes disponíveis.
+- [ ] Permitir informar data de validade dos ingredientes.
+- [ ] Alertar sobre produtos próximos do vencimento.
+- [ ] Sugerir receitas com ingredientes próximos do vencimento.
+- [ ] Sugerir receitas com base nos ingredientes disponíveis em casa.
+- [ ] Relacionar estoque da despensa com receitas salvas.
+- [ ] Relacionar estoque da despensa com planejamento alimentar.
+
+### Tela de Receitas
+
+- [ ] Permitir cadastro de receita por comando de voz.
+- [ ] Usar microfone para ditar ingredientes e modo de preparo.
+- [ ] Converter fala em texto para preencher campos automaticamente.
+- [ ] Permitir importação de receita a partir de URL da web.
+- [ ] Permitir organizar receitas em pastas customizáveis.
+- [ ] Permitir criar pastas aninhadas de receitas.
+- [ ] Permitir navegação em árvore nas pastas.
+- [ ] Permitir salvar receitas para consulta offline.
+- [ ] Permitir baixar receitas da comunidade para acesso offline.
+- [ ] Permitir criar receitas colaborativas.
+- [ ] Permitir visualizar histórico de versões de receitas colaborativas.
+- [ ] Gerar PDF formatado da receita.
+- [ ] Permitir compartilhar receita.
+- [ ] Permitir avaliar receitas com sistema de estrelas.
+- [ ] Permitir seguir o autor da receita.
+- [ ] Exibir dados do usuário que publicou a receita.
+- [ ] Exibir selo de “Chef Verificado” no autor, quando aplicável.
+- [ ] Permitir adicionar receita à lista de “Receitas a fazer”.
+- [ ] Permitir visualizar ingredientes da receita.
+- [ ] Permitir visualizar modo de preparo da receita.
+- [ ] Permitir iniciar preparo da receita.
+- [ ] Filtrar receitas com base em dieta e alergias.
+- [ ] Permitir modo criança com interface simplificada.
+
+### Tela de Refeições
+
+- [ ] Planejar refeições com base em metas nutricionais.
+- [ ] Sugerir receitas adequadas para o planejamento.
+- [ ] Permitir registrar refeições consumidas no diário alimentar.
+- [ ] Criar histórico nutricional do usuário.
+- [ ] Permitir acompanhamento do histórico alimentar.
+- [ ] Permitir importar planejamento de refeições para o Google Calendar.
+
+### Tela de Perfil
+
+- [ ] Permitir editar dados do usuário.
+- [ ] Permitir definir preferências de sistemas.
+- [ ] Permitir selecionar idioma do aplicativo.
+- [ ] Exibir usuários seguidos e seguidores.
+- [ ] Permitir seguir e deixar de seguir cozinheiros.
+- [ ] Exibir selo de “Chef Verificado”, quando aplicável.
+- [ ] Permitir escolher cor principal do aplicativo.
+- [ ] Permitir escolher estilo de fonte.
+- [ ] Permitir configurar experiência visual personalizada.
+- [ ] Permitir sincronizar preferências do perfil com a nuvem.
+
+### Função Notificações
+
+- [ ] Enviar lembrete baseado em localização quando o usuário estiver próximo de um supermercado.
+- [ ] Notificar o usuário para não esquecer a lista de compras.
+- [ ] Enviar notificações de itens a serem comprados.
+- [ ] Enviar notificações de timers durante o preparo de receitas.
+- [ ] Permitir múltiplas notificações de timers simultâneos.
+- [ ] Notificar produtos próximos do vencimento na despensa.
+- [ ] Notificar sugestões de receitas para usar produtos próximos do vencimento.
+- [ ] Enviar notificações de receitas sazonais.
+- [ ] Enviar notificações de desafios culinários semanais.
+- [ ] Notificar atividades relevantes no feed.
+- [ ] Notificar curtidas e comentários em receitas publicadas.
+- [ ] Notificar atualizações em receitas colaborativas.
+- [ ] Notificar mudanças em receitas compartilhadas.
+- [ ] Notificar lembretes relacionados ao planejamento de refeições.
+- [ ] Notificar eventos exportados ou relacionados ao calendário.
+- [ ] Usar geofencing para lembretes por localização.
+- [ ] Usar sensores de localização para disparar notificações contextuais.
+
+</details>
 
 ## Como rodar o projeto
 

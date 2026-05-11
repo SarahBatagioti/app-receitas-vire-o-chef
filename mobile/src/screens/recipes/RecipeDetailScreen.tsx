@@ -5,7 +5,6 @@ import {
   Circle,
   Heart,
   Play,
-  Share2,
   Star,
   UserRound,
   Users2,
@@ -597,9 +596,9 @@ function RecipeDetailScreen({
               strokeWidth={1.8}
             />
           </Pressable>
-          <Pressable accessibilityLabel="Compartilhar receita">
+          {/* <Pressable accessibilityLabel="Compartilhar receita">
             <Share2 color={theme.colors.primary} size={theme.spacing['4xl']} strokeWidth={2} />
-          </Pressable>
+          </Pressable> */}
         </AppContainer>
       </AppContainer>
 
